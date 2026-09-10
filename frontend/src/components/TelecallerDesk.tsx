@@ -1,27 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Lead, api } from "../services/api";
 import { openGmail, openWhatsApp } from "../utils/mailHelper";
 import { 
   PhoneCall, 
-  PhoneOff,
-  Mic,
-  MicOff,
   MessageCircle, 
   Mail, 
-  Calendar, 
   ShieldCheck, 
   Flame, 
   Check, 
   ChevronRight,
-  Sparkles,
   Lock,
-  ExternalLink
+  RefreshCw,
+  Search
 } from "lucide-react";
 
 export const TelecallerDesk: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterPriority, setFilterPriority] = useState("ALL");
 
   // Outcome logger state
   const [outcome, setOutcome] = useState<string>("CONNECTED");
@@ -30,58 +28,70 @@ export const TelecallerDesk: React.FC = () => {
   const [loggingOutcome, setLoggingOutcome] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Live Calling Cockpit state
-  const [isCalling, setIsCalling] = useState(false);
-  const [callDuration, setCallDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const timerRef = useRef<any>(null);
-
   useEffect(() => {
-    if (isCalling) {
-      timerRef.current = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isCalling]);
+    loadMyLeads();
+  }, []);
 
-  const formatTimer = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const handleStartCall = async () => {
-    if (!selectedLead) return;
-    setIsCalling(true);
-    setCallDuration(0);
-    setIsMuted(false);
+  // Fetch all leads from the organization (synced with ORG Admin dashboard)
+  const loadMyLeads = async () => {
+    setLoading(true);
     try {
-      await api.triggerLeadAction(selectedLead.id, "call");
+      const data = await api.getLeads();
+      setLeads(data || []);
+      if (data && data.length > 0) {
+        setSelectedLead((prev) => (prev ? data.find((l) => l.id === prev.id) || data[0] : data[0]));
+      }
     } catch (e) {
-      console.warn("Local audit event logged", e);
+      console.error("Error loading leads in telecaller desk:", e);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEndCall = () => {
-    setIsCalling(false);
-    const duration = callDuration;
-    if (duration >= 5) {
-      setOutcome("CONNECTED");
-      setNotes((prev) =>
-        prev
-          ? `${prev}\nOutbound Call completed (${duration}s).`
-          : `Connected outbound call (${duration}s). Notes: `
-      );
-    } else {
-      setOutcome("NO_ANSWER");
+  // Filtered leads based on search query and priority chip
+  const filteredLeads = useMemo(() => {
+    return leads.filter((lead) => {
+      // Priority filter
+      if (filterPriority !== "ALL") {
+        if (filterPriority === "HOT") {
+          if (lead.priority !== "URGENT" && lead.priority !== "HIGH") return false;
+        } else if (lead.priority !== filterPriority) {
+          return false;
+        }
+      }
+      // Text search
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchTitle = lead.title?.toLowerCase().includes(q);
+        const matchCompany = lead.company_name?.toLowerCase().includes(q);
+        const matchContact = lead.contact_name?.toLowerCase().includes(q);
+        const matchPhone = lead.contact_phone?.includes(q);
+        if (!matchTitle && !matchCompany && !matchContact && !matchPhone) return false;
+      }
+      return true;
+    });
+  }, [leads, filterPriority, searchQuery]);
+
+  // Single Call button that straightaway opens the native OS/Mobile "Pick an App" / Phone dialer
+  const handleCall = async () => {
+    if (!selectedLead) return;
+    setSuccessMsg("Opening Phone App / 'Pick an App' prompt on your device...");
+    setTimeout(() => setSuccessMsg(null), 4000);
+
+    // Pre-fill notes for the telecaller to log discussion after the call
+    if (!notes) {
+      setNotes(`Outbound Call placed to ${selectedLead.contact_name || selectedLead.title}. Notes: `);
     }
-    setSuccessMsg(`Call completed (${formatTimer(duration)}). Outcome set to ${duration >= 5 ? "Connected" : "No Answer"}. Review and log below.`);
-    setTimeout(() => setSuccessMsg(null), 5000);
+
+    try {
+      const res = await api.triggerLeadAction(selectedLead.id, "call");
+      if (res.tel_url) {
+        // Triggers the device's native "Pick an App" / Phone dialer
+        window.location.href = res.tel_url;
+      }
+    } catch (e) {
+      console.warn("Call trigger audit error", e);
+    }
   };
 
   const handleWhatsApp = async () => {
@@ -116,25 +126,6 @@ export const TelecallerDesk: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadMyLeads();
-  }, []);
-
-  const loadMyLeads = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getLeads({ status: "OPEN" });
-      setLeads(data);
-      if (data.length > 0 && !selectedLead) {
-        setSelectedLead(data[0]);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleRecordOutcome = async () => {
     if (!selectedLead) return;
     setLoggingOutcome(true);
@@ -146,7 +137,7 @@ export const TelecallerDesk: React.FC = () => {
         subject: `Telecaller Call: ${outcome}`,
         description: notes || `Outcome marked as ${outcome}`,
         status: outcome,
-        duration_seconds: outcome === "CONNECTED" ? 180 : 25,
+        duration_seconds: outcome === "CONNECTED" ? 120 : 15,
       });
 
       // 2. If followup selected, schedule task
@@ -169,10 +160,10 @@ export const TelecallerDesk: React.FC = () => {
       setNotes("");
       setTimeout(() => setSuccessMsg(null), 3000);
 
-      // Move to next lead
-      const currentIndex = leads.findIndex((l) => l.id === selectedLead.id);
-      if (currentIndex < leads.length - 1) {
-        setSelectedLead(leads[currentIndex + 1]);
+      // Move to next lead in filtered queue
+      const currentIndex = filteredLeads.findIndex((l) => l.id === selectedLead.id);
+      if (currentIndex < filteredLeads.length - 1) {
+        setSelectedLead(filteredLeads[currentIndex + 1]);
       }
     } catch (err: any) {
       alert(err.message);
@@ -197,19 +188,52 @@ export const TelecallerDesk: React.FC = () => {
       {/* Top Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
         <div>
-          <h2 style={{ fontSize: "1.375rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: "8px" }}>
-            <PhoneCall style={{ width: "20px", height: "20px", color: "var(--emerald)" }} />
-            Telecaller Outbound Desk
-          </h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <h2 style={{ fontSize: "1.375rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: "8px" }}>
+              <PhoneCall style={{ width: "20px", height: "20px", color: "var(--emerald)" }} />
+              Telecaller Outbound Desk
+            </h2>
+            <span style={{
+              fontSize: "0.6875rem",
+              fontWeight: 700,
+              padding: "2px 8px",
+              borderRadius: "999px",
+              backgroundColor: "var(--emerald-light)",
+              color: "var(--emerald-dark)",
+              border: "1px solid var(--emerald-border)"
+            }}>
+              Synced with ORG Admin
+            </span>
+          </div>
           <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-            Rapid outbound dialer with contact masking & one-tap outcome logging
+            Direct device dialing (Pick an App), contact masking, and one-tap discussion outcome logging
           </p>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span className="badge badge-masked" style={{ fontSize: "0.75rem", padding: "4px 10px" }}>
+          <button
+            onClick={loadMyLeads}
+            title="Refresh queue from ORG Admin"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              padding: "6px 12px",
+              borderRadius: "8px",
+              border: "1px solid var(--border-subtle)",
+              background: "var(--bg-surface)",
+              color: "var(--text-primary)",
+              cursor: "pointer"
+            }}
+          >
+            <RefreshCw style={{ width: "13px", height: "13px", color: "var(--primary)" }} />
+            Sync Leads
+          </button>
+          <span className="badge badge-masked" style={{ fontSize: "0.75rem", padding: "5px 10px" }}>
             <ShieldCheck style={{ width: "14px", height: "14px" }} />
-            Anti-Theft Contact Masking Active
+            Anti-Theft Active
           </span>
         </div>
       </div>
@@ -234,29 +258,101 @@ export const TelecallerDesk: React.FC = () => {
 
       {/* Main Two-Column Workflow Desk */}
       <div className="grid-cols-desk">
-        {/* Left Column: Assigned Leads Queue */}
-        <div className="card" style={{ padding: "16px", display: "flex", flexDirection: "column" }}>
+        {/* Left Column: Leads to Contact (Fetched from ORG Admin) */}
+        <div className="card" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+          {/* Queue Header & Counter */}
           <div style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingBottom: "12px",
-            marginBottom: "12px",
+            paddingBottom: "10px",
             borderBottom: "1px solid var(--border-subtle)"
           }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-              Assigned Queue ({leads.length})
+            <div>
+              <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                Leads to Contact ({filteredLeads.length})
+              </span>
+              <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "block" }}>
+                Total in Organization: {leads.length} leads
+              </span>
+            </div>
+            <span style={{ fontSize: "0.6875rem", color: "var(--emerald-dark)", fontWeight: 700, background: "var(--emerald-light)", padding: "2px 6px", borderRadius: "4px" }}>
+              Live Connected
             </span>
-            <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontWeight: 600 }}>High to Low Score</span>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", flex: 1, paddingRight: "4px", maxHeight: "620px" }}>
+          {/* Search Box */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "6px 10px",
+            background: "var(--bg-surface-subtle)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "8px"
+          }}>
+            <Search style={{ width: "14px", height: "14px", color: "var(--text-muted)" }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by title, company, or contact..."
+              style={{
+                width: "100%",
+                border: "none",
+                background: "transparent",
+                fontSize: "0.75rem",
+                color: "var(--text-primary)",
+                outline: "none"
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                style={{ border: "none", background: "transparent", fontSize: "0.6875rem", color: "var(--text-muted)", cursor: "pointer" }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Filter Chips */}
+          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+            {[
+              { key: "ALL", label: `All (${leads.length})` },
+              { key: "HOT", label: `Hot (${leads.filter((l) => l.priority === "URGENT" || l.priority === "HIGH").length})` },
+              { key: "MEDIUM", label: `Medium (${leads.filter((l) => l.priority === "MEDIUM").length})` }
+            ].map((chip) => (
+              <button
+                key={chip.key}
+                onClick={() => setFilterPriority(chip.key)}
+                style={{
+                  fontSize: "0.6875rem",
+                  fontWeight: 600,
+                  padding: "3px 8px",
+                  borderRadius: "999px",
+                  border: filterPriority === chip.key ? "1px solid var(--primary)" : "1px solid var(--border-subtle)",
+                  background: filterPriority === chip.key ? "var(--primary-light)" : "var(--bg-surface-subtle)",
+                  color: filterPriority === chip.key ? "var(--primary)" : "var(--text-secondary)",
+                  cursor: "pointer"
+                }}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Leads List */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", flex: 1, paddingRight: "4px", maxHeight: "560px" }}>
             {loading ? (
-              <p style={{ textAlign: "center", padding: "32px 0", fontSize: "0.75rem", color: "var(--text-muted)" }}>Loading queue...</p>
-            ) : leads.length === 0 ? (
-              <p style={{ textAlign: "center", padding: "32px 0", fontSize: "0.75rem", color: "var(--text-muted)" }}>All assigned leads completed!</p>
+              <p style={{ textAlign: "center", padding: "32px 0", fontSize: "0.75rem", color: "var(--text-muted)" }}>Loading leads from organization...</p>
+            ) : filteredLeads.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "32px 12px", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                <p style={{ fontWeight: 600 }}>No matching leads found</p>
+                <p style={{ fontSize: "0.6875rem", marginTop: "4px" }}>Leads from ORG Admin will appear here.</p>
+              </div>
             ) : (
-              leads.map((lead) => {
+              filteredLeads.map((lead) => {
                 const isSelected = selectedLead?.id === lead.id;
                 return (
                   <div
@@ -282,14 +378,32 @@ export const TelecallerDesk: React.FC = () => {
                       </div>
                     </div>
 
-                    <h4 style={{ fontSize: "0.8125rem", fontWeight: 700, color: isSelected ? "var(--primary)" : "var(--text-primary)", marginBottom: "2px" }}>
+                    <h4 style={{ fontSize: "0.8125rem", fontWeight: 700, color: isSelected ? "var(--primary)" : "var(--text-primary)", marginBottom: "2px", lineHeight: "1.3" }}>
                       {lead.title}
                     </h4>
 
-                    <div style={{ fontSize: "0.6875rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between" }}>
-                      <span>{lead.company_name || "Account"}</span>
-                      <span style={{ color: "var(--purple-dark)", fontWeight: 600 }}>{lead.contact_phone || "No phone"}</span>
+                    <div style={{ fontSize: "0.6875rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "4px" }}>
+                      <span style={{ fontWeight: 600 }}>{lead.company_name || "Account"}</span>
+                      <span style={{ color: "var(--purple-dark)", fontWeight: 600, fontFamily: "monospace" }}>
+                        {lead.contact_phone || "No phone"}
+                      </span>
                     </div>
+
+                    {lead.stage && (
+                      <div style={{ marginTop: "6px", display: "flex", justifyContent: "flex-start" }}>
+                        <span style={{
+                          fontSize: "0.625rem",
+                          fontWeight: 700,
+                          padding: "1px 6px",
+                          borderRadius: "4px",
+                          background: "var(--bg-surface-subtle)",
+                          color: "var(--text-secondary)",
+                          border: "1px solid var(--border-subtle)"
+                        }}>
+                          Stage: {lead.stage.name}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -358,50 +472,42 @@ export const TelecallerDesk: React.FC = () => {
                     {selectedLead.contact_email}
                   </span>
                 )}
-                <div style={{ display: "flex", gap: "8px", marginTop: "8px", justifyContent: "flex-end", flexWrap: "wrap" }}>
-                  {!isCalling ? (
-                    <button
-                      onClick={handleStartCall}
-                      className="btn-primary"
-                      style={{ background: "linear-gradient(135deg, #059669, #047857)", borderColor: "#065f46", fontSize: "0.75rem", padding: "6px 14px" }}
-                    >
-                      <PhoneCall style={{ width: "14px", height: "14px" }} />
-                      Call Lead
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleEndCall}
-                      style={{
-                        background: "#dc2626",
-                        border: "1px solid #b91c1c",
-                        borderRadius: "8px",
-                        padding: "6px 14px",
-                        color: "#fff",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        fontSize: "0.75rem",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px"
-                      }}
-                    >
-                      <PhoneOff style={{ width: "14px", height: "14px" }} />
-                      End Call ({formatTimer(callDuration)})
-                    </button>
-                  )}
+
+                {/* Direct Action Buttons: Call (Opens Pick an App), WhatsApp, Gmail */}
+                <div style={{ display: "flex", gap: "8px", marginTop: "12px", justifyContent: "flex-end", flexWrap: "wrap" }}>
+                  {/* Single Call button that straightaway opens the native OS / Mobile Pick an App prompt */}
+                  <button
+                    onClick={handleCall}
+                    className="btn-primary"
+                    style={{
+                      background: "linear-gradient(135deg, #059669, #047857)",
+                      borderColor: "#065f46",
+                      fontSize: "0.75rem",
+                      padding: "7px 16px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px"
+                    }}
+                    title="Prompts device's 'Pick an App' / phone dialer"
+                  >
+                    <PhoneCall style={{ width: "14px", height: "14px" }} />
+                    Call Lead
+                  </button>
+
                   <button
                     onClick={handleWhatsApp}
                     className="btn-secondary"
-                    style={{ fontSize: "0.75rem", padding: "6px 12px" }}
+                    style={{ fontSize: "0.75rem", padding: "7px 14px", display: "flex", alignItems: "center", gap: "6px" }}
                     title="Open WhatsApp chat in new tab"
                   >
                     <MessageCircle style={{ width: "14px", height: "14px", color: "var(--emerald)" }} />
                     WhatsApp
                   </button>
+
                   <button
                     onClick={handleGmail}
                     className="btn-secondary"
-                    style={{ fontSize: "0.75rem", padding: "6px 12px", color: "#dc2626", borderColor: "#fecaca" }}
+                    style={{ fontSize: "0.75rem", padding: "7px 14px", color: "#dc2626", borderColor: "#fecaca", display: "flex", alignItems: "center", gap: "6px" }}
                     title="Open Gmail composer in new tab"
                   >
                     <Mail style={{ width: "14px", height: "14px", color: "#dc2626" }} />
@@ -411,189 +517,126 @@ export const TelecallerDesk: React.FC = () => {
               </div>
             </div>
 
-            {/* In-Call Active Cockpit Banner */}
-            {isCalling && (
-              <div style={{
-                padding: "16px 20px",
-                borderRadius: "12px",
-                background: "linear-gradient(135deg, #064e3b 0%, #065f46 100%)",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: "12px",
-                boxShadow: "0 6px 16px rgba(5, 150, 105, 0.25)"
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <div style={{
-                    width: "12px",
-                    height: "12px",
-                    borderRadius: "50%",
-                    background: "#34d399",
-                    boxShadow: "0 0 0 4px rgba(52, 211, 153, 0.35)"
-                  }} />
-                  <div>
-                    <div style={{ fontSize: "0.875rem", fontWeight: 800 }}>
-                      Live VoIP Outbound Call in Progress
-                    </div>
-                    <div style={{ fontSize: "0.75rem", color: "#a7f3d0" }}>
-                      Connected with {selectedLead.contact_name || selectedLead.title} ({selectedLead.contact_phone})
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <span style={{ fontSize: "1.25rem", fontFamily: "monospace", fontWeight: 800, color: "#fff", letterSpacing: "0.06em" }}>
-                    {formatTimer(callDuration)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsMuted(!isMuted)}
-                    style={{
-                      background: isMuted ? "#ef4444" : "rgba(255, 255, 255, 0.18)",
-                      border: "none",
-                      borderRadius: "6px",
-                      padding: "6px 12px",
-                      color: "#fff",
-                      cursor: "pointer",
-                      fontSize: "0.75rem",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px"
-                    }}
-                  >
-                    {isMuted ? <MicOff style={{ width: "14px", height: "14px" }} /> : <Mic style={{ width: "14px", height: "14px" }} />}
-                    {isMuted ? "Unmute" : "Mute"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleEndCall}
-                    style={{
-                      background: "#dc2626",
-                      border: "1px solid #b91c1c",
-                      borderRadius: "6px",
-                      padding: "6px 16px",
-                      color: "#fff",
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      fontSize: "0.75rem",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px"
-                    }}
-                  >
-                    <PhoneOff style={{ width: "14px", height: "14px" }} />
-                    End Call & Advance
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Structured Call Outcome Selector */}
-            <div>
-              <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.04em", display: "block", marginBottom: "10px" }}>
-                1. Select Call Outcome
-              </label>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "8px" }}>
-                {OUTCOMES.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setOutcome(item.id)}
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: "8px",
-                      border: outcome === item.id ? "2px solid var(--primary)" : "1px solid var(--border-medium)",
-                      background: outcome === item.id ? "var(--primary-light)" : "var(--bg-surface)",
-                      color: outcome === item.id ? "var(--primary)" : "var(--text-primary)",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      boxShadow: outcome === item.id ? "var(--shadow-sm)" : "none",
-                      transition: "all 0.15s ease"
-                    }}
-                  >
-                    <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: item.color }} />
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Notes & Follow-up Row */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
+            {/* Outcome & Rapid Discussion Logger */}
+            <div style={{
+              padding: "18px",
+              borderRadius: "10px",
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-subtle)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px"
+            }}>
               <div>
-                <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.04em", display: "block", marginBottom: "6px" }}>
-                  2. Call Notes & Discussion Highlights
-                </label>
+                <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                  1. Select Call Outcome
+                </h4>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "8px", marginTop: "8px" }}>
+                  {OUTCOMES.map((o) => {
+                    const isSelected = outcome === o.id;
+                    return (
+                      <button
+                        key={o.id}
+                        type="button"
+                        onClick={() => setOutcome(o.id)}
+                        style={{
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          border: isSelected ? "2px solid var(--primary)" : "1px solid var(--border-subtle)",
+                          background: isSelected ? "var(--primary-light)" : "var(--bg-surface)",
+                          color: isSelected ? "var(--primary)" : "var(--text-primary)",
+                          fontWeight: isSelected ? 700 : 500,
+                          fontSize: "0.75rem",
+                          textAlign: "left",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          transition: "all 0.15s ease"
+                        }}
+                      >
+                        <span>{o.label}</span>
+                        {isSelected && <Check style={{ width: "14px", height: "14px", color: "var(--primary)" }} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Call Notes */}
+              <div>
+                <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                  2. Discussion Notes
+                </h4>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="e.g. Client interested in enterprise trial, requesting demo with VP Engineering..."
+                  placeholder="Record summary of discussion, interest level, budget, or objections..."
                   rows={3}
-                  className="textarea-field"
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-medium)",
+                    background: "var(--bg-surface)",
+                    color: "var(--text-primary)",
+                    fontSize: "0.8125rem",
+                    resize: "vertical",
+                    outline: "none"
+                  }}
                 />
               </div>
 
+              {/* Auto Follow-up Preset */}
               <div>
-                <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.04em", display: "block", marginBottom: "6px" }}>
-                  3. Schedule Follow-up Reminder
-                </label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                  3. Automated Follow-up Task
+                </h4>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                   {[
                     { id: "tomorrow", label: "Tomorrow" },
                     { id: "3days", label: "In 3 Days" },
                     { id: "nextweek", label: "Next Week" },
                     { id: "none", label: "No Follow-up" },
-                  ].map((preset) => (
+                  ].map((p) => (
                     <button
-                      key={preset.id}
+                      key={p.id}
                       type="button"
-                      onClick={() => setFollowupPreset(preset.id)}
+                      onClick={() => setFollowupPreset(p.id)}
                       style={{
-                        padding: "8px 10px",
-                        borderRadius: "8px",
-                        border: followupPreset === preset.id ? "2px solid var(--primary)" : "1px solid var(--border-medium)",
-                        background: followupPreset === preset.id ? "var(--primary-light)" : "var(--bg-surface)",
-                        color: followupPreset === preset.id ? "var(--primary)" : "var(--text-secondary)",
+                        padding: "6px 12px",
+                        borderRadius: "6px",
+                        border: followupPreset === p.id ? "1px solid var(--primary)" : "1px solid var(--border-subtle)",
+                        background: followupPreset === p.id ? "var(--primary-light)" : "var(--bg-surface-subtle)",
+                        color: followupPreset === p.id ? "var(--primary)" : "var(--text-secondary)",
                         fontWeight: 600,
                         fontSize: "0.75rem",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "6px"
+                        cursor: "pointer"
                       }}
                     >
-                      <Calendar style={{ width: "12px", height: "12px" }} />
-                      <span>{preset.label}</span>
+                      {p.label}
                     </button>
                   ))}
                 </div>
               </div>
-            </div>
 
-            {/* Save & Advance Button */}
-            <div style={{ paddingTop: "12px", borderTop: "1px solid var(--border-subtle)", display: "flex", justifyContent: "flex-end" }}>
-              <button
-                onClick={handleRecordOutcome}
-                disabled={loggingOutcome}
-                className="btn-primary"
-                style={{ padding: "10px 24px", fontSize: "0.875rem" }}
-              >
-                {loggingOutcome ? "Recording..." : "Log Call & Advance to Next Lead"}
-                <ChevronRight style={{ width: "16px", height: "16px" }} />
-              </button>
+              {/* Action Submit */}
+              <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--border-subtle)", paddingTop: "14px" }}>
+                <button
+                  onClick={handleRecordOutcome}
+                  disabled={loggingOutcome}
+                  className="btn-primary"
+                  style={{ fontSize: "0.8125rem", padding: "8px 20px" }}
+                >
+                  {loggingOutcome ? "Recording..." : "Save Outcome & Next Lead"}
+                  <ChevronRight style={{ width: "16px", height: "16px" }} />
+                </button>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="card" style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Select a lead from the assigned queue to begin outreach.
+          <div className="card" style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)" }}>
+            Select a lead from the organization queue to begin outbound calling.
           </div>
         )}
       </div>

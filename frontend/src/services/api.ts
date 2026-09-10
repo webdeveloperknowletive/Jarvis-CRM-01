@@ -127,10 +127,113 @@ export interface GlobalCompany {
   display_name?: string | null;
   company_type?: string | null;
   industry?: string | null;
+  cin?: string | null;
+  registration_number?: string | null;
+  gst_number?: string | null;
+  address?: string | null;
+  postal_code?: string | null;
   website?: string | null;
+  email?: string | null;
+  phone?: string | null;
   city?: string | null;
   state?: string | null;
+  country?: string;
+  status?: string;
+  pull_status?: string;
+  pulled_by_org_id?: string | null;
+  pulled_by_org_name?: string | null;
+  pulled_at?: string | null;
   contacts_count: number;
+  first_seen_at?: string;
+  last_updated_at?: string;
+}
+
+export interface GlobalCompanyCreatePayload {
+  legal_name: string;
+  id?: string;
+  cin?: string;
+  registration_number?: string;
+  gst_number?: string;
+  address?: string;
+  city?: string;
+  postal_code?: string;
+  state?: string;
+  website?: string;
+  email?: string;
+  phone?: string;
+  country?: string;
+  industry?: string;
+  company_type?: string;
+}
+
+export interface AssociatedCompany {
+  company_name: string;
+  designation?: string;
+}
+
+export interface GlobalPerson {
+  id: string;
+  full_name: string;
+  email?: string | null;
+  phone?: string | null;
+  designation?: string | null;
+  company_name?: string | null;
+  associated_companies?: AssociatedCompany[];
+  industry?: string | null;
+  seniority?: string | null;
+  department?: string | null;
+  linkedin_url?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country: string;
+  estimated_value: number;
+  status: string;
+  pull_status?: string;
+  pulled_by_org_id?: string | null;
+  pulled_by_org_name?: string | null;
+  pulled_at?: string | null;
+  source: string;
+  notes?: string | null;
+  first_seen_at: string;
+  last_updated_at: string;
+}
+
+export interface LinkedPerson {
+  id: string;
+  full_name: string;
+  email?: string | null;
+  phone?: string | null;
+  designation?: string | null;
+  company_name?: string | null;
+  seniority?: string | null;
+  department?: string | null;
+  city?: string | null;
+  state?: string | null;
+  linkedin_url?: string | null;
+  status: string;
+  pull_status?: string;
+  pulled_by_org_id?: string | null;
+  pulled_by_org_name?: string | null;
+  pulled_at?: string | null;
+  is_primary: boolean;
+  estimated_value: number;
+}
+
+export interface CompanyWithPeople extends GlobalCompany {
+  associated_people: LinkedPerson[];
+  people_count: number;
+}
+
+export interface GlobalIntelligenceResponse {
+  total_companies: number;
+  total_people: number;
+  linked_people_count: number;
+  unlinked_people_count: number;
+  companies_with_people_count: number;
+  direct_reach_percentage: number;
+  total_market_turnover?: number;
+  companies: CompanyWithPeople[];
+  unlinked_people: LinkedPerson[];
 }
 
 export const api = {
@@ -201,6 +304,35 @@ export const api = {
 
   // Pipelines & Stages
   getPipeline: () => api.request<any>("/pipelines/"),
+  createStage: (data: {
+    name: string;
+    code: string;
+    order_index: number;
+    color?: string;
+    win_probability?: number;
+    is_won?: boolean;
+    is_lost?: boolean;
+  }) =>
+    api.request<PipelineStage>("/pipelines/stages", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateStage: (
+    id: string,
+    data: {
+      name?: string;
+      code?: string;
+      order_index?: number;
+      color?: string;
+      win_probability?: number;
+      is_won?: boolean;
+      is_lost?: boolean;
+    }
+  ) =>
+    api.request<PipelineStage>(`/pipelines/stages/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
 
   // Leads
   getLeads: (params: Record<string, string> = {}) => {
@@ -232,6 +364,7 @@ export const api = {
       lead_id: string;
       gmail_url?: string;
       whatsapp_url?: string;
+      tel_url?: string;
       recipient_email?: string;
       recipient_phone?: string;
       message?: string;
@@ -296,18 +429,69 @@ export const api = {
   getImportJob: (id: string) => api.request<ImportJob>(`/imports/jobs/${id}`),
   getImportErrors: (id: string) => api.request<any[]>(`/imports/jobs/${id}/errors`),
 
-  // Global Registry
+  // Global Registry (Company Intelligence)
   getGlobalCompanies: (search?: string, city?: string) => {
     const params = new URLSearchParams();
     if (search) params.append("search", search);
     if (city) params.append("city", city);
     return api.request<GlobalCompany[]>(`/global/companies?${params.toString()}`);
   },
-  pullGlobalCompanies: (global_company_ids: string[]) =>
+  pullGlobalCompanies: (global_company_ids: string[], target_organization_id?: string) =>
     api.request<any>("/global/pull", {
       method: "POST",
-      body: JSON.stringify({ global_company_ids }),
+      body: JSON.stringify({ global_company_ids, target_organization_id }),
     }),
+  createGlobalCompany: (data: GlobalCompanyCreatePayload) =>
+    api.request<GlobalCompany>("/global/companies", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  // Global People Intelligence
+  getGlobalPeople: (params: { search?: string; department?: string; seniority?: string; city?: string } = {}) => {
+    const query = new URLSearchParams();
+    if (params.search) query.append("search", params.search);
+    if (params.department && params.department !== "ALL") query.append("department", params.department);
+    if (params.seniority && params.seniority !== "ALL") query.append("seniority", params.seniority);
+    if (params.city) query.append("city", params.city);
+    const qs = query.toString();
+    return api.request<GlobalPerson[]>(`/global/people/${qs ? "?" + qs : ""}`);
+  },
+  createGlobalPerson: (data: Partial<GlobalPerson>) =>
+    api.request<GlobalPerson>("/global/people/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  pullGlobalPeople: (data: {
+    global_people_ids: string[];
+    target_organization_id?: string;
+    target_stage_id?: string;
+    target_owner_id?: string;
+  }) =>
+    api.request<any>("/global/people/pull", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  // Global Intelligence Graph & Unified View
+  getGlobalIntelligence: (params: {
+    search?: string;
+    filter_type?: string;
+    city?: string;
+    industry?: string;
+    skip?: number;
+    limit?: number;
+  } = {}) => {
+    const query = new URLSearchParams();
+    if (params.search) query.append("search", params.search);
+    if (params.filter_type && params.filter_type !== "ALL") query.append("filter_type", params.filter_type);
+    if (params.city) query.append("city", params.city);
+    if (params.industry) query.append("industry", params.industry);
+    if (params.skip !== undefined) query.append("skip", params.skip.toString());
+    if (params.limit !== undefined) query.append("limit", params.limit.toString());
+    const qs = query.toString();
+    return api.request<GlobalIntelligenceResponse>(`/global/intelligence${qs ? "?" + qs : ""}`);
+  },
 
   // Radar & Audit
   getRadarOverview: () => api.request<RadarOverview>("/radar/overview"),

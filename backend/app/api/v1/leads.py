@@ -32,17 +32,15 @@ def list_leads(
     priority: Optional[str] = None,
     min_score: Optional[int] = None,
     skip: int = 0,
-    limit: int = 50,
+    limit: int = 250,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
 ):
     query = db.query(Lead).filter(Lead.organization_id == tenant_id)
 
-    # Telecaller scope: if telecaller, only show assigned leads
-    if current_user.tenant_role == "TELECALLER":
-        query = query.filter((Lead.owner_id == current_user.id) | (Lead.owner_id == None))
-    elif owner_id:
+    # Allow filtering by owner_id if explicitly specified
+    if owner_id:
         query = query.filter(Lead.owner_id == owner_id)
 
     if status_filter:
@@ -223,6 +221,7 @@ class LeadActionResponse(BaseModel):
     lead_id: str
     gmail_url: Optional[str] = None
     whatsapp_url: Optional[str] = None
+    tel_url: Optional[str] = None
     recipient_email: Optional[str] = None
     recipient_phone: Optional[str] = None
     message: Optional[str] = None
@@ -295,10 +294,14 @@ def trigger_lead_action(
         )
 
     elif action_clean == "call":
+        phone = lead.contact_phone or ""
+        clean_digits = "".join([c for c in phone if c.isdigit() or c == "+"])
+        tel_url = f"tel:{clean_digits}" if clean_digits else None
         return LeadActionResponse(
             status="success",
             action_type="call",
             lead_id=lead.id,
+            tel_url=tel_url,
             recipient_phone=lead.contact_phone,
             message="VoIP outbound call connection initialized"
         )

@@ -308,7 +308,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "orga
       )}
 
       {/* ========================================================================= */}
-      {/* MODULE 2: PLATFORM AUDIT TRAIL VIEW                                       */}
+      {/* MODULE 2: PLATFORM ACTIVITIES VIEW                                        */}
       {/* ========================================================================= */}
       {viewMode === "audit" && (
         <>
@@ -317,10 +317,10 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "orga
             <div>
               <h2 style={{ fontSize: "1.375rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: "8px" }}>
                 <ActivitySquare style={{ width: "22px", height: "22px", color: "var(--primary)" }} />
-                Platform Audit Trail & Security Events
+                Platform Activities & System Events
               </h2>
               <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-                Immutable event stream auditing user actions, contact access, communication dispatches, and logins
+                Real-time event stream recording user actions, communication dispatches, and system activities
               </p>
             </div>
 

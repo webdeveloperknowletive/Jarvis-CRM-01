@@ -11,6 +11,7 @@ from app.api.v1 import (
     tasks,
     imports,
     global_registry,
+    global_people,
     radar,
     ai,
     health,
@@ -30,5 +31,6 @@ api_router.include_router(activities.router)
 api_router.include_router(tasks.router)
 api_router.include_router(imports.router)
 api_router.include_router(global_registry.router)
+api_router.include_router(global_people.router)
 api_router.include_router(radar.router)
 api_router.include_router(ai.router)

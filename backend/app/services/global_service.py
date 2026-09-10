@@ -1,16 +1,18 @@
+import uuid
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
 from app.models.global_registry import GlobalCompany, GlobalContact, GlobalCompanyContactMap, GlobalDataPullLog
-from app.models.organization import Subscription
+from app.models.global_people import GlobalPerson
+from app.models.organization import Organization, Subscription
 from app.models.company import Company
 from app.models.contact import Contact
 from app.models.lead import Lead
 from app.models.lead_history import LeadStageHistory
 from app.models.user import User
-from app.schemas.global_registry import GlobalCompanyOut, GlobalPullResponse
+from app.schemas.global_registry import GlobalCompanyOut, GlobalCompanyCreate, GlobalPullResponse
 from app.services.pipeline_service import get_first_stage, get_stage_by_id
 
 
@@ -20,22 +22,29 @@ def search_global_companies(
     city: Optional[str] = None,
     industry: Optional[str] = None,
     skip: int = 0,
-    limit: int = 50
+    limit: int = 50,
+    current_user: Optional[User] = None
 ) -> List[GlobalCompanyOut]:
     query = db.query(GlobalCompany).filter(GlobalCompany.status == "ACTIVE")
+    if not (current_user and current_user.is_super_admin):
+        query = query.filter(GlobalCompany.pull_status != "PULLED")
+
     if search:
         s = f"%{search}%"
         query = query.filter(
             (GlobalCompany.legal_name.ilike(s)) |
             (GlobalCompany.registry_id.ilike(s)) |
-            (GlobalCompany.display_name.ilike(s))
+            (GlobalCompany.display_name.ilike(s)) |
+            (GlobalCompany.cin.ilike(s)) |
+            (GlobalCompany.gst_number.ilike(s)) |
+            (GlobalCompany.registration_number.ilike(s))
         )
     if city:
         query = query.filter(GlobalCompany.city.ilike(f"%{city}%"))
     if industry:
         query = query.filter(GlobalCompany.industry.ilike(f"%{industry}%"))
 
-    companies = query.order_by(GlobalCompany.legal_name.asc()).offset(skip).limit(limit).all()
+    companies = query.order_by(GlobalCompany.first_seen_at.desc(), GlobalCompany.legal_name.asc()).offset(skip).limit(limit).all()
 
     results = []
     for c in companies:
@@ -47,6 +56,11 @@ def search_global_companies(
             display_name=c.display_name,
             company_type=c.company_type,
             industry=c.industry,
+            cin=c.cin or c.registry_id,
+            registration_number=c.registration_number,
+            gst_number=c.gst_number,
+            address=c.address,
+            postal_code=c.postal_code,
             website=c.website,
             email=c.email,
             phone=c.phone,
@@ -54,11 +68,82 @@ def search_global_companies(
             state=c.state,
             country=c.country,
             status=c.status,
+            pull_status=c.pull_status or "AVAILABLE",
+            pulled_by_org_id=c.pulled_by_org_id,
+            pulled_by_org_name=c.pulled_by_org_name,
+            pulled_at=c.pulled_at,
             contacts_count=cnt,
             first_seen_at=c.first_seen_at,
             last_updated_at=c.last_updated_at
         ))
     return results
+
+
+def create_global_company(db: Session, data: GlobalCompanyCreate) -> GlobalCompanyOut:
+    company_id = data.id.strip() if data.id and data.id.strip() else str(uuid.uuid4())
+
+    # Ensure unique ID
+    if db.query(GlobalCompany).filter(GlobalCompany.id == company_id).first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Company with ID '{company_id}' already exists."
+        )
+
+    # Determine registry_id (CIN or registration number or auto-generated)
+    registry_id = (data.cin or data.registration_number or f"REG-{uuid.uuid4().hex[:8].upper()}").strip()
+    existing_reg = db.query(GlobalCompany).filter(GlobalCompany.registry_id == registry_id).first()
+    if existing_reg:
+        registry_id = f"{registry_id}-{uuid.uuid4().hex[:4].upper()}"
+
+    company = GlobalCompany(
+        id=company_id,
+        registry_country="IN",
+        registry_type="CIN" if data.cin else "OTHER",
+        registry_id=registry_id,
+        legal_name=data.legal_name.strip(),
+        display_name=data.legal_name.strip(),
+        company_type=data.company_type or "Private Limited",
+        industry=data.industry.strip() if data.industry else None,
+        cin=data.cin.strip() if data.cin else None,
+        registration_number=data.registration_number.strip() if data.registration_number else None,
+        gst_number=data.gst_number.strip() if data.gst_number else None,
+        address=data.address.strip() if data.address else None,
+        city=data.city.strip() if data.city else None,
+        postal_code=data.postal_code.strip() if data.postal_code else None,
+        state=data.state.strip() if data.state else None,
+        country=data.country or "India",
+        website=data.website.strip() if data.website else None,
+        email=data.email.strip() if data.email else None,
+        phone=data.phone.strip() if data.phone else None,
+        status="ACTIVE"
+    )
+    db.add(company)
+    db.commit()
+    db.refresh(company)
+
+    return GlobalCompanyOut(
+        id=company.id,
+        registry_id=company.registry_id,
+        legal_name=company.legal_name,
+        display_name=company.display_name,
+        company_type=company.company_type,
+        industry=company.industry,
+        cin=company.cin or company.registry_id,
+        registration_number=company.registration_number,
+        gst_number=company.gst_number,
+        address=company.address,
+        postal_code=company.postal_code,
+        website=company.website,
+        email=company.email,
+        phone=company.phone,
+        city=company.city,
+        state=company.state,
+        country=company.country,
+        status=company.status,
+        contacts_count=0,
+        first_seen_at=company.first_seen_at,
+        last_updated_at=company.last_updated_at
+    )
 
 
 def pull_global_companies_to_crm(
@@ -98,10 +183,31 @@ def pull_global_companies_to_crm(
     pulled_conts = 0
     created_leads = 0
 
+    org = db.query(Organization).filter(Organization.id == organization_id).first()
+    org_name = org.name if org else "Organization"
+    now_utc = datetime.now(timezone.utc)
+
     for g_id in global_company_ids:
         g_comp = db.query(GlobalCompany).filter(GlobalCompany.id == g_id).first()
         if not g_comp:
             continue
+
+        # Mark global company as PULLED by this organization in DB
+        g_comp.pull_status = "PULLED"
+        g_comp.pulled_by_org_id = organization_id
+        g_comp.pulled_by_org_name = org_name
+        g_comp.pulled_at = now_utc
+
+        # Also mark any corresponding GlobalPerson records as PULLED
+        matched_people = db.query(GlobalPerson).filter(
+            (GlobalPerson.company_name == g_comp.legal_name) |
+            (GlobalPerson.company_name == g_comp.display_name)
+        ).all()
+        for mp in matched_people:
+            mp.pull_status = "PULLED"
+            mp.pulled_by_org_id = organization_id
+            mp.pulled_by_org_name = org_name
+            mp.pulled_at = now_utc
 
         # Check if already pulled or existing in tenant CRM
         crm_comp = db.query(Company).filter(

@@ -10,6 +10,8 @@ import { TelecallerDesk } from "./components/TelecallerDesk";
 import { GlobalRegistryView } from "./components/GlobalRegistryView";
 import { RadarView } from "./components/RadarView";
 import { SuperAdminView } from "./components/SuperAdminView";
+import { PeopleIntelligenceView } from "./components/PeopleIntelligenceView";
+import { GlobalIntelligenceView } from "./components/GlobalIntelligenceView";
 import { NewLeadModal } from "./components/NewLeadModal";
 import { UploadCloud, FileSpreadsheet, Plus, Check } from "lucide-react";
 
@@ -38,6 +40,7 @@ export const App: React.FC = () => {
     try {
       const user = await api.getMe();
       setCurrentUser(user);
+      localStorage.setItem("jarvis_user", JSON.stringify(user));
       if (user.is_super_admin) {
         setActiveTab("organizations");
       } else if (user.tenant_role === "TELECALLER") {
@@ -82,6 +85,7 @@ export const App: React.FC = () => {
 
   const handleLogout = () => {
     api.clearToken();
+    localStorage.removeItem("jarvis_user");
     setCurrentUser(null);
   };
 
@@ -108,6 +112,7 @@ export const App: React.FC = () => {
       <LoginScreen
         onSuccess={(u) => {
           setCurrentUser(u);
+          localStorage.setItem("jarvis_user", JSON.stringify(u));
           if (u.is_super_admin) {
             setActiveTab("organizations");
           } else if (u.tenant_role === "TELECALLER") {
@@ -147,6 +152,7 @@ export const App: React.FC = () => {
             onSelectLead={(l) => setSelectedLead(l)}
             onMoveStage={handleMoveStage}
             onNewLeadClick={() => setShowNewLeadModal(true)}
+            onRefreshPipeline={loadCRMData}
           />
         )}
 
@@ -201,8 +207,22 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* Global Intelligence Registry */}
-        {activeTab === "global" && <GlobalRegistryView />}
+        {/* Global Intelligence Graph (Unified Company & People) */}
+        {activeTab === "global_intelligence" && (
+          <GlobalIntelligenceView isOrgAdmin={false} currentUser={currentUser} />
+        )}
+
+        {/* Global Registry in ORG Admin / Company Intelligence in Super Admin */}
+        {activeTab === "global" && (
+          currentUser.is_super_admin ? (
+            <GlobalRegistryView currentUser={currentUser} />
+          ) : (
+            <GlobalIntelligenceView isOrgAdmin={true} currentUser={currentUser} />
+          )
+        )}
+
+        {/* Global People Intelligence (Super Admin) */}
+        {activeTab === "people" && <PeopleIntelligenceView currentUser={currentUser} />}
 
         {/* Super Admin Control */}
         {activeTab === "organizations" && <SuperAdminView viewMode="organizations" />}

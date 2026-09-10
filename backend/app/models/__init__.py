@@ -12,6 +12,7 @@ from app.models.task import Task
 from app.models.masking import MaskingPolicy, MaskingException
 from app.models.import_job import ImportJob, ImportRowError
 from app.models.global_registry import GlobalCompany, GlobalContact, GlobalCompanyContactMap, GlobalDataPullLog
+from app.models.global_people import GlobalPerson
 from app.models.audit import AuditLog, RadarEvent
 from app.models.ai import AIRun, AIInsight
 
@@ -41,6 +42,7 @@ __all__ = [
     "GlobalContact",
     "GlobalCompanyContactMap",
     "GlobalDataPullLog",
+    "GlobalPerson",
     "AuditLog",
     "RadarEvent",
     "AIRun",

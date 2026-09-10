@@ -14,7 +14,9 @@ import {
   Menu,
   X,
   ShieldCheck,
-  Plus
+  Plus,
+  UserCheck,
+  BrainCircuit
 } from "lucide-react";
 
 interface NavbarProps {
@@ -150,19 +152,37 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               </button>
 
               <button
+                onClick={() => handleTabClick("global_intelligence")}
+                className={`nav-tab-btn ${activeTab === "global_intelligence" ? "active" : ""}`}
+                id="nav-tab-global-intelligence"
+              >
+                <BrainCircuit style={{ width: "15px", height: "15px", color: "var(--primary)" }} />
+                Global Intelligence
+              </button>
+
+              <button
                 onClick={() => handleTabClick("global")}
                 className={`nav-tab-btn ${activeTab === "global" ? "active" : ""}`}
               >
                 <Globe2 style={{ width: "15px", height: "15px", color: "var(--cyan)" }} />
-                Global Intelligence
+                Company Intelligence
+              </button>
+
+              <button
+                onClick={() => handleTabClick("people")}
+                className={`nav-tab-btn ${activeTab === "people" ? "active" : ""}`}
+              >
+                <UserCheck style={{ width: "15px", height: "15px", color: "var(--emerald)" }} />
+                People Intelligence
               </button>
 
               <button
                 onClick={() => handleTabClick("audit")}
                 className={`nav-tab-btn ${activeTab === "audit" ? "active" : ""}`}
+                id="nav-tab-platform-activities"
               >
                 <ActivitySquare style={{ width: "15px", height: "15px" }} />
-                Platform Audit
+                Platform Activities
               </button>
             </>
           )}
@@ -334,12 +354,30 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               </button>
 
               <button
+                onClick={() => handleTabClick("global_intelligence")}
+                className={`nav-tab-btn ${activeTab === "global_intelligence" ? "active" : ""}`}
+                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
+              >
+                <BrainCircuit style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
+                Global Intelligence
+              </button>
+
+              <button
                 onClick={() => handleTabClick("global")}
                 className={`nav-tab-btn ${activeTab === "global" ? "active" : ""}`}
                 style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
               >
                 <Globe2 style={{ width: "16px", height: "16px", color: "var(--cyan)" }} />
-                Global Intelligence
+                Company Intelligence
+              </button>
+
+              <button
+                onClick={() => handleTabClick("people")}
+                className={`nav-tab-btn ${activeTab === "people" ? "active" : ""}`}
+                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
+              >
+                <UserCheck style={{ width: "16px", height: "16px", color: "var(--emerald)" }} />
+                People Intelligence
               </button>
 
               <button
@@ -348,7 +386,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
               >
                 <ActivitySquare style={{ width: "16px", height: "16px" }} />
-                Platform Audit
+                Platform Activities
               </button>
             </>
           )}

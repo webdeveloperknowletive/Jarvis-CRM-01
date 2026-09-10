@@ -34,12 +34,13 @@ async def upload_import_file(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user)
 ):
-    # Validate extension
-    ext = os.path.splitext(file.filename)[1].lower()
+    # Validate tabular extension
+    ext = os.path.splitext(file.filename)[1].lower() if file.filename else ""
     if ext not in (".csv", ".xlsx", ".xls"):
+        invalid_type = ext.replace(".", "").upper() if ext else "UNKNOWN"
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Unsupported file format. Please upload CSV, XLSX, or XLS files."
+            detail=f"Invalid file format '{invalid_type}'. Data ingestion only accepts tabular spreadsheet files (.CSV, .XLSX, .XLS). Non-tabular formats like PDF, Word documents, or images do not contain structured rows and columns."
         )
 
     # Save to disk
@@ -81,7 +82,7 @@ def execute_import(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Uploaded file not found on server")
 
     job_type = (data.job_type or "TENANT_LEADS").upper()
-    if job_type in ("GLOBAL_COMPANIES", "GLOBAL_DATABASE"):
+    if job_type in ("GLOBAL_COMPANIES", "GLOBAL_DATABASE", "GLOBAL_PEOPLE"):
         if not current_user.is_super_admin:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Super Admin privilege required for Global Database ingestion")
         target_org_id = None
