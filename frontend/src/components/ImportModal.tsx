@@ -143,7 +143,7 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
     document.body.removeChild(link);
   };
 
-  const VALID_TABULAR_EXTENSIONS = [".csv", ".xlsx", ".xls"];
+  const VALID_TABULAR_EXTENSIONS = [".csv", ".xls", ".xlsx", ".xlsb", ".xlsm", ".parquet", ".json"];
 
   const validateAndProcessFile = async (file: File) => {
     setFormatWarning(null);
@@ -153,7 +153,7 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
     if (!VALID_TABULAR_EXTENSIONS.includes(ext)) {
       const detectedFormat = ext ? ext.replace(".", "").toUpperCase() : "NON-TABULAR";
       setFormatWarning(
-        `Invalid file format (${detectedFormat}): "${file.name}". Data ingestion exclusively supports tabular files (.CSV, .XLSX, .XLS). Non-tabular formats such as PDF, Word documents, or images cannot be processed into database columns and rows.`
+        `Invalid file format (${detectedFormat}): "${file.name}". Data ingestion exclusively supports tabular files (.CSV, .XLS, .XLSX, .XLSB, .XLSM, .PARQUET, .JSON). Non-tabular formats such as PDF, Word documents, Markdown (.md), or text files (.txt) cannot be processed into database columns and rows.`
       );
       return;
     }
@@ -315,8 +315,12 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
             <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px", flexWrap: "wrap" }}>
               <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#b45309" }}>Valid Tabular Formats:</span>
               <span style={{ fontSize: "0.6875rem", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#fef3c7", border: "1px solid #fcd34d", fontWeight: 700, fontFamily: "monospace" }}>.CSV</span>
-              <span style={{ fontSize: "0.6875rem", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#fef3c7", border: "1px solid #fcd34d", fontWeight: 700, fontFamily: "monospace" }}>.XLSX</span>
               <span style={{ fontSize: "0.6875rem", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#fef3c7", border: "1px solid #fcd34d", fontWeight: 700, fontFamily: "monospace" }}>.XLS</span>
+              <span style={{ fontSize: "0.6875rem", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#fef3c7", border: "1px solid #fcd34d", fontWeight: 700, fontFamily: "monospace" }}>.XLSX</span>
+              <span style={{ fontSize: "0.6875rem", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#fef3c7", border: "1px solid #fcd34d", fontWeight: 700, fontFamily: "monospace" }}>.XLSB</span>
+              <span style={{ fontSize: "0.6875rem", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#fef3c7", border: "1px solid #fcd34d", fontWeight: 700, fontFamily: "monospace" }}>.XLSM</span>
+              <span style={{ fontSize: "0.6875rem", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#fef3c7", border: "1px solid #fcd34d", fontWeight: 700, fontFamily: "monospace" }}>.PARQUET</span>
+              <span style={{ fontSize: "0.6875rem", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#fef3c7", border: "1px solid #fcd34d", fontWeight: 700, fontFamily: "monospace" }}>.JSON</span>
             </div>
           </div>
         )}
@@ -400,14 +404,14 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
             >
               <UploadCloud style={{ width: "40px", height: "40px", color: isDraggingOver ? "var(--primary)" : "var(--primary)", margin: "0 auto 10px auto" }} />
               <p style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                {isDraggingOver ? "Drop file here to upload" : "Drag & Drop or Click to select CSV, XLS, or XLSX file"}
+                {isDraggingOver ? "Drop file here to upload" : "Drag & Drop or Click to select CSV, Excel, Parquet, or JSON file"}
               </p>
               <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>
                 Auto-matches column names: company_name, id, address, city, pincode, state, website, email, company_contact_number, cin, gst_number, associated_companies, etc.
               </p>
               <input
                 type="file"
-                accept=".csv,.xlsx,.xls"
+                accept=".csv,.xls,.xlsx,.xlsb,.xlsm,.parquet,.json"
                 onChange={handleFileChange}
                 style={{ display: "none" }}
                 id="file-upload-input"

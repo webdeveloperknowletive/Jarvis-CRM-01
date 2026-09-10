@@ -8,6 +8,7 @@ export interface User {
   tenant_role?: string | null;
   effective_role: string;
   is_super_admin: boolean;
+  is_data_entry?: boolean;
   organization_id?: string | null;
   organization?: {
     id: string;
@@ -446,6 +447,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  updateGlobalCompany: (id: string, data: Partial<GlobalCompanyCreatePayload>) =>
+    api.request<GlobalCompany>(`/global/companies/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
 
   // Global People Intelligence
   getGlobalPeople: (params: { search?: string; department?: string; seniority?: string; city?: string } = {}) => {
@@ -460,6 +466,11 @@ export const api = {
   createGlobalPerson: (data: Partial<GlobalPerson>) =>
     api.request<GlobalPerson>("/global/people/", {
       method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateGlobalPerson: (id: string, data: Partial<GlobalPerson>) =>
+    api.request<GlobalPerson>(`/global/people/${id}`, {
+      method: "PUT",
       body: JSON.stringify(data),
     }),
   pullGlobalPeople: (data: {

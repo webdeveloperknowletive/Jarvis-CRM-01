@@ -28,6 +28,25 @@ class GlobalPersonCreate(BaseModel):
     notes: Optional[str] = None
 
 
+class GlobalPersonUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    designation: Optional[str] = None
+    company_name: Optional[str] = None
+    associated_companies: Optional[List[AssociatedCompanyItem]] = None
+    industry: Optional[str] = None
+    seniority: Optional[str] = None
+    department: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+    estimated_value: Optional[float] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
+
 class GlobalPersonOut(BaseModel):
     id: str
     full_name: str

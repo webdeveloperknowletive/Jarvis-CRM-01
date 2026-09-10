@@ -265,6 +265,7 @@ def trigger_lead_action(
             "view": "cm",
             "fs": "1",
             "to": target_email,
+            "authuser": current_user.email,
             "su": subject,
             "body": body
         })

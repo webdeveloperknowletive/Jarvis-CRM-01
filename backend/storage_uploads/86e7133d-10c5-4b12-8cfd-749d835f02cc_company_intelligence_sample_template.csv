@@ -1,0 +1,3 @@
+company_name,id,cin,registration_number,gst_number,address,city,pincode,state,website,email,company_contact_number,industry
+Tata Advanced Systems Ltd,,U72200MH2015PLC123456,REG-847291,27AAACT1234A1Z1,Plot 42 Hinjewadi Phase 1,Pune,411057,Maharashtra,https://tataadvanced.com,contact@tataadvanced.com,+912012345678,Aerospace & Defense
+Acme Infotech Pvt Ltd,,U72900KA2018PTC987654,REG-109283,29AABCA9876B1Z2,100 Feet Road Indiranagar,Bengaluru,560038,Karnataka,https://acmeinfo.in,info@acmeinfo.in,+918098765432,Information Technology

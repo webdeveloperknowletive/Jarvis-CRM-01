@@ -6,6 +6,8 @@ import {
   GlobalIntelligenceResponse,
 } from "../services/api";
 import { openGmail } from "../utils/mailHelper";
+import { EditCompanyModal } from "./EditCompanyModal";
+import { EditPersonModal } from "./EditPersonModal";
 import {
   BrainCircuit,
   Building2,
@@ -40,11 +42,14 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
   const storedUser = localStorage.getItem("jarvis_user");
   const currentUser = propUser || (storedUser ? JSON.parse(storedUser) : null);
   const isSuperAdmin = currentUser?.is_super_admin ?? !isOrgAdmin;
+  const canManage = isSuperAdmin || currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY";
   const orgName = currentUser?.organization?.name || "Your Organization";
   const orgId = currentUser?.organization_id || currentUser?.organization?.id;
 
   const [intelligenceData, setIntelligenceData] = useState<GlobalIntelligenceResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<any | null>(null);
+  const [editingPerson, setEditingPerson] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"ALL" | "WITH_PEOPLE" | "WITHOUT_PEOPLE">("ALL");
   const [cityFilter, setCityFilter] = useState("");
@@ -1069,8 +1074,8 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
 
                       {/* Right: People Badge & Expand Toggle */}
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                        {/* Pull Action for ORG Admin OR Status Tag for Super Admin */}
-                        {!isSuperAdmin ? (
+                        {/* Pull Action for ORG Admin OR Status Tag & Edit Button for Super Admin/Data Entry */}
+                        {!canManage ? (
                           <button
                             type="button"
                             onClick={() => {
@@ -1093,26 +1098,50 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                             <span>Conserve to CRM</span>
                           </button>
                         ) : (
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              padding: "3px 8px",
-                              borderRadius: "999px",
-                              fontSize: "0.6875rem",
-                              fontWeight: 700,
-                              background: company.pull_status === "PULLED" ? "rgba(225, 29, 72, 0.12)" : "rgba(16, 185, 129, 0.12)",
-                              color: company.pull_status === "PULLED" ? "var(--rose-dark)" : "var(--emerald)",
-                              border: company.pull_status === "PULLED" ? "1px solid rgba(225, 29, 72, 0.3)" : "1px solid rgba(16, 185, 129, 0.3)",
-                            }}
-                          >
-                            {company.pull_status === "PULLED" ? (
-                              <span>TAKEN • Pulled by {company.pulled_by_org_name || "Enterprise"}</span>
-                            ) : (
-                              <span>AVAILABLE</span>
-                            )}
-                          </span>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "3px 8px",
+                                borderRadius: "999px",
+                                fontSize: "0.6875rem",
+                                fontWeight: 700,
+                                background: company.pull_status === "PULLED" ? "rgba(225, 29, 72, 0.12)" : "rgba(16, 185, 129, 0.12)",
+                                color: company.pull_status === "PULLED" ? "var(--rose-dark)" : "var(--emerald)",
+                                border: company.pull_status === "PULLED" ? "1px solid rgba(225, 29, 72, 0.3)" : "1px solid rgba(16, 185, 129, 0.3)",
+                              }}
+                            >
+                              {company.pull_status === "PULLED" ? (
+                                <span>TAKEN • Pulled by {company.pulled_by_org_name || "Enterprise"}</span>
+                              ) : (
+                                <span>AVAILABLE</span>
+                              )}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingCompany(company);
+                              }}
+                              className="btn btn-secondary"
+                              style={{
+                                padding: "3px 8px",
+                                fontSize: "0.7rem",
+                                borderRadius: "6px",
+                                border: "1px solid var(--border-color)",
+                                background: "var(--bg-surface)",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "3px",
+                              }}
+                              title="Edit Enterprise Record"
+                            >
+                              ✏️ Edit
+                            </button>
+                          </div>
                         )}
                         <div
                           style={{
@@ -1387,34 +1416,58 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                                       )}
                                     </div>
 
-                                    {person.pull_status === "PULLED" ? (
-                                      <span
-                                        style={{
-                                          fontSize: "0.5625rem",
-                                          fontWeight: 700,
-                                          padding: "1px 5px",
-                                          borderRadius: "4px",
-                                          background: "rgba(225, 29, 72, 0.12)",
-                                          color: "var(--rose-dark)",
-                                          border: "1px solid rgba(225, 29, 72, 0.3)",
-                                        }}
-                                      >
-                                        TAKEN • {person.pulled_by_org_name || company.pulled_by_org_name || "Pulled"}
-                                      </span>
-                                    ) : (
-                                      <span
-                                        style={{
-                                          fontSize: "0.5625rem",
-                                          fontWeight: 700,
-                                          padding: "1px 5px",
-                                          borderRadius: "4px",
-                                          background: "rgba(16, 185, 129, 0.1)",
-                                          color: "var(--emerald)",
-                                        }}
-                                      >
-                                        Verified
-                                      </span>
-                                    )}
+                                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                      {person.pull_status === "PULLED" ? (
+                                        <span
+                                          style={{
+                                            fontSize: "0.5625rem",
+                                            fontWeight: 700,
+                                            padding: "1px 5px",
+                                            borderRadius: "4px",
+                                            background: "rgba(225, 29, 72, 0.12)",
+                                            color: "var(--rose-dark)",
+                                            border: "1px solid rgba(225, 29, 72, 0.3)",
+                                          }}
+                                        >
+                                          TAKEN • {person.pulled_by_org_name || company.pulled_by_org_name || "Pulled"}
+                                        </span>
+                                      ) : (
+                                        <span
+                                          style={{
+                                            fontSize: "0.5625rem",
+                                            fontWeight: 700,
+                                            padding: "1px 5px",
+                                            borderRadius: "4px",
+                                            background: "rgba(16, 185, 129, 0.1)",
+                                            color: "var(--emerald)",
+                                          }}
+                                        >
+                                          Verified
+                                        </span>
+                                      )}
+                                      {canManage && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingPerson(person);
+                                          }}
+                                          className="btn-secondary"
+                                          style={{
+                                            padding: "2px 6px",
+                                            fontSize: "0.625rem",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "2px",
+                                            borderRadius: "4px",
+                                            cursor: "pointer",
+                                          }}
+                                          title="Edit Decision-Maker"
+                                        >
+                                          ✏️ Edit
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               );
@@ -1731,7 +1784,7 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                           )}
                         </div>
 
-                        {!isSuperAdmin ? (
+                        {!canManage ? (
                           <button
                             onClick={() => {
                               setSelectedPeopleIds([person.id]);
@@ -1753,26 +1806,45 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                             Conserve
                           </button>
                         ) : (
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              padding: "2px 6px",
-                              borderRadius: "999px",
-                              fontSize: "0.625rem",
-                              fontWeight: 700,
-                              background: person.pull_status === "PULLED" ? "rgba(225, 29, 72, 0.12)" : "rgba(16, 185, 129, 0.12)",
-                              color: person.pull_status === "PULLED" ? "var(--rose-dark)" : "var(--emerald)",
-                              border: person.pull_status === "PULLED" ? "1px solid rgba(225, 29, 72, 0.3)" : "1px solid rgba(16, 185, 129, 0.3)",
-                            }}
-                          >
-                            {person.pull_status === "PULLED" ? (
-                              <span>TAKEN • Pulled by {person.pulled_by_org_name || "Enterprise"}</span>
-                            ) : (
-                              <span>AVAILABLE</span>
-                            )}
-                          </span>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "2px 6px",
+                                borderRadius: "999px",
+                                fontSize: "0.625rem",
+                                fontWeight: 700,
+                                background: person.pull_status === "PULLED" ? "rgba(225, 29, 72, 0.12)" : "rgba(16, 185, 129, 0.12)",
+                                color: person.pull_status === "PULLED" ? "var(--rose-dark)" : "var(--emerald)",
+                                border: person.pull_status === "PULLED" ? "1px solid rgba(225, 29, 72, 0.3)" : "1px solid rgba(16, 185, 129, 0.3)",
+                              }}
+                            >
+                              {person.pull_status === "PULLED" ? (
+                                <span>TAKEN • Pulled by {person.pulled_by_org_name || "Enterprise"}</span>
+                              ) : (
+                                <span>AVAILABLE</span>
+                              )}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setEditingPerson(person)}
+                              className="btn btn-secondary"
+                              style={{
+                                padding: "2px 6px",
+                                fontSize: "0.625rem",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "2px",
+                                borderRadius: "4px",
+                                cursor: "pointer",
+                              }}
+                              title="Edit Lead"
+                            >
+                              ✏️ Edit
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1880,6 +1952,32 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
             </div>
           </div>
         </div>
+      )}
+
+      {editingCompany && (
+        <EditCompanyModal
+          company={editingCompany}
+          isOpen={Boolean(editingCompany)}
+          onClose={() => setEditingCompany(null)}
+          onSaved={(updated) => {
+            setSuccessMsg(`Enterprise "${updated.legal_name}" updated successfully!`);
+            setTimeout(() => setSuccessMsg(null), 4000);
+            loadIntelligence();
+          }}
+        />
+      )}
+
+      {editingPerson && (
+        <EditPersonModal
+          person={editingPerson}
+          isOpen={Boolean(editingPerson)}
+          onClose={() => setEditingPerson(null)}
+          onSaved={(updated) => {
+            setSuccessMsg(`Executive profile for "${updated.full_name}" updated successfully!`);
+            setTimeout(() => setSuccessMsg(null), 4000);
+            loadIntelligence();
+          }}
+        />
       )}
     </div>
   );

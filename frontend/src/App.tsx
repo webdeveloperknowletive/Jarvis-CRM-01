@@ -43,6 +43,8 @@ export const App: React.FC = () => {
       localStorage.setItem("jarvis_user", JSON.stringify(user));
       if (user.is_super_admin) {
         setActiveTab("organizations");
+      } else if (user.is_data_entry || user.platform_role === "DATA_ENTRY") {
+        setActiveTab("global_intelligence");
       } else if (user.tenant_role === "TELECALLER") {
         setActiveTab("telecaller");
       } else {
@@ -56,7 +58,7 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    if (currentUser && !currentUser.is_super_admin) {
+    if (currentUser && !currentUser.is_super_admin && !(currentUser.is_data_entry || currentUser.platform_role === "DATA_ENTRY")) {
       loadCRMData();
     }
   }, [currentUser]);
@@ -115,6 +117,8 @@ export const App: React.FC = () => {
           localStorage.setItem("jarvis_user", JSON.stringify(u));
           if (u.is_super_admin) {
             setActiveTab("organizations");
+          } else if (u.is_data_entry || u.platform_role === "DATA_ENTRY") {
+            setActiveTab("global_intelligence");
           } else if (u.tenant_role === "TELECALLER") {
             setActiveTab("telecaller");
           } else {
@@ -212,16 +216,16 @@ export const App: React.FC = () => {
           <GlobalIntelligenceView isOrgAdmin={false} currentUser={currentUser} />
         )}
 
-        {/* Global Registry in ORG Admin / Company Intelligence in Super Admin */}
+        {/* Global Registry in ORG Admin / Company Intelligence in Super Admin & Data Entry */}
         {activeTab === "global" && (
-          currentUser.is_super_admin ? (
+          (currentUser.is_super_admin || currentUser.is_data_entry || currentUser.platform_role === "DATA_ENTRY") ? (
             <GlobalRegistryView currentUser={currentUser} />
           ) : (
             <GlobalIntelligenceView isOrgAdmin={true} currentUser={currentUser} />
           )
         )}
 
-        {/* Global People Intelligence (Super Admin) */}
+        {/* Global People Intelligence (Super Admin & Data Entry) */}
         {activeTab === "people" && <PeopleIntelligenceView currentUser={currentUser} />}
 
         {/* Super Admin Control */}
@@ -241,10 +245,15 @@ export const App: React.FC = () => {
 
       {showImportModal && (
         <ImportModal
+          jobType={currentUser.is_data_entry || currentUser.platform_role === "DATA_ENTRY" ? "GLOBAL_COMPANIES" : undefined}
           onClose={() => setShowImportModal(false)}
           onSuccess={() => {
-            loadCRMData();
-            setActiveTab("pipeline");
+            if (currentUser.is_data_entry || currentUser.platform_role === "DATA_ENTRY") {
+              setActiveTab("global_intelligence");
+            } else {
+              loadCRMData();
+              setActiveTab("pipeline");
+            }
           }}
         />
       )}

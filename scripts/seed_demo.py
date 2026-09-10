@@ -42,7 +42,7 @@ def seed_database():
                 db.flush()
             plan_objects[p["code"]] = existing
 
-        # 2. Super Admin
+        # 2. Super Admin & Data Entry Platform Users
         super_admin_email = "superadmin@jarvis.local"
         super_admin = db.query(User).filter(User.email == super_admin_email).first()
         if not super_admin:
@@ -57,6 +57,21 @@ def seed_database():
             db.add(super_admin)
             db.flush()
             print(f"Created Super Admin: {super_admin_email}")
+
+        data_entry_email = "dataentry@jarvis.local"
+        data_entry_user = db.query(User).filter(User.email == data_entry_email).first()
+        if not data_entry_user:
+            data_entry_user = User(
+                email=data_entry_email,
+                full_name="Jarvis Data Specialist",
+                platform_role="DATA_ENTRY",
+                tenant_role=None,
+                password_hash=get_password_hash("DataEntry@2026"),
+                status="ACTIVE"
+            )
+            db.add(data_entry_user)
+            db.flush()
+            print(f"Created Data Entry User: {data_entry_email}")
 
         # 3. Global Business Intelligence Registry (50 Sample Enterprise Companies & Directors)
         sample_globals = [

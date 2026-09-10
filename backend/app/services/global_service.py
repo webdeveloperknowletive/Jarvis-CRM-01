@@ -12,7 +12,7 @@ from app.models.contact import Contact
 from app.models.lead import Lead
 from app.models.lead_history import LeadStageHistory
 from app.models.user import User
-from app.schemas.global_registry import GlobalCompanyOut, GlobalCompanyCreate, GlobalPullResponse
+from app.schemas.global_registry import GlobalCompanyOut, GlobalCompanyCreate, GlobalCompanyUpdate, GlobalPullResponse
 from app.services.pipeline_service import get_first_stage, get_stage_by_id
 
 
@@ -26,7 +26,7 @@ def search_global_companies(
     current_user: Optional[User] = None
 ) -> List[GlobalCompanyOut]:
     query = db.query(GlobalCompany).filter(GlobalCompany.status == "ACTIVE")
-    if not (current_user and current_user.is_super_admin):
+    if not (current_user and (current_user.is_super_admin or current_user.is_data_entry)):
         query = query.filter(GlobalCompany.pull_status != "PULLED")
 
     if search:
@@ -141,6 +141,77 @@ def create_global_company(db: Session, data: GlobalCompanyCreate) -> GlobalCompa
         country=company.country,
         status=company.status,
         contacts_count=0,
+        first_seen_at=company.first_seen_at,
+        last_updated_at=company.last_updated_at
+    )
+
+
+def update_global_company(db: Session, company_id: str, data: GlobalCompanyUpdate) -> GlobalCompanyOut:
+    company = db.query(GlobalCompany).filter(GlobalCompany.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Global company not found")
+
+    if data.legal_name is not None:
+        company.legal_name = data.legal_name.strip()
+        company.display_name = data.legal_name.strip()
+    if data.cin is not None:
+        company.cin = data.cin.strip() if data.cin else None
+        if company.cin:
+            company.registry_id = company.cin
+    if data.registration_number is not None:
+        company.registration_number = data.registration_number.strip() if data.registration_number else None
+    if data.gst_number is not None:
+        company.gst_number = data.gst_number.strip() if data.gst_number else None
+    if data.address is not None:
+        company.address = data.address.strip() if data.address else None
+    if data.city is not None:
+        company.city = data.city.strip() if data.city else None
+    if data.postal_code is not None:
+        company.postal_code = data.postal_code.strip() if data.postal_code else None
+    if data.state is not None:
+        company.state = data.state.strip() if data.state else None
+    if data.website is not None:
+        company.website = data.website.strip() if data.website else None
+    if data.email is not None:
+        company.email = data.email.strip() if data.email else None
+    if data.phone is not None:
+        company.phone = data.phone.strip() if data.phone else None
+    if data.country is not None:
+        company.country = data.country.strip() if data.country else "India"
+    if data.industry is not None:
+        company.industry = data.industry.strip() if data.industry else None
+    if data.company_type is not None:
+        company.company_type = data.company_type.strip() if data.company_type else "Private Limited"
+    if data.status is not None:
+        company.status = data.status
+
+    db.commit()
+    db.refresh(company)
+
+    return GlobalCompanyOut(
+        id=company.id,
+        registry_id=company.registry_id,
+        legal_name=company.legal_name,
+        display_name=company.display_name,
+        company_type=company.company_type,
+        industry=company.industry,
+        cin=company.cin,
+        registration_number=company.registration_number,
+        gst_number=company.gst_number,
+        address=company.address,
+        city=company.city,
+        state=company.state,
+        country=company.country or "India",
+        postal_code=company.postal_code,
+        website=company.website,
+        email=company.email,
+        phone=company.phone,
+        status=company.status,
+        pull_status=getattr(company, "pull_status", "AVAILABLE") or "AVAILABLE",
+        pulled_by_org_id=getattr(company, "pulled_by_org_id", None),
+        pulled_by_org_name=getattr(company, "pulled_by_org_name", None),
+        pulled_at=getattr(company, "pulled_at", None),
+        contacts_count=db.query(GlobalContact).join(GlobalCompanyContactMap).filter(GlobalCompanyContactMap.company_id == company.id).count(),
         first_seen_at=company.first_seen_at,
         last_updated_at=company.last_updated_at
     )
@@ -338,3 +409,58 @@ def pull_global_companies_to_crm(
         created_leads=created_leads,
         remaining_quota=sub.pull_quota_monthly - sub.pull_quota_used
     )
+
+
+def update_global_company(db: Session, company_id: str, data: GlobalCompanyUpdate) -> GlobalCompanyOut:
+    company = db.query(GlobalCompany).filter(GlobalCompany.id == company_id).first()
+    if not company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Company with ID '{company_id}' not found."
+        )
+
+    fields = [
+        "legal_name", "cin", "registration_number", "gst_number",
+        "address", "city", "postal_code", "state", "website",
+        "email", "phone", "country", "industry", "company_type", "status"
+    ]
+    for field in fields:
+        val = getattr(data, field)
+        if val is not None:
+            setattr(company, field, val.strip() if isinstance(val, str) else val)
+            if field == "legal_name" and val:
+                company.display_name = val.strip()
+
+    company.last_updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(company)
+
+    cnt = db.query(GlobalCompanyContactMap).filter(GlobalCompanyContactMap.company_id == company.id).count()
+    return GlobalCompanyOut(
+        id=company.id,
+        registry_id=company.registry_id,
+        legal_name=company.legal_name,
+        display_name=company.display_name,
+        company_type=company.company_type,
+        industry=company.industry,
+        cin=company.cin or company.registry_id,
+        registration_number=company.registration_number,
+        gst_number=company.gst_number,
+        address=company.address,
+        postal_code=company.postal_code,
+        website=company.website,
+        email=company.email,
+        phone=company.phone,
+        city=company.city,
+        state=company.state,
+        country=company.country,
+        status=company.status,
+        pull_status=company.pull_status or "AVAILABLE",
+        pulled_by_org_id=company.pulled_by_org_id,
+        pulled_by_org_name=company.pulled_by_org_name,
+        pulled_at=company.pulled_at,
+        contacts_count=cnt,
+        first_seen_at=company.first_seen_at,
+        last_updated_at=company.last_updated_at
+    )
+

@@ -66,24 +66,25 @@ def on_startup():
     Base.metadata.create_all(bind=engine)
 
     # Safe SQLite column migration for pull tracking
-    with engine.connect() as conn:
-        for table, col_def in [
-            ("global_companies", "pull_status VARCHAR(30) DEFAULT 'AVAILABLE'"),
-            ("global_companies", "pulled_by_org_id VARCHAR(36)"),
-            ("global_companies", "pulled_by_org_name VARCHAR(255)"),
-            ("global_companies", "pulled_at DATETIME"),
-            ("global_people", "pull_status VARCHAR(30) DEFAULT 'AVAILABLE'"),
-            ("global_people", "pulled_by_org_id VARCHAR(36)"),
-            ("global_people", "pulled_by_org_name VARCHAR(255)"),
-            ("global_people", "pulled_at DATETIME"),
-        ]:
-            col_name = col_def.split()[0]
-            try:
-                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_def}"))
-                conn.commit()
-                logger.info(f"Added column {col_name} to {table}")
-            except Exception:
-                pass
+    if settings.DATABASE_URL.startswith("sqlite"):
+        with engine.connect() as conn:
+            for table, col_def in [
+                ("global_companies", "pull_status VARCHAR(30) DEFAULT 'AVAILABLE'"),
+                ("global_companies", "pulled_by_org_id VARCHAR(36)"),
+                ("global_companies", "pulled_by_org_name VARCHAR(255)"),
+                ("global_companies", "pulled_at DATETIME"),
+                ("global_people", "pull_status VARCHAR(30) DEFAULT 'AVAILABLE'"),
+                ("global_people", "pulled_by_org_id VARCHAR(36)"),
+                ("global_people", "pulled_by_org_name VARCHAR(255)"),
+                ("global_people", "pulled_at DATETIME"),
+            ]:
+                col_name = col_def.split()[0]
+                try:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_def}"))
+                    conn.commit()
+                    logger.info(f"Added column {col_name} to {table}")
+                except Exception:
+                    pass
 
     logger.info("Database schema checked and verified.")
 

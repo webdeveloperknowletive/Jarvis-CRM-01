@@ -6,6 +6,7 @@ from app.core.deps import get_db, get_current_user, get_optional_tenant_id
 from app.models.user import User
 from app.schemas.global_people import (
     GlobalPersonCreate,
+    GlobalPersonUpdate,
     GlobalPersonOut,
     GlobalPeoplePullRequest,
     GlobalPeoplePullResponse,
@@ -13,6 +14,7 @@ from app.schemas.global_people import (
 from app.services.global_people_service import (
     search_global_people,
     create_global_person,
+    update_global_person,
     pull_global_people_to_crm,
 )
 
@@ -50,12 +52,28 @@ def create_person_lead(
     current_user: User = Depends(get_current_user)
 ):
     """Single add lead feature with detailed input fields for the People Intelligence registry."""
-    if not (current_user.is_super_admin or current_user.role in ("ORG_ADMIN", "ADMIN")):
+    if not (current_user.is_super_admin or current_user.is_data_entry or (hasattr(current_user, "role") and current_user.role in ("ORG_ADMIN", "ADMIN"))):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin privilege required to add people to the Global Intelligence directory"
+            detail="Admin or Data Entry privilege required to add people to the Global Intelligence directory"
         )
     return create_global_person(db=db, data=data)
+
+
+@router.put("/{id}", response_model=GlobalPersonOut)
+def edit_person_lead(
+    id: str,
+    data: GlobalPersonUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update profile and company association in People Intelligence registry."""
+    if not (current_user.is_super_admin or current_user.is_data_entry):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super Admin or Data Entry privilege required to edit people intelligence profiles"
+        )
+    return update_global_person(db=db, person_id=id, data=data)
 
 
 @router.post("/pull", response_model=GlobalPeoplePullResponse)
@@ -66,10 +84,10 @@ def pull_people_to_crm(
     tenant_id: Optional[str] = Depends(get_optional_tenant_id)
 ):
     """Pull selected people leads into a target tenant organization CRM with full contact & company mapping."""
-    if current_user.is_super_admin:
+    if current_user.is_super_admin or current_user.is_data_entry:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Super Admin cannot pull leads directly. Leads can only be pulled into CRM organizations by Organization Admins."
+            detail="Platform users (Super Admin / Data Entry) cannot pull leads directly. Leads can only be pulled into CRM organizations by Organization Admins."
         )
 
     target_org_id = tenant_id or data.target_organization_id
@@ -87,3 +105,4 @@ def pull_people_to_crm(
         target_stage_id=data.target_stage_id,
         target_owner_id=data.target_owner_id
     )
+

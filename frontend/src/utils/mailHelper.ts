@@ -7,14 +7,38 @@
 export const getGmailUrl = (
   to?: string | null,
   subject?: string,
-  body?: string
+  body?: string,
+  fromEmail?: string | null
 ): string => {
+  // Determine sender ("From") email of the currently logged in user
+  let senderEmail = fromEmail;
+  if (!senderEmail) {
+    try {
+      const stored = localStorage.getItem("jarvis_user");
+      if (stored) {
+        const u = JSON.parse(stored);
+        senderEmail = u?.email;
+      }
+    } catch {}
+  }
+
   const params = new URLSearchParams();
   params.set("view", "cm");
   params.set("fs", "1");
-  if (to && !to.includes("*")) {
-    params.set("to", to.trim());
+
+  // "To" must strictly be the recipient lead's or company's email
+  const cleanTo = (to || "").trim();
+  const cleanFrom = (senderEmail || "").trim();
+
+  if (cleanTo && !cleanTo.includes("*")) {
+    params.set("to", cleanTo);
   }
+
+  // "From" in Google Mail compose is chosen via `authuser`
+  if (cleanFrom) {
+    params.set("authuser", cleanFrom);
+  }
+
   if (subject) {
     params.set("su", subject.trim());
   }
@@ -27,9 +51,10 @@ export const getGmailUrl = (
 export const openGmail = (
   to?: string | null,
   subject?: string,
-  body?: string
+  body?: string,
+  fromEmail?: string | null
 ): Window | null => {
-  const url = getGmailUrl(to, subject, body);
+  const url = getGmailUrl(to, subject, body, fromEmail);
   return window.open(url, "_blank", "noopener,noreferrer");
 };
 

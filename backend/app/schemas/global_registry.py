@@ -36,6 +36,24 @@ class GlobalCompanyCreate(BaseModel):
     company_type: Optional[str] = "Private Limited"
 
 
+class GlobalCompanyUpdate(BaseModel):
+    legal_name: Optional[str] = None
+    cin: Optional[str] = None
+    registration_number: Optional[str] = None
+    gst_number: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    postal_code: Optional[str] = None
+    state: Optional[str] = None
+    website: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    country: Optional[str] = None
+    industry: Optional[str] = None
+    company_type: Optional[str] = None
+    status: Optional[str] = None
+
+
 class GlobalCompanyOut(BaseModel):
     id: str
     registry_id: str  # CIN or identifier

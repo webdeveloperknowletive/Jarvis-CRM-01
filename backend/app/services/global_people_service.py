@@ -10,7 +10,7 @@ from app.models.lead import Lead
 from app.models.lead_history import LeadStageHistory
 from app.models.organization import Organization
 from app.models.user import User
-from app.schemas.global_people import GlobalPersonCreate, GlobalPersonOut, GlobalPeoplePullResponse
+from app.schemas.global_people import GlobalPersonCreate, GlobalPersonUpdate, GlobalPersonOut, GlobalPeoplePullResponse
 from app.services.pipeline_service import get_first_stage, get_stage_by_id
 
 
@@ -25,7 +25,7 @@ def search_global_people(
     current_user: Optional[User] = None
 ) -> List[GlobalPersonOut]:
     query = db.query(GlobalPerson)
-    if not (current_user and current_user.is_super_admin):
+    if not (current_user and (current_user.is_super_admin or current_user.is_data_entry)):
         query = query.filter(GlobalPerson.pull_status != "PULLED")
 
     if search:
@@ -84,6 +84,55 @@ def create_global_person(db: Session, data: GlobalPersonCreate) -> GlobalPersonO
         notes=data.notes.strip() if data.notes else None,
     )
     db.add(person)
+    db.commit()
+    db.refresh(person)
+    return GlobalPersonOut.from_orm(person)
+
+
+def update_global_person(db: Session, person_id: str, data: GlobalPersonUpdate) -> GlobalPersonOut:
+    person = db.query(GlobalPerson).filter(GlobalPerson.id == person_id).first()
+    if not person:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Global person lead not found")
+
+    if data.full_name is not None:
+        person.full_name = data.full_name.strip()
+    if data.email is not None:
+        person.email = data.email.strip() if data.email else None
+    if data.phone is not None:
+        person.phone = data.phone.strip() if data.phone else None
+    if data.designation is not None:
+        person.designation = data.designation.strip() if data.designation else None
+    if data.company_name is not None:
+        person.company_name = data.company_name.strip() if data.company_name else None
+    if data.associated_companies is not None:
+        assoc_comps = []
+        for ac in data.associated_companies:
+            c_name = ac.company_name.strip() if hasattr(ac, 'company_name') else (ac.get('company_name', '').strip() if isinstance(ac, dict) else '')
+            d_name = (ac.designation.strip() if hasattr(ac, 'designation') and ac.designation else (ac.get('designation', '').strip() if isinstance(ac, dict) and ac.get('designation') else ''))
+            if c_name:
+                assoc_comps.append({"company_name": c_name, "designation": d_name})
+        person.associated_companies = assoc_comps
+    if data.industry is not None:
+        person.industry = data.industry.strip() if data.industry else None
+    if data.seniority is not None:
+        person.seniority = data.seniority.strip() if data.seniority else None
+    if data.department is not None:
+        person.department = data.department.strip() if data.department else None
+    if data.linkedin_url is not None:
+        person.linkedin_url = data.linkedin_url.strip() if data.linkedin_url else None
+    if data.city is not None:
+        person.city = data.city.strip() if data.city else None
+    if data.state is not None:
+        person.state = data.state.strip() if data.state else None
+    if data.country is not None:
+        person.country = data.country.strip() if data.country else "India"
+    if data.estimated_value is not None:
+        person.estimated_value = float(data.estimated_value)
+    if data.status is not None:
+        person.status = data.status
+    if data.notes is not None:
+        person.notes = data.notes.strip() if data.notes else None
+
     db.commit()
     db.refresh(person)
     return GlobalPersonOut.from_orm(person)
@@ -238,3 +287,37 @@ def pull_global_people_to_crm(
         created_leads=created_leads,
         remaining_quota=None
     )
+
+
+def update_global_person(db: Session, person_id: str, data: GlobalPersonUpdate) -> GlobalPersonOut:
+    person = db.query(GlobalPerson).filter(GlobalPerson.id == person_id).first()
+    if not person:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Person profile with ID '{person_id}' not found."
+        )
+
+    fields = [
+        "full_name", "email", "phone", "designation", "company_name",
+        "industry", "seniority", "department", "linkedin_url",
+        "city", "state", "country", "estimated_value", "status", "notes"
+    ]
+    for field in fields:
+        val = getattr(data, field)
+        if val is not None:
+            setattr(person, field, val.strip() if isinstance(val, str) else val)
+
+    if data.associated_companies is not None:
+        assoc_comps = []
+        for ac in data.associated_companies:
+            c_name = ac.company_name.strip() if hasattr(ac, 'company_name') else (ac.get('company_name', '').strip() if isinstance(ac, dict) else '')
+            d_name = (ac.designation.strip() if hasattr(ac, 'designation') and ac.designation else (ac.get('designation', '').strip() if isinstance(ac, dict) and ac.get('designation') else ''))
+            if c_name:
+                assoc_comps.append({"company_name": c_name, "designation": d_name})
+        person.associated_companies = assoc_comps
+
+    person.last_updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(person)
+    return GlobalPersonOut.from_orm(person)
+

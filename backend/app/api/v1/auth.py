@@ -64,6 +64,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         "tenant_role": user.tenant_role,
         "effective_role": user.effective_role,
         "is_super_admin": user.is_super_admin,
+        "is_data_entry": user.is_data_entry,
         "organization": org_data,
         "organization_id": user.organization_id
     }
@@ -92,6 +93,7 @@ def get_current_user_profile(current_user: User = Depends(get_current_user)):
         "tenant_role": current_user.tenant_role,
         "effective_role": current_user.effective_role,
         "is_super_admin": current_user.is_super_admin,
+        "is_data_entry": current_user.is_data_entry,
         "status": current_user.status,
         "organization_id": current_user.organization_id,
         "organization": org_data,

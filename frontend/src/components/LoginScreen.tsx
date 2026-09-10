@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { api, User } from "../services/api";
-import { ShieldCheck, UserCheck, PhoneCall, AlertCircle, ArrowRight } from "lucide-react";
+import { ShieldCheck, UserCheck, PhoneCall, AlertCircle, ArrowRight, Database } from "lucide-react";
 
 interface LoginScreenProps {
   onSuccess: (user: User) => void;
@@ -162,6 +162,32 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
                 <div>
                   <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-primary)" }}>Super Admin (Platform)</p>
                   <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>superadmin@jarvis.local</p>
+                </div>
+              </div>
+              <span style={{ fontSize: "0.6875rem", color: "var(--primary)", fontWeight: 700 }}>Autofill</span>
+            </button>
+
+            <button
+              onClick={() => setPreset("dataentry@jarvis.local", "DataEntry@2026")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                background: "var(--bg-surface-subtle)",
+                border: "1px solid var(--border-subtle)",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "all 0.15s ease"
+              }}
+              id="preset-dataentry-btn"
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <Database style={{ width: "18px", height: "18px", color: "var(--amber)" }} />
+                <div>
+                  <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-primary)" }}>Data Entry (Supervised Ops)</p>
+                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>dataentry@jarvis.local</p>
                 </div>
               </div>
               <span style={{ fontSize: "0.6875rem", color: "var(--primary)", fontWeight: 700 }}>Autofill</span>

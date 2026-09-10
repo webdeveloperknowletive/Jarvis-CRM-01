@@ -28,6 +28,10 @@ class User(Base, TimestampMixin):
         return self.platform_role == "SUPER_ADMIN"
 
     @property
+    def is_data_entry(self) -> bool:
+        return self.platform_role in ("DATA_ENTRY", "DATA_OPS") or self.tenant_role == "DATA_ENTRY"
+
+    @property
     def is_org_admin(self) -> bool:
         return self.tenant_role == "ORG_ADMIN" or self.is_super_admin
 

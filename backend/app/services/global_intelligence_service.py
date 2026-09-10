@@ -31,8 +31,8 @@ def get_global_intelligence(
     limit: int = 100,
     current_user: Optional[Any] = None
 ) -> GlobalIntelligenceResponse:
-    # 1. Fetch active companies and active people (filter out PULLED for non-superadmins)
-    is_sa = bool(current_user and getattr(current_user, "is_super_admin", False))
+    # 1. Fetch active companies and active people (filter out PULLED for non-superadmins/non-data-entry)
+    is_sa = bool(current_user and (getattr(current_user, "is_super_admin", False) or getattr(current_user, "is_data_entry", False)))
     if is_sa:
         all_companies = db.query(GlobalCompany).filter(GlobalCompany.status == "ACTIVE").all()
         all_people = db.query(GlobalPerson).filter(GlobalPerson.status == "ACTIVE").all()

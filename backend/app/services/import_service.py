@@ -2,6 +2,7 @@ import os
 import re
 import csv
 import uuid
+import json
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timezone
 import pandas as pd
@@ -19,6 +20,8 @@ from app.models.user import User
 from app.services.pipeline_service import get_first_stage, get_stage_by_id
 from app.services.company_service import get_or_create_company
 from app.services.contact_service import get_or_create_contact
+
+ALLOWED_TABULAR_EXTENSIONS = (".csv", ".xls", ".xlsx", ".xlsb", ".xlsm", ".parquet", ".json")
 
 COLUMN_PATTERNS = {
     "id": [r"^id$", r"company_id", r"uuid", r"unique_id", r"identifier"],
@@ -77,19 +80,54 @@ def detect_file_encoding(file_path: str) -> str:
         return "latin-1"
 
 
-def preview_import_file(file_path: str, file_type: str) -> Dict[str, Any]:
-    file_type = file_type.upper()
-    if file_type == "CSV":
+def load_tabular_dataframe(file_path: str, file_type: str, nrows: Optional[int] = None) -> Tuple[pd.DataFrame, int]:
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext not in ALLOWED_TABULAR_EXTENSIONS:
+        invalid_type = ext.replace(".", "").upper() if ext else file_type
+        raise ValueError(
+            f"Invalid file format '{invalid_type}'. Data ingestion strictly requires tabular spreadsheet files "
+            f"(.CSV, .XLS, .XLSX, .XLSB, .XLSM, .PARQUET, .JSON). Non-tabular formats such as .PDF, .TXT, .MD, .ZIP, .HTML are not supported."
+        )
+
+    clean_type = file_type.upper().replace(".", "")
+    if clean_type == "CSV" or ext == ".csv":
         encoding = detect_file_encoding(file_path)
-        df = pd.read_csv(file_path, encoding=encoding, nrows=50)
-        # get total row count
-        with open(file_path, "r", encoding=encoding) as f:
-            total_rows = sum(1 for _ in f) - 1
-    elif file_type in ("XLSX", "XLS"):
-        df = pd.read_excel(file_path, nrows=50)
-        total_rows = len(pd.read_excel(file_path))
+        if nrows:
+            df = pd.read_csv(file_path, encoding=encoding, nrows=nrows)
+            with open(file_path, "r", encoding=encoding, errors="ignore") as f:
+                total_rows = max(0, sum(1 for _ in f) - 1)
+        else:
+            df = pd.read_csv(file_path, encoding=encoding)
+            total_rows = len(df)
+    elif clean_type in ("XLSX", "XLS", "XLSM") or ext in (".xlsx", ".xls", ".xlsm"):
+        df = pd.read_excel(file_path, nrows=nrows)
+        total_rows = len(pd.read_excel(file_path)) if nrows else len(df)
+    elif clean_type == "XLSB" or ext == ".xlsb":
+        df = pd.read_excel(file_path, engine="pyxlsb", nrows=nrows)
+        total_rows = len(pd.read_excel(file_path, engine="pyxlsb")) if nrows else len(df)
+    elif clean_type == "PARQUET" or ext == ".parquet":
+        full_df = pd.read_parquet(file_path)
+        total_rows = len(full_df)
+        df = full_df.head(nrows) if nrows else full_df
+    elif clean_type == "JSON" or ext == ".json":
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            raw_data = json.load(f)
+        if isinstance(raw_data, dict):
+            for k in ("data", "records", "leads", "companies", "rows", "items"):
+                if k in raw_data and isinstance(raw_data[k], list):
+                    raw_data = raw_data[k]
+                    break
+        full_df = pd.json_normalize(raw_data) if isinstance(raw_data, list) else pd.DataFrame([raw_data])
+        total_rows = len(full_df)
+        df = full_df.head(nrows) if nrows else full_df
     else:
-        raise ValueError(f"Unsupported file format: {file_type}")
+        raise ValueError(f"Unsupported tabular format: {file_type}")
+
+    return df, total_rows
+
+
+def preview_import_file(file_path: str, file_type: str) -> Dict[str, Any]:
+    df, total_rows = load_tabular_dataframe(file_path, file_type, nrows=50)
 
     headers = [str(c).strip() for c in df.columns if not str(c).startswith("Unnamed:")]
     if len(headers) == 0:
@@ -152,13 +190,7 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                 stage = get_first_stage(db, organization_id)
 
         # Read dataset
-        if file_type == "CSV":
-            encoding = detect_file_encoding(file_path)
-            df = pd.read_csv(file_path, encoding=encoding)
-        elif file_type in ("XLSX", "XLS"):
-            df = pd.read_excel(file_path)
-        else:
-            raise ValueError(f"Unsupported file format: {file_type}")
+        df, total = load_tabular_dataframe(file_path, file_type)
 
         total = len(df)
         job.total_rows = total

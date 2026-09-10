@@ -30,6 +30,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, onLogout, onNewLeadClick }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isSuperAdmin = user.is_super_admin;
+  const isDataEntry = Boolean(user.is_data_entry || user.platform_role === "DATA_ENTRY" || user.tenant_role === "DATA_ENTRY");
   const isTelecaller = user.tenant_role === "TELECALLER";
 
   const handleTabClick = (tab: string) => {
@@ -77,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               </span>
             </div>
             <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>
-              {user.organization ? user.organization.name : "Platform Management"}
+              {user.organization ? user.organization.name : isDataEntry ? "Data Operations (Super Admin Control)" : "Platform Management"}
             </p>
           </div>
         </div>
@@ -95,8 +96,49 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
             </button>
           )}
 
+          {/* Data Entry Supervised Tabs */}
+          {isDataEntry && (
+            <>
+              <button
+                onClick={() => handleTabClick("global_intelligence")}
+                className={`nav-tab-btn ${activeTab === "global_intelligence" ? "active" : ""}`}
+                id="nav-tab-dataentry-global-intel"
+              >
+                <BrainCircuit style={{ width: "15px", height: "15px", color: "var(--primary)" }} />
+                Global Intelligence
+              </button>
+
+              <button
+                onClick={() => handleTabClick("global")}
+                className={`nav-tab-btn ${activeTab === "global" ? "active" : ""}`}
+                id="nav-tab-dataentry-companies"
+              >
+                <Globe2 style={{ width: "15px", height: "15px", color: "var(--cyan)" }} />
+                Company Intelligence
+              </button>
+
+              <button
+                onClick={() => handleTabClick("people")}
+                className={`nav-tab-btn ${activeTab === "people" ? "active" : ""}`}
+                id="nav-tab-dataentry-people"
+              >
+                <UserCheck style={{ width: "15px", height: "15px", color: "var(--emerald)" }} />
+                People Intelligence
+              </button>
+
+              <button
+                onClick={() => handleTabClick("import")}
+                className={`nav-tab-btn ${activeTab === "import" ? "active" : ""}`}
+                id="nav-tab-dataentry-import"
+              >
+                <UploadCloud style={{ width: "15px", height: "15px", color: "#6366f1" }} />
+                Data Ingestion
+              </button>
+            </>
+          )}
+
           {/* Core CRM Tabs */}
-          {!isTelecaller && !isSuperAdmin && (
+          {!isTelecaller && !isSuperAdmin && !isDataEntry && (
             <>
               <button
                 onClick={() => handleTabClick("radar")}
@@ -190,7 +232,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
 
         {/* User Profile & Actions */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {!isSuperAdmin && !isTelecaller && onNewLeadClick && (
+          {!isSuperAdmin && !isDataEntry && !isTelecaller && onNewLeadClick && (
             <button
               onClick={onNewLeadClick}
               className="btn-primary"
@@ -215,6 +257,10 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 <span className="badge badge-hot" style={{ fontSize: "0.625rem" }}>
                   <ShieldCheck style={{ width: "10px", height: "10px" }} />
                   SUPER ADMIN
+                </span>
+              ) : isDataEntry ? (
+                <span className="badge" style={{ fontSize: "0.625rem", background: "rgba(245, 158, 11, 0.15)", color: "#b45309", border: "1px solid rgba(245, 158, 11, 0.3)", fontWeight: 700 }}>
+                  DATA ENTRY (SUPERVISED)
                 </span>
               ) : (
                 <span className="badge badge-medium" style={{ fontSize: "0.625rem" }}>
@@ -293,7 +339,48 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
             </button>
           )}
 
-          {!isTelecaller && !isSuperAdmin && (
+          {/* Data Entry Mobile Tabs */}
+          {isDataEntry && (
+            <>
+              <button
+                onClick={() => handleTabClick("global_intelligence")}
+                className={`nav-tab-btn ${activeTab === "global_intelligence" ? "active" : ""}`}
+                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
+              >
+                <BrainCircuit style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
+                Global Intelligence
+              </button>
+
+              <button
+                onClick={() => handleTabClick("global")}
+                className={`nav-tab-btn ${activeTab === "global" ? "active" : ""}`}
+                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
+              >
+                <Globe2 style={{ width: "16px", height: "16px", color: "var(--cyan)" }} />
+                Company Intelligence
+              </button>
+
+              <button
+                onClick={() => handleTabClick("people")}
+                className={`nav-tab-btn ${activeTab === "people" ? "active" : ""}`}
+                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
+              >
+                <UserCheck style={{ width: "16px", height: "16px", color: "var(--emerald)" }} />
+                People Intelligence
+              </button>
+
+              <button
+                onClick={() => handleTabClick("import")}
+                className={`nav-tab-btn ${activeTab === "import" ? "active" : ""}`}
+                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
+              >
+                <UploadCloud style={{ width: "16px", height: "16px", color: "#6366f1" }} />
+                Data Ingestion
+              </button>
+            </>
+          )}
+
+          {!isTelecaller && !isSuperAdmin && !isDataEntry && (
             <>
               <button
                 onClick={() => handleTabClick("radar")}

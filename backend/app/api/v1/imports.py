@@ -29,18 +29,21 @@ def background_import_runner(job_id: str):
         db.close()
 
 
+ALLOWED_TABULAR_EXTENSIONS = (".csv", ".xls", ".xlsx", ".xlsb", ".xlsm", ".parquet", ".json")
+
+
 @router.post("/upload", response_model=ImportPreviewResponse)
 async def upload_import_file(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user)
 ):
-    # Validate tabular extension
+    # Strictly validate tabular extensions
     ext = os.path.splitext(file.filename)[1].lower() if file.filename else ""
-    if ext not in (".csv", ".xlsx", ".xls"):
+    if ext not in ALLOWED_TABULAR_EXTENSIONS:
         invalid_type = ext.replace(".", "").upper() if ext else "UNKNOWN"
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid file format '{invalid_type}'. Data ingestion only accepts tabular spreadsheet files (.CSV, .XLSX, .XLS). Non-tabular formats like PDF, Word documents, or images do not contain structured rows and columns."
+            detail=f"Invalid file format '{invalid_type}'. Data ingestion strictly requires tabular spreadsheet files (.CSV, .XLS, .XLSX, .XLSB, .XLSM, .PARQUET, .JSON). Non-tabular formats such as .PDF, .TXT, .MD, .ZIP, .HTML are not supported."
         )
 
     # Save to disk
@@ -52,7 +55,7 @@ async def upload_import_file(
     with open(file_path, "wb") as f:
         f.write(content)
 
-    file_type = "CSV" if ext == ".csv" else ("XLSX" if ext == ".xlsx" else "XLS")
+    file_type = ext.replace(".", "").upper()
 
     try:
         preview = preview_import_file(file_path, file_type)
@@ -83,8 +86,8 @@ def execute_import(
 
     job_type = (data.job_type or "TENANT_LEADS").upper()
     if job_type in ("GLOBAL_COMPANIES", "GLOBAL_DATABASE", "GLOBAL_PEOPLE"):
-        if not current_user.is_super_admin:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Super Admin privilege required for Global Database ingestion")
+        if not (current_user.is_super_admin or current_user.platform_role in ("DATA_ENTRY", "DATA_OPS") or current_user.tenant_role == "DATA_ENTRY"):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Super Admin or Data Entry privilege required for Global Database ingestion")
         target_org_id = None
     else:
         if not tenant_id:

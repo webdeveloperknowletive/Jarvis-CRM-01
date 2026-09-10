@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { api, GlobalCompany, GlobalCompanyCreatePayload } from "../services/api";
 import { ImportModal } from "./ImportModal";
+import { EditCompanyModal } from "./EditCompanyModal";
 import {
   Globe2,
   Search,
@@ -27,6 +28,7 @@ export const GlobalRegistryView: React.FC<GlobalRegistryViewProps> = ({ currentU
   const storedUser = localStorage.getItem("jarvis_user");
   const currentUser = propUser || (storedUser ? JSON.parse(storedUser) : null);
   const isSuperAdmin = currentUser?.is_super_admin ?? false;
+  const canManage = isSuperAdmin || currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY";
   const [companies, setCompanies] = useState<GlobalCompany[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [cityFilter, setCityFilter] = useState("");
@@ -35,6 +37,7 @@ export const GlobalRegistryView: React.FC<GlobalRegistryViewProps> = ({ currentU
   const [pulling, setPulling] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<GlobalCompany | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // New Company Form State (UUID is kept internal, never exposed to user)
@@ -211,7 +214,7 @@ export const GlobalRegistryView: React.FC<GlobalRegistryViewProps> = ({ currentU
             Import to Global Database
           </button>
 
-          {!isSuperAdmin && selectedIds.length > 0 && (
+          {!canManage && selectedIds.length > 0 && (
             <button
               onClick={handlePullToCRM}
               disabled={pulling}
@@ -468,7 +471,7 @@ export const GlobalRegistryView: React.FC<GlobalRegistryViewProps> = ({ currentU
                     </div>
                   </div>
 
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", flexShrink: 0 }}>
                     {comp.pull_status === "PULLED" ? (
                       <span className="badge badge-hot" style={{ fontSize: "0.6875rem", background: "rgba(225, 29, 72, 0.12)", color: "var(--rose-dark)", border: "1px solid rgba(225, 29, 72, 0.3)" }}>
                         TAKEN • Pulled by {comp.pulled_by_org_name || "Enterprise"}
@@ -477,6 +480,28 @@ export const GlobalRegistryView: React.FC<GlobalRegistryViewProps> = ({ currentU
                       <span className="badge badge-open" style={{ fontSize: "0.6875rem" }}>
                         VERIFIED PROFILE
                       </span>
+                    )}
+                    {canManage && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingCompany(comp);
+                        }}
+                        className="btn btn-secondary"
+                        style={{
+                          padding: "4px 10px",
+                          fontSize: "0.75rem",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          borderRadius: "6px",
+                          background: "var(--bg-surface)",
+                          border: "1px solid var(--border-color)",
+                        }}
+                        title="Edit Enterprise Record"
+                      >
+                        ✏️ Edit
+                      </button>
                     )}
                   </div>
                 </div>
@@ -772,6 +797,19 @@ export const GlobalRegistryView: React.FC<GlobalRegistryViewProps> = ({ currentU
           onSuccess={() => {
             loadGlobalCompanies();
             setSuccessMsg("Company database import completed successfully!");
+            setTimeout(() => setSuccessMsg(null), 4000);
+          }}
+        />
+      )}
+
+      {editingCompany && (
+        <EditCompanyModal
+          company={editingCompany}
+          isOpen={Boolean(editingCompany)}
+          onClose={() => setEditingCompany(null)}
+          onSaved={(updated) => {
+            setCompanies((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+            setSuccessMsg(`Enterprise record "${updated.legal_name}" updated successfully!`);
             setTimeout(() => setSuccessMsg(null), 4000);
           }}
         />

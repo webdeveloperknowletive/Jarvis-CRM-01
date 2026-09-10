@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { api, GlobalPerson } from "../services/api";
 import { ImportModal } from "./ImportModal";
+import { EditPersonModal } from "./EditPersonModal";
 import { openGmail } from "../utils/mailHelper";
 import {
   UserCheck,
@@ -32,6 +33,7 @@ export const PeopleIntelligenceView: React.FC<PeopleIntelligenceViewProps> = ({ 
   const storedUser = localStorage.getItem("jarvis_user");
   const currentUser = propUser || (storedUser ? JSON.parse(storedUser) : null);
   const isSuperAdmin = currentUser?.is_super_admin ?? false;
+  const canManage = isSuperAdmin || currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY";
   const [people, setPeople] = useState<GlobalPerson[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("ALL");
@@ -45,6 +47,7 @@ export const PeopleIntelligenceView: React.FC<PeopleIntelligenceViewProps> = ({ 
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAddLeadModal, setShowAddLeadModal] = useState(false);
   const [showPullModal, setShowPullModal] = useState(false);
+  const [editingPerson, setEditingPerson] = useState<GlobalPerson | null>(null);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [targetOrgId, setTargetOrgId] = useState("");
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -313,8 +316,8 @@ export const PeopleIntelligenceView: React.FC<PeopleIntelligenceViewProps> = ({ 
             + Add Lead
           </button>
 
-          {/* Pull Selected to CRM (Hidden for Super Admin) */}
-          {!isSuperAdmin && selectedIds.length > 0 && (
+          {/* Pull Selected to CRM (Hidden for Super Admin & Data Entry) */}
+          {!canManage && selectedIds.length > 0 && (
             <button
               onClick={() => setShowPullModal(true)}
               className="btn-primary"
@@ -743,35 +746,57 @@ export const PeopleIntelligenceView: React.FC<PeopleIntelligenceViewProps> = ({ 
                         </div>
                       </td>
 
-                      {/* Status */}
+                      {/* Status & Actions */}
                       <td style={{ padding: "12px 16px", textAlign: "center" }}>
-                        {person.pull_status === "PULLED" ? (
-                          <span style={{
-                            fontSize: "0.625rem",
-                            fontWeight: 700,
-                            padding: "2px 8px",
-                            borderRadius: "999px",
-                            background: "rgba(225, 29, 72, 0.12)",
-                            color: "var(--rose-dark)",
-                            border: "1px solid rgba(225, 29, 72, 0.3)",
-                            textTransform: "uppercase"
-                          }}>
-                            TAKEN • {person.pulled_by_org_name || "Pulled"}
-                          </span>
-                        ) : (
-                          <span style={{
-                            fontSize: "0.625rem",
-                            fontWeight: 700,
-                            padding: "2px 8px",
-                            borderRadius: "999px",
-                            background: "var(--emerald-light)",
-                            color: "var(--emerald-dark)",
-                            border: "1px solid var(--emerald-border)",
-                            textTransform: "uppercase"
-                          }}>
-                            {person.status}
-                          </span>
-                        )}
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+                          {person.pull_status === "PULLED" ? (
+                            <span style={{
+                              fontSize: "0.625rem",
+                              fontWeight: 700,
+                              padding: "2px 8px",
+                              borderRadius: "999px",
+                              background: "rgba(225, 29, 72, 0.12)",
+                              color: "var(--rose-dark)",
+                              border: "1px solid rgba(225, 29, 72, 0.3)",
+                              textTransform: "uppercase"
+                            }}>
+                              TAKEN • {person.pulled_by_org_name || "Pulled"}
+                            </span>
+                          ) : (
+                            <span style={{
+                              fontSize: "0.625rem",
+                              fontWeight: 700,
+                              padding: "2px 8px",
+                              borderRadius: "999px",
+                              background: "var(--emerald-light)",
+                              color: "var(--emerald-dark)",
+                              border: "1px solid var(--emerald-border)",
+                              textTransform: "uppercase"
+                            }}>
+                              {person.status}
+                            </span>
+                          )}
+                          {canManage && (
+                            <button
+                              onClick={() => setEditingPerson(person)}
+                              className="btn btn-secondary"
+                              style={{
+                                padding: "3px 8px",
+                                fontSize: "0.72rem",
+                                borderRadius: "6px",
+                                border: "1px solid var(--border-color)",
+                                background: "var(--bg-surface)",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                              }}
+                              title="Edit Executive Profile"
+                            >
+                              ✏️ Edit
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1258,6 +1283,19 @@ export const PeopleIntelligenceView: React.FC<PeopleIntelligenceViewProps> = ({ 
           onSuccess={() => {
             loadGlobalPeople();
             setShowImportModal(false);
+          }}
+        />
+      )}
+
+      {editingPerson && (
+        <EditPersonModal
+          person={editingPerson}
+          isOpen={Boolean(editingPerson)}
+          onClose={() => setEditingPerson(null)}
+          onSaved={(updated) => {
+            setPeople((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+            setSuccessMsg(`Decision maker profile for "${updated.full_name}" updated!`);
+            setTimeout(() => setSuccessMsg(null), 4000);
           }}
         />
       )}
