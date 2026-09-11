@@ -28,9 +28,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    # allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 
@@ -47,10 +49,18 @@ async def add_process_time_and_request_id(request: Request, call_next):
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Global exception: {exc}", exc_info=True)
+    logger.error(f"Global exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    origin = request.headers.get("origin") or "*"
+    cors_headers = {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "*",
+        "Access-Control-Allow-Headers": "*",
+    }
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"success": False, "error": {"code": "INTERNAL_SERVER_ERROR", "message": str(exc)}}
+        content={"success": False, "detail": str(exc), "error": {"code": "INTERNAL_SERVER_ERROR", "message": str(exc)}},
+        headers=cors_headers
     )
 
 
@@ -87,6 +97,21 @@ def on_startup():
                     pass
 
     logger.info("Database schema checked and verified.")
+
+    # Initialize PostgreSQL schema-per-tenant trigger and sync schemas
+    if not settings.DATABASE_URL.startswith("sqlite"):
+        try:
+            from app.core.database import SessionLocal
+            from app.core.tenant_schema import install_org_schema_trigger, sync_all_tenant_schemas
+            startup_db = SessionLocal()
+            try:
+                install_org_schema_trigger(startup_db)
+                sync_all_tenant_schemas(startup_db)
+                logger.info("PostgreSQL tenant schemas and triggers verified.")
+            finally:
+                startup_db.close()
+        except Exception as exc:
+            logger.warning(f"Tenant schema startup sync notice: {exc}")
 
 
 @app.get("/")

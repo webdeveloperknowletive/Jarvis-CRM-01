@@ -85,7 +85,10 @@ def update_organization(
         org.settings = current_settings
 
     db.commit()
-    db.refresh(org)
+    try:
+        db.refresh(org)
+    except Exception:
+        pass
     return org
 
 

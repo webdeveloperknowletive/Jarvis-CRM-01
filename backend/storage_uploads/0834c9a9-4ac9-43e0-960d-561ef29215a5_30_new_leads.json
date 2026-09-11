@@ -1,0 +1,272 @@
+[
+    {
+        "contact_name":"Ramesh Patel",
+        "company_name":"Mahindra Logistics",
+        "designation":"Account Manager",
+        "contact_email":"ramesh.patel@mahindralogistics.com",
+        "contact_phone":919068068140,
+        "city":"Bhopal",
+        "value":789000
+    },
+    {
+        "contact_name":"Deepak Iyer",
+        "company_name":"Infosys Enterprises",
+        "designation":"IT Director",
+        "contact_email":"deepak.iyer@infosysenterprises.com",
+        "contact_phone":919027797563,
+        "city":"Kolkata",
+        "value":705000
+    },
+    {
+        "contact_name":"Rahul Iyer",
+        "company_name":"Tech Technologies",
+        "designation":"Senior Consultant",
+        "contact_email":"rahul.iyer@techtechnologies.com",
+        "contact_phone":919039734395,
+        "city":"Jaipur",
+        "value":802000
+    },
+    {
+        "contact_name":"Nisha Bose",
+        "company_name":"Stellar Logistics",
+        "designation":"Account Manager",
+        "contact_email":"nisha.bose@stellarlogistics.com",
+        "contact_phone":919048171384,
+        "city":"Nagpur",
+        "value":475000
+    },
+    {
+        "contact_name":"Rohan Deshmukh",
+        "company_name":"L&T Innovations",
+        "designation":"Procurement Manager",
+        "contact_email":"rohan.deshmukh@ltinnovations.com",
+        "contact_phone":919039983327,
+        "city":"Pimpri-Chinchwad",
+        "value":406000
+    },
+    {
+        "contact_name":"Deepak Mehta",
+        "company_name":"Wipro Logistics",
+        "designation":"CEO",
+        "contact_email":"deepak.mehta@wiprologistics.com",
+        "contact_phone":919049793816,
+        "city":"Visakhapatnam",
+        "value":715000
+    },
+    {
+        "contact_name":"Ramesh Chatterjee",
+        "company_name":"Stellar Innovations",
+        "designation":"Operations Manager",
+        "contact_email":"ramesh.chatterjee@stellarinnovations.com",
+        "contact_phone":919011603580,
+        "city":"Kolkata",
+        "value":991000
+    },
+    {
+        "contact_name":"Kavya Chopra",
+        "company_name":"Nexus Industries",
+        "designation":"Sales Executive",
+        "contact_email":"kavya.chopra@nexusindustries.com",
+        "contact_phone":919091958051,
+        "city":"Jaipur",
+        "value":872000
+    },
+    {
+        "contact_name":"Pooja Dubey",
+        "company_name":"JSW Ventures",
+        "designation":"Director of HR",
+        "contact_email":"pooja.dubey@jswventures.com",
+        "contact_phone":919080250557,
+        "city":"Nagpur",
+        "value":256000
+    },
+    {
+        "contact_name":"Geeta Kapur",
+        "company_name":"Global Industries",
+        "designation":"Project Manager",
+        "contact_email":"geeta.kapur@globalindustries.com",
+        "contact_phone":919029931108,
+        "city":"Jaipur",
+        "value":978000
+    },
+    {
+        "contact_name":"Poonam Kulkarni",
+        "company_name":"Pinnacle Systems",
+        "designation":"Operations Manager",
+        "contact_email":"poonam.kulkarni@pinnaclesystems.com",
+        "contact_phone":919056065316,
+        "city":"Hyderabad",
+        "value":407000
+    },
+    {
+        "contact_name":"Kavya Dixit",
+        "company_name":"L&T Solutions",
+        "designation":"Head of Sales",
+        "contact_email":"kavya.dixit@ltsolutions.com",
+        "contact_phone":919039913851,
+        "city":"Hyderabad",
+        "value":371000
+    },
+    {
+        "contact_name":"Mira Kulkarni",
+        "company_name":"Tech Solutions",
+        "designation":"Director of HR",
+        "contact_email":"mira.kulkarni@techsolutions.com",
+        "contact_phone":919072659293,
+        "city":"Visakhapatnam",
+        "value":224000
+    },
+    {
+        "contact_name":"Sanjay Chatterjee",
+        "company_name":"Quantum Logistics",
+        "designation":"Director of HR",
+        "contact_email":"sanjay.chatterjee@quantumlogistics.com",
+        "contact_phone":919042081161,
+        "city":"Ahmedabad",
+        "value":660000
+    },
+    {
+        "contact_name":"Vihaan Mehta",
+        "company_name":"Smart Technologies",
+        "designation":"IT Director",
+        "contact_email":"vihaan.mehta@smarttechnologies.com",
+        "contact_phone":919054372588,
+        "city":"Surat",
+        "value":659000
+    },
+    {
+        "contact_name":"Geeta Bose",
+        "company_name":"Stellar Systems",
+        "designation":"Sales Executive",
+        "contact_email":"geeta.bose@stellarsystems.com",
+        "contact_phone":919028291376,
+        "city":"Thane",
+        "value":596000
+    },
+    {
+        "contact_name":"Geeta Kulkarni",
+        "company_name":"Infosys Solutions",
+        "designation":"Chief Marketing Officer",
+        "contact_email":"geeta.kulkarni@infosyssolutions.com",
+        "contact_phone":919089007008,
+        "city":"Surat",
+        "value":293000
+    },
+    {
+        "contact_name":"Pooja Verma",
+        "company_name":"Godrej Innovations",
+        "designation":"Chief Marketing Officer",
+        "contact_email":"pooja.verma@godrejinnovations.com",
+        "contact_phone":919039046118,
+        "city":"Thane",
+        "value":809000
+    },
+    {
+        "contact_name":"Pooja Patel",
+        "company_name":"Reliance Enterprises",
+        "designation":"Operations Manager",
+        "contact_email":"pooja.patel@relianceenterprises.com",
+        "contact_phone":919089398866,
+        "city":"Indore",
+        "value":375000
+    },
+    {
+        "contact_name":"Swati Gupta",
+        "company_name":"Pinnacle Systems",
+        "designation":"Sales Executive",
+        "contact_email":"swati.gupta@pinnaclesystems.com",
+        "contact_phone":919017658105,
+        "city":"Lucknow",
+        "value":376000
+    },
+    {
+        "contact_name":"Arjun Kapur",
+        "company_name":"Apex Services",
+        "designation":"CEO",
+        "contact_email":"arjun.kapur@apexservices.com",
+        "contact_phone":919026587586,
+        "city":"Nagpur",
+        "value":229000
+    },
+    {
+        "contact_name":"Rahul Singh",
+        "company_name":"Apex Enterprises",
+        "designation":"Project Manager",
+        "contact_email":"rahul.singh@apexenterprises.com",
+        "contact_phone":919069422438,
+        "city":"Pimpri-Chinchwad",
+        "value":707000
+    },
+    {
+        "contact_name":"Ananya Dubey",
+        "company_name":"Godrej Ventures",
+        "designation":"VP of Operations",
+        "contact_email":"ananya.dubey@godrejventures.com",
+        "contact_phone":919087936605,
+        "city":"Visakhapatnam",
+        "value":693000
+    },
+    {
+        "contact_name":"Ravi Verma",
+        "company_name":"Bajaj Ventures",
+        "designation":"IT Director",
+        "contact_email":"ravi.verma@bajajventures.com",
+        "contact_phone":919057149357,
+        "city":"Kolkata",
+        "value":524000
+    },
+    {
+        "contact_name":"Amit Verma",
+        "company_name":"Nova Logistics",
+        "designation":"Sales Executive",
+        "contact_email":"amit.verma@novalogistics.com",
+        "contact_phone":919031944097,
+        "city":"Pimpri-Chinchwad",
+        "value":419000
+    },
+    {
+        "contact_name":"Sanjay Tiwari",
+        "company_name":"Apex Enterprises",
+        "designation":"Head of Sales",
+        "contact_email":"sanjay.tiwari@apexenterprises.com",
+        "contact_phone":919016539250,
+        "city":"Kolkata",
+        "value":913000
+    },
+    {
+        "contact_name":"Aarav Chatterjee",
+        "company_name":"Quantum Systems",
+        "designation":"VP of Operations",
+        "contact_email":"aarav.chatterjee@quantumsystems.com",
+        "contact_phone":919096840908,
+        "city":"Patna",
+        "value":786000
+    },
+    {
+        "contact_name":"Diya Banerjee",
+        "company_name":"Infosys Logistics",
+        "designation":"Project Manager",
+        "contact_email":"diya.banerjee@infosyslogistics.com",
+        "contact_phone":919010168484,
+        "city":"Ahmedabad",
+        "value":360000
+    },
+    {
+        "contact_name":"Deepak Sharma",
+        "company_name":"Future Solutions",
+        "designation":"Project Manager",
+        "contact_email":"deepak.sharma@futuresolutions.com",
+        "contact_phone":919079181157,
+        "city":"Surat",
+        "value":477000
+    },
+    {
+        "contact_name":"Amit Choudhary",
+        "company_name":"Future Enterprises",
+        "designation":"Procurement Manager",
+        "contact_email":"amit.choudhary@futureenterprises.com",
+        "contact_phone":919080707929,
+        "city":"Ahmedabad",
+        "value":309000
+    }
+]

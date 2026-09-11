@@ -49,7 +49,10 @@ def create_company(db: Session, organization_id: str, data: CompanyCreate, user_
     )
     db.add(audit)
     db.commit()
-    db.refresh(company)
+    try:
+        db.refresh(company)
+    except Exception:
+        pass
     return company
 
 

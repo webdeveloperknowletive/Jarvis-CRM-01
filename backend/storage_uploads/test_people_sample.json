@@ -1,0 +1,20 @@
+[
+  {
+    "full_name": "Satya Nadella",
+    "company_name": "Microsoft Corp",
+    "designation": "Chief Executive Officer",
+    "email": "satya.nadella@example.com",
+    "phone": "+1 425 882 8080",
+    "location": "Redmond, WA",
+    "linkedin_url": "https://linkedin.com/in/satyanadella"
+  },
+  {
+    "full_name": "Sundar Pichai",
+    "company_name": "Google LLC",
+    "designation": "CEO",
+    "email": "sundar.pichai@example.com",
+    "phone": "+1 650 253 0000",
+    "location": "Mountain View, CA",
+    "linkedin_url": "https://linkedin.com/in/sundarpichai"
+  }
+]

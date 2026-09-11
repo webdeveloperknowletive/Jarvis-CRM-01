@@ -9,6 +9,8 @@ from app.services.masking_service import should_mask_field, mask_phone_number, m
 
 
 def create_contact(db: Session, organization_id: str, data: ContactCreate, user_id: str = None) -> Contact:
+    from app.services.import_service import normalize_phone
+    phone_norm = normalize_phone(data.phone)
     contact = Contact(
         organization_id=organization_id,
         company_id=data.company_id,
@@ -18,8 +20,8 @@ def create_contact(db: Session, organization_id: str, data: ContactCreate, user_
         designation=data.designation,
         department=data.department,
         email=data.email.lower().strip() if data.email else None,
-        phone=data.phone.strip() if data.phone else None,
-        alternate_phone=data.alternate_phone,
+        phone=phone_norm,
+        alternate_phone=normalize_phone(data.alternate_phone),
         linkedin_url=data.linkedin_url,
         city=data.city,
         state=data.state,
@@ -40,7 +42,10 @@ def create_contact(db: Session, organization_id: str, data: ContactCreate, user_
     )
     db.add(audit)
     db.commit()
-    db.refresh(contact)
+    try:
+        db.refresh(contact)
+    except Exception:
+        pass
     return contact
 
 
@@ -55,7 +60,8 @@ def get_or_create_contact(
     user_id: Optional[str] = None
 ) -> Tuple[Contact, bool]:
     clean_name = full_name.strip()
-    clean_phone = phone.strip() if phone else None
+    from app.services.import_service import normalize_phone
+    clean_phone = normalize_phone(phone)
     clean_email = email.lower().strip() if email else None
 
     # Priority 1: Check phone match within org

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { api, PipelineStage } from "../services/api";
 import { X, UserPlus, AlertCircle } from "lucide-react";
+import { cleanPhoneInput } from "../utils/phoneHelper";
 
 interface NewLeadModalProps {
   stages: PipelineStage[];
@@ -124,13 +125,14 @@ export const NewLeadModal: React.FC<NewLeadModalProps> = ({ stages, onClose, onS
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <div>
               <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
-                Phone / Mobile
+                Phone Number (10 Digits)
               </label>
               <input
-                type="text"
+                type="tel"
+                maxLength={10}
                 value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
-                placeholder="+91 98765 43210"
+                onChange={(e) => setContactPhone(cleanPhoneInput(e.target.value))}
+                placeholder="e.g. 9876543210"
                 className="input-text"
               />
             </div>

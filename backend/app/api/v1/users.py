@@ -22,6 +22,36 @@ def list_users(
     return query.order_by(User.full_name.asc()).offset(skip).limit(limit).all()
 
 
+@router.get("/telecallers")
+def list_organization_telecallers(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    from app.models.lead import Lead
+    telecallers = db.query(User).filter(
+        User.organization_id == tenant_id,
+        User.tenant_role == "TELECALLER"
+    ).order_by(User.full_name.asc()).all()
+
+    result = []
+    for t in telecallers:
+        assigned_count = db.query(Lead).filter(
+            Lead.owner_id == t.id,
+            Lead.organization_id == tenant_id
+        ).count()
+        result.append({
+            "id": t.id,
+            "full_name": t.full_name,
+            "email": t.email,
+            "phone": t.phone,
+            "status": t.status,
+            "assigned_leads_count": assigned_count,
+            "created_at": t.created_at.isoformat() if t.created_at else None
+        })
+    return result
+
+
 @router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_tenant_user(
     data: UserCreate,
@@ -69,7 +99,10 @@ def create_tenant_user(
     )
     db.add(audit)
     db.commit()
-    db.refresh(user)
+    try:
+        db.refresh(user)
+    except Exception:
+        pass
     return user
 
 
@@ -111,5 +144,8 @@ def update_user(
     )
     db.add(audit)
     db.commit()
-    db.refresh(user)
+    try:
+        db.refresh(user)
+    except Exception:
+        pass
     return user

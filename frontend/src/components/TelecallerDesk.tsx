@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Lead, api } from "../services/api";
 import { openGmail, openWhatsApp } from "../utils/mailHelper";
+import { format10DigitPhone, getCallUrl } from "../utils/phoneHelper";
+import { EmailComposeModal } from "./EmailComposeModal";
 import { 
   PhoneCall, 
   MessageCircle, 
@@ -20,6 +22,7 @@ export const TelecallerDesk: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPriority, setFilterPriority] = useState("ALL");
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   // Outcome logger state
   const [outcome, setOutcome] = useState<string>("CONNECTED");
@@ -106,24 +109,13 @@ export const TelecallerDesk: React.FC = () => {
       setSuccessMsg("Opened WhatsApp Web in a new tab.");
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch {
-      openWhatsApp(selectedLead.contact_phone, `Hello ${selectedLead.contact_name || ""}, regarding ${selectedLead.title}.`);
+      openWhatsApp(format10DigitPhone(selectedLead.contact_phone), `Hello ${selectedLead.contact_name || ""}, regarding ${selectedLead.title}.`);
     }
   };
 
-  const handleGmail = async () => {
+  const handleGmail = () => {
     if (!selectedLead) return;
-    try {
-      const res = await api.triggerLeadAction(selectedLead.id, "email");
-      if (res.gmail_url) {
-        window.open(res.gmail_url, "_blank", "noopener,noreferrer");
-      } else {
-        openGmail(selectedLead.contact_email, `Regarding ${selectedLead.title}`, `Hello ${selectedLead.contact_name || "there"},\n\n`);
-      }
-      setSuccessMsg("Opened Gmail composer in a new tab.");
-      setTimeout(() => setSuccessMsg(null), 3000);
-    } catch {
-      openGmail(selectedLead.contact_email, `Regarding ${selectedLead.title}`, `Hello ${selectedLead.contact_name || "there"},\n\n`);
-    }
+    setShowEmailModal(true);
   };
 
   const handleRecordOutcome = async () => {
@@ -385,7 +377,7 @@ export const TelecallerDesk: React.FC = () => {
                     <div style={{ fontSize: "0.6875rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "4px" }}>
                       <span style={{ fontWeight: 600 }}>{lead.company_name || "Account"}</span>
                       <span style={{ color: "var(--purple-dark)", fontWeight: 600, fontFamily: "monospace" }}>
-                        {lead.contact_phone || "No phone"}
+                        {format10DigitPhone(lead.contact_phone) || "No phone"}
                       </span>
                     </div>
 
@@ -450,7 +442,7 @@ export const TelecallerDesk: React.FC = () => {
                   Masked Mobile Contact
                 </span>
                 <p style={{ fontSize: "1.25rem", fontFamily: "monospace", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "0.05em" }}>
-                  {selectedLead.contact_phone || "Not available"}
+                  {format10DigitPhone(selectedLead.contact_phone) || "Not available"}
                 </p>
                 {selectedLead.contact_email && (
                   <span
@@ -640,6 +632,15 @@ export const TelecallerDesk: React.FC = () => {
           </div>
         )}
       </div>
+
+      {showEmailModal && selectedLead && (
+        <EmailComposeModal
+          isOpen={showEmailModal}
+          onClose={() => setShowEmailModal(false)}
+          lead={selectedLead}
+          onSent={() => loadMyLeads()}
+        />
+      )}
     </div>
   );
 };

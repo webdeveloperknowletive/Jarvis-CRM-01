@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { api, GlobalCompany, GlobalCompanyCreatePayload } from "../services/api";
 import { Building2, X, Check, AlertCircle } from "lucide-react";
+import { cleanPhoneInput, format10DigitPhone } from "../utils/phoneHelper";
 
 interface EditCompanyModalProps {
   company: GlobalCompany | null;
@@ -392,9 +393,10 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
                 </label>
                 <input
                   type="tel"
+                  maxLength={10}
                   value={formData.phone || ""}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+91 98765 43210"
+                  onChange={(e) => setFormData({ ...formData, phone: cleanPhoneInput(e.target.value) })}
+                  placeholder="e.g. 9876543210 (10 digits)"
                   className="input-text"
                   style={{ width: "100%" }}
                   id="edit-company-phone"

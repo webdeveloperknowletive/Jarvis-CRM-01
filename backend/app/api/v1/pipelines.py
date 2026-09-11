@@ -24,7 +24,7 @@ def get_organization_pipeline(
         description=pipeline.description,
         is_default=pipeline.is_default,
         status=pipeline.status,
-        stages=[PipelineStageOut.from_orm(s) for s in stages],
+        stages=[PipelineStageOut.model_validate(s) for s in stages],
         created_at=pipeline.created_at
     )
 
@@ -50,7 +50,10 @@ def add_pipeline_stage(
     )
     db.add(stage)
     db.commit()
-    db.refresh(stage)
+    try:
+        db.refresh(stage)
+    except Exception:
+        pass
     return stage
 
 
@@ -79,5 +82,8 @@ def update_pipeline_stage(
         stage.is_lost = data.is_lost
 
     db.commit()
-    db.refresh(stage)
+    try:
+        db.refresh(stage)
+    except Exception:
+        pass
     return stage

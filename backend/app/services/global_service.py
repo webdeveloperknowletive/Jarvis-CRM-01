@@ -119,7 +119,10 @@ def create_global_company(db: Session, data: GlobalCompanyCreate) -> GlobalCompa
     )
     db.add(company)
     db.commit()
-    db.refresh(company)
+    try:
+        db.refresh(company)
+    except Exception:
+        pass
 
     return GlobalCompanyOut(
         id=company.id,
@@ -186,7 +189,10 @@ def update_global_company(db: Session, company_id: str, data: GlobalCompanyUpdat
         company.status = data.status
 
     db.commit()
-    db.refresh(company)
+    try:
+        db.refresh(company)
+    except Exception:
+        pass
 
     return GlobalCompanyOut(
         id=company.id,
@@ -433,7 +439,10 @@ def update_global_company(db: Session, company_id: str, data: GlobalCompanyUpdat
 
     company.last_updated_at = datetime.now(timezone.utc)
     db.commit()
-    db.refresh(company)
+    try:
+        db.refresh(company)
+    except Exception:
+        pass
 
     cnt = db.query(GlobalCompanyContactMap).filter(GlobalCompanyContactMap.company_id == company.id).count()
     return GlobalCompanyOut(

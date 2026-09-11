@@ -1,0 +1,31 @@
+name,mobile,email_id,associated_companies,designation_with_each_company,industry,city,state
+Sample Lead 01,+91900000001,lead01@example.com,Sample Manufacturing Co,VP of Operations,Manufacturing,Pune,Maharashtra
+Sample Lead 02,+91900000002,lead02@example.com,"Sample Health Corp, Sample Wellness Labs","Board Director (Sample Health Corp), Advisor (Sample Wellness Labs)",Healthcare,Mumbai,Maharashtra
+Sample Lead 03,+91900000003,lead03@example.com,Sample Fintech Solutions,Chief Financial Officer,Financial Services,Bengaluru,Karnataka
+Sample Lead 04,+91900000004,lead04@example.com,Sample Retail Group,Head of Merchandising,Retail,Delhi,Delhi
+Sample Lead 05,+91900000005,lead05@example.com,Sample Logistics Ltd,VP of Supply Chain,Logistics,Chennai,Tamil Nadu
+Sample Lead 06,+91900000006,lead06@example.com,Sample EdTech Inc,Chief Product Officer,Education,Hyderabad,Telangana
+Sample Lead 07,+91900000007,lead07@example.com,"Sample Energy Corp, Sample Renewables","Director of Strategy (Sample Energy Corp), Advisor (Sample Renewables)",Energy,Ahmedabad,Gujarat
+Sample Lead 08,+91900000008,lead08@example.com,Sample Aerospace Systems,VP of Engineering,Aerospace & Defense,Bengaluru,Karnataka
+Sample Lead 09,+91900000009,lead09@example.com,Sample Media Group,Chief Marketing Officer,Media & Entertainment,Mumbai,Maharashtra
+Sample Lead 10,+91900000010,lead10@example.com,Sample AgriTech Ltd,Head of Operations,Agriculture,Nagpur,Maharashtra
+Sample Lead 11,+91900000011,lead11@example.com,Sample Auto Components,VP of Manufacturing,Automotive,Pune,Maharashtra
+Sample Lead 12,+91900000012,lead12@example.com,"Sample Insurance Co, Sample Risk Advisors","Chief Risk Officer (Sample Insurance Co), Board Member (Sample Risk Advisors)",Insurance,Gurugram,Haryana
+Sample Lead 13,+91900000013,lead13@example.com,Sample Cloud Systems,Chief Technology Officer,Information Technology,Bengaluru,Karnataka
+Sample Lead 14,+91900000014,lead14@example.com,Sample Realty Group,VP of Development,Real Estate,Noida,Uttar Pradesh
+Sample Lead 15,+91900000015,lead15@example.com,Sample Textiles Ltd,Head of Exports,Textiles,Surat,Gujarat
+Sample Lead 16,+91900000016,lead16@example.com,Sample Pharma Labs,Director of R&D,Pharmaceuticals,Hyderabad,Telangana
+Sample Lead 17,+91900000017,lead17@example.com,"Sample Steel Works, Sample Metals Trading","VP of Production (Sample Steel Works), Advisor (Sample Metals Trading)",Metals & Mining,Jamshedpur,Jharkhand
+Sample Lead 18,+91900000018,lead18@example.com,Sample Consulting Group,Senior Partner,Consulting,Mumbai,Maharashtra
+Sample Lead 19,+91900000019,lead19@example.com,Sample Beverages Co,Head of Sales,FMCG,Bengaluru,Karnataka
+Sample Lead 20,+91900000020,lead20@example.com,Sample Telecom Ltd,VP of Network Operations,Telecommunications,Chennai,Tamil Nadu
+Sample Lead 21,+91900000021,lead21@example.com,Sample Shipping Corp,Chief Operating Officer,Maritime & Shipping,Kochi,Kerala
+Sample Lead 22,+91900000022,lead22@example.com,"Sample Bank Ltd, Sample Wealth Advisors","Regional Head (Sample Bank Ltd), Board Advisor (Sample Wealth Advisors)",Banking,Kolkata,West Bengal
+Sample Lead 23,+91900000023,lead23@example.com,Sample Chemicals Inc,Plant Head,Chemicals,Vadodara,Gujarat
+Sample Lead 24,+91900000024,lead24@example.com,Sample Hospitality Group,General Manager,Hospitality,Jaipur,Rajasthan
+Sample Lead 25,+91900000025,lead25@example.com,Sample Construction Co,VP of Projects,Construction,Lucknow,Uttar Pradesh
+Sample Lead 26,+91900000026,lead26@example.com,Sample Semiconductor Ltd,Director of Engineering,Semiconductors,Bengaluru,Karnataka
+Sample Lead 27,+91900000027,lead27@example.com,"Sample Law Associates, Sample Legal Advisory","Managing Partner (Sample Law Associates), Counsel (Sample Legal Advisory)",Legal Services,Delhi,Delhi
+Sample Lead 28,+91900000028,lead28@example.com,Sample Sports Ventures,Chief Business Officer,Sports & Recreation,Mumbai,Maharashtra
+Sample Lead 29,+91900000029,lead29@example.com,Sample BioTech Labs,Head of Clinical Research,Biotechnology,Pune,Maharashtra
+Sample Lead 30,+91900000030,lead30@example.com,Sample Defense Systems,VP of Procurement,Aerospace & Defense,Bengaluru,Karnataka

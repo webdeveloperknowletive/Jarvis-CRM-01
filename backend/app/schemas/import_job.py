@@ -47,17 +47,17 @@ class ImportJobOut(BaseModel):
     job_type: str
     file_name: str
     file_type: str
-    total_rows: int
-    processed_rows: int
-    successful_rows: int
-    duplicate_rows: int
-    error_rows: int
-    status: str
+    total_rows: int = 0
+    processed_rows: int = 0
+    successful_rows: int = 0
+    duplicate_rows: int = 0
+    error_rows: int = 0
+    status: str = "PENDING"
     column_mapping: Dict[str, Any] = {}
     error_summary: Dict[str, Any] = {}
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

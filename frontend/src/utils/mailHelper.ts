@@ -25,6 +25,7 @@ export const getGmailUrl = (
   const params = new URLSearchParams();
   params.set("view", "cm");
   params.set("fs", "1");
+  params.set("tf", "cm");
 
   // "To" must strictly be the recipient lead's or company's email
   const cleanTo = (to || "").trim();
@@ -48,6 +49,28 @@ export const getGmailUrl = (
   return `https://mail.google.com/mail/?${params.toString()}`;
 };
 
+export const getMailtoUrl = (
+  to?: string | null,
+  subject?: string,
+  body?: string
+): string => {
+  const cleanTo = (to || "").trim();
+  const params = new URLSearchParams();
+  if (subject) params.set("subject", subject.trim());
+  if (body) params.set("body", body.trim());
+  const queryString = params.toString();
+  return `mailto:${cleanTo}${queryString ? "?" + queryString : ""}`;
+};
+
+export const openMailto = (
+  to?: string | null,
+  subject?: string,
+  body?: string
+): void => {
+  const url = getMailtoUrl(to, subject, body);
+  window.location.href = url;
+};
+
 export const openGmail = (
   to?: string | null,
   subject?: string,
@@ -58,16 +81,19 @@ export const openGmail = (
   return window.open(url, "_blank", "noopener,noreferrer");
 };
 
+import { getWhatsAppDigits } from "./phoneHelper";
+
 export const getWhatsAppUrl = (
   phone?: string | null,
   text?: string
 ): string => {
   if (!phone) return "https://web.whatsapp.com";
-  // Remove non-digit characters except leading plus
-  const cleanDigits = phone.replace(/[^\d]/g, "");
   const params = new URLSearchParams();
-  if (cleanDigits && !phone.includes("*")) {
-    params.set("phone", cleanDigits);
+  if (!phone.includes("*")) {
+    const waDigits = getWhatsAppDigits(phone);
+    if (waDigits) {
+      params.set("phone", waDigits);
+    }
   }
   if (text) {
     params.set("text", text);

@@ -85,7 +85,10 @@ def create_global_person(db: Session, data: GlobalPersonCreate) -> GlobalPersonO
     )
     db.add(person)
     db.commit()
-    db.refresh(person)
+    try:
+        db.refresh(person)
+    except Exception:
+        pass
     return GlobalPersonOut.from_orm(person)
 
 
@@ -134,7 +137,10 @@ def update_global_person(db: Session, person_id: str, data: GlobalPersonUpdate) 
         person.notes = data.notes.strip() if data.notes else None
 
     db.commit()
-    db.refresh(person)
+    try:
+        db.refresh(person)
+    except Exception:
+        pass
     return GlobalPersonOut.from_orm(person)
 
 
@@ -318,6 +324,9 @@ def update_global_person(db: Session, person_id: str, data: GlobalPersonUpdate) 
 
     person.last_updated_at = datetime.now(timezone.utc)
     db.commit()
-    db.refresh(person)
+    try:
+        db.refresh(person)
+    except Exception:
+        pass
     return GlobalPersonOut.from_orm(person)
 

@@ -82,7 +82,38 @@ export const ImportModal: React.FC<ImportModalProps> = ({ jobType = "TENANT_LEAD
         sampleFileName: "company_intelligence_sample_template.csv",
         sampleContent: `company_name,id,cin,registration_number,gst_number,address,city,pincode,state,website,email,company_contact_number,industry
 Tata Advanced Systems Ltd,,U72200MH2015PLC123456,REG-847291,27AAACT1234A1Z1,Plot 42 Hinjewadi Phase 1,Pune,411057,Maharashtra,https://tataadvanced.com,contact@tataadvanced.com,+912012345678,Aerospace & Defense
-Acme Infotech Pvt Ltd,,U72900KA2018PTC987654,REG-109283,29AABCA9876B1Z2,100 Feet Road Indiranagar,Bengaluru,560038,Karnataka,https://acmeinfo.in,info@acmeinfo.in,+918098765432,Information Technology`
+Acme Infotech Pvt Ltd,,U72900KA2018PTC987654,REG-109283,29AABCA9876B1Z2,100 Feet Road Indiranagar,Bengaluru,560038,Karnataka,https://acmeinfo.in,info@acmeinfo.in,+918098765432,Information Technology`,
+        sampleJsonFileName: "company_intelligence_sample_template.json",
+        sampleJsonContent: JSON.stringify([
+          {
+            "company_name": "Tata Advanced Systems Ltd",
+            "cin": "U72200MH2015PLC123456",
+            "registration_number": "REG-847291",
+            "gst_number": "27AAACT1234A1Z1",
+            "address": "Plot 42 Hinjewadi Phase 1",
+            "city": "Pune",
+            "postal_code": "411057",
+            "state": "Maharashtra",
+            "website": "https://tataadvanced.com",
+            "contact_email": "contact@tataadvanced.com",
+            "contact_phone": "+912012345678",
+            "industry": "Aerospace & Defense"
+          },
+          {
+            "company_name": "Acme Infotech Pvt Ltd",
+            "cin": "U72900KA2018PTC987654",
+            "registration_number": "REG-109283",
+            "gst_number": "29AABCA9876B1Z2",
+            "address": "100 Feet Road Indiranagar",
+            "city": "Bengaluru",
+            "postal_code": "560038",
+            "state": "Karnataka",
+            "website": "https://acmeinfo.in",
+            "contact_email": "info@acmeinfo.in",
+            "contact_phone": "+918098765432",
+            "industry": "Information Technology"
+          }
+        ], null, 2)
       };
     }
 
@@ -105,7 +136,30 @@ Acme Infotech Pvt Ltd,,U72900KA2018PTC987654,REG-109283,29AABCA9876B1Z2,100 Feet
         sampleFileName: "people_intelligence_sample_template.csv",
         sampleContent: `name,mobile,email_id,associated_companies,designation_with_each_company,industry,city,state
 Rajesh Sharma,+919876543210,rajesh.sharma@tata.com,Tata Advanced Systems,VP of Supply Chain,Aerospace & Defense,Pune,Maharashtra
-Sunita Verma,+919812345678,sunita.verma@apex.in,"Apex Health, BioPharma Labs","Board Director (Apex Health), Strategic Advisor (BioPharma Labs)",Healthcare,Mumbai,Maharashtra`
+Sunita Verma,+919812345678,sunita.verma@apex.in,"Apex Health, BioPharma Labs","Board Director (Apex Health), Strategic Advisor (BioPharma Labs)",Healthcare,Mumbai,Maharashtra`,
+        sampleJsonFileName: "people_intelligence_sample_template.json",
+        sampleJsonContent: JSON.stringify([
+          {
+            "contact_name": "Rajesh Sharma",
+            "contact_phone": "+919876543210",
+            "contact_email": "rajesh.sharma@tata.com",
+            "associated_companies": "Tata Advanced Systems",
+            "designation": "VP of Supply Chain",
+            "industry": "Aerospace & Defense",
+            "city": "Pune",
+            "state": "Maharashtra"
+          },
+          {
+            "contact_name": "Sunita Verma",
+            "contact_phone": "+919812345678",
+            "contact_email": "sunita.verma@apex.in",
+            "associated_companies": "Apex Health, BioPharma Labs",
+            "designation": "Board Director",
+            "industry": "Healthcare",
+            "city": "Mumbai",
+            "state": "Maharashtra"
+          }
+        ], null, 2)
       };
     }
 
@@ -126,7 +180,28 @@ Sunita Verma,+919812345678,sunita.verma@apex.in,"Apex Health, BioPharma Labs","B
       sampleFileName: "crm_leads_sample_template.csv",
       sampleContent: `contact_name,company_name,designation,contact_email,contact_phone,city,value
 Vikram Mehta,Mehta Logistics Pvt Ltd,Managing Director,vikram@mehtalogistics.in,+919822011223,Pune,500000
-Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+919823344556,Nashik,350000`
+Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+919823344556,Nashik,350000`,
+      sampleJsonFileName: "crm_leads_sample_template.json",
+      sampleJsonContent: JSON.stringify([
+        {
+          "contact_name": "Vikram Mehta",
+          "company_name": "Mehta Logistics Pvt Ltd",
+          "designation": "Managing Director",
+          "contact_email": "vikram@mehtalogistics.in",
+          "contact_phone": "+919822011223",
+          "city": "Pune",
+          "value": 500000
+        },
+        {
+          "contact_name": "Pooja Kulkarni",
+          "company_name": "Kulkarni Engineering",
+          "designation": "Head of Purchasing",
+          "contact_email": "pooja@kulkarnieng.com",
+          "contact_phone": "+919823344556",
+          "city": "Nashik",
+          "value": 350000
+        }
+      ], null, 2)
     };
   };
 
@@ -138,6 +213,17 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", guide.sampleFileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadSampleJson = () => {
+    const blob = new Blob([guide.sampleJsonContent], { type: "application/json;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", guide.sampleJsonFileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -345,16 +431,28 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
                     {guide.title}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleDownloadSample}
-                  className="btn-secondary"
-                  style={{ fontSize: "0.75rem", padding: "4px 10px", gap: "6px" }}
-                  id="download-sample-csv-btn"
-                >
-                  <Download style={{ width: "13px", height: "13px" }} />
-                  Download Sample Template (.CSV)
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={handleDownloadSample}
+                    className="btn-secondary"
+                    style={{ fontSize: "0.75rem", padding: "4px 10px", gap: "6px" }}
+                    id="download-sample-csv-btn"
+                  >
+                    <Download style={{ width: "13px", height: "13px" }} />
+                    Download Sample (.CSV)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDownloadSampleJson}
+                    className="btn-secondary"
+                    style={{ fontSize: "0.75rem", padding: "4px 10px", gap: "6px" }}
+                    id="download-sample-json-btn"
+                  >
+                    <Download style={{ width: "13px", height: "13px" }} />
+                    Download Sample (.JSON)
+                  </button>
+                </div>
               </div>
 
               {/* Required Columns */}

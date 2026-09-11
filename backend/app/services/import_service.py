@@ -7,6 +7,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timezone
 import pandas as pd
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from app.models.import_job import ImportJob, ImportRowError
 from app.models.lead import Lead
@@ -24,21 +25,21 @@ from app.services.contact_service import get_or_create_contact
 ALLOWED_TABULAR_EXTENSIONS = (".csv", ".xls", ".xlsx", ".xlsb", ".xlsm", ".parquet", ".json")
 
 COLUMN_PATTERNS = {
-    "id": [r"^id$", r"company_id", r"uuid", r"unique_id", r"identifier"],
-    "contact_phone": [r"company_contact_number", r"contact_number", r"company_phone", r"phone", r"mobile", r"cell", r"contact_no", r"tel", r"telephone"],
-    "contact_email": [r"company_email", r"contact_email", r"email_id", r"email", r"mail", r"e-mail"],
+    "id": [r"^id$", r"^uuid$", r"^unique_?id$", r"^identifier$"],
+    "contact_phone": [r"company_contact_number", r"contact_?number", r"contactnumber", r"company_phone", r"phone", r"mobile", r"cell", r"contact_?no", r"tel", r"telephone"],
+    "contact_email": [r"company_email", r"contact_?email", r"contactemail", r"email_?id", r"emailid", r"^email$", r"mail", r"e-mail"],
     "associated_companies": [r"associated_companies", r"associated_company", r"companies", r"other_companies", r"affiliations"],
-    "company_name": [r"company_name", r"^company$", r"organization", r"^org$", r"business", r"firm", r"account", r"legal_name"],
-    "contact_name": [r"contact_name", r"contact_person", r"^contact$", r"^person$", r"^name$", r"director", r"decision_maker", r"client", r"full_name"],
-    "cin": [r"^cin$", r"cin_number", r"corporate_id"],
+    "company_name": [r"company_?name", r"companyname", r"^company$", r"organization", r"^org$", r"business", r"firm", r"account_?name", r"legal_?name"],
+    "contact_name": [r"contact_?name", r"contactname", r"contact_?person", r"^contact$", r"^person$", r"^name$", r"director", r"decision_maker", r"client", r"full_?name", r"fullname"],
+    "cin": [r"^cin$", r"cin_number", r"corporate_id", r"^company_?id$", r"^companyid$"],
     "registration_number": [r"registration_number", r"registration_no", r"reg_no", r"reg_num", r"registration"],
-    "gst_number": [r"gst_number", r"gst_no", r"gstin", r"gst"],
+    "gst_number": [r"gst_number", r"gst_no", r"gstin", r"^gst$"],
     "address": [r"address", r"street", r"office_address", r"location_address"],
-    "postal_code": [r"pincode", r"pin_code", r"postal_code", r"zip", r"zipcode", r"postal"],
-    "city": [r"city", r"location", r"town", r"district"],
-    "state": [r"state", r"province"],
+    "postal_code": [r"pincode", r"pin_code", r"postal_code", r"postalcode", r"^zip$", r"zipcode", r"postal"],
+    "city": [r"^city$", r"location", r"town", r"district"],
+    "state": [r"^state$", r"province"],
     "website": [r"website", r"web", r"domain", r"url", r"site"],
-    "designation": [r"designation_with_each_company", r"designation", r"job_title", r"role", r"position"],
+    "designation": [r"designation_with_each_company", r"designation", r"job_?title", r"jobtitle", r"role", r"position"],
     "title": [r"title", r"deal", r"opportunity", r"project"],
     "value": [r"value", r"amount", r"budget", r"revenue", r"deal_size"],
     "industry": [r"industry", r"sector", r"category"],
@@ -56,9 +57,20 @@ def normalize_phone(phone_raw: Any) -> Optional[str]:
     # Remove floating point decimals from Excel like 9876543210.0
     if val.endswith(".0"):
         val = val[:-2]
-    # Remove spaces, parentheses, hyphens
-    val = re.sub(r"[\s\(\)\-\.]", "", val)
-    return val if len(val) >= 6 else None
+    # Remove spaces, parentheses, hyphens, pluses
+    digits = re.sub(r"\D", "", val)
+    if not digits:
+        return None
+    # 12 digits starting with 91 (India country code) -> take last 10 digits
+    if len(digits) == 12 and digits.startswith("91"):
+        return digits[2:]
+    # 11 digits starting with 0 (STD trunk prefix) -> take last 10 digits
+    if len(digits) == 11 and digits.startswith("0"):
+        return digits[1:]
+    # If longer than 10 digits -> take last 10 digits
+    if len(digits) > 10:
+        return digits[-10:]
+    return digits if len(digits) >= 6 else None
 
 
 def normalize_email(email_raw: Any) -> Optional[str]:
@@ -110,14 +122,51 @@ def load_tabular_dataframe(file_path: str, file_type: str, nrows: Optional[int] 
         total_rows = len(full_df)
         df = full_df.head(nrows) if nrows else full_df
     elif clean_type == "JSON" or ext == ".json":
-        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-            raw_data = json.load(f)
+        raw_data = None
+        # 1. Try standard JSON parse
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                raw_data = json.load(f)
+        except Exception:
+            # 2. Fallback to line-delimited JSON (NDJSON/JSONL)
+            try:
+                lines = []
+                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                    for line in f:
+                        line_str = line.strip()
+                        if line_str and line_str.startswith("{") and line_str.endswith("}"):
+                            lines.append(json.loads(line_str))
+                if lines:
+                    raw_data = lines
+            except Exception:
+                pass
+
+        if raw_data is None:
+            raise ValueError(f"Failed to parse JSON file '{os.path.basename(file_path)}'. Please ensure it contains valid JSON objects.")
+
+        # 3. If raw_data is a dictionary, unwrap list of records if nested
         if isinstance(raw_data, dict):
-            for k in ("data", "records", "leads", "companies", "rows", "items"):
-                if k in raw_data and isinstance(raw_data[k], list):
-                    raw_data = raw_data[k]
+            found_list = None
+            for k in ("data", "records", "leads", "companies", "people", "contacts", "results", "rows", "items", "payload"):
+                if k in raw_data and isinstance(raw_data[k], list) and len(raw_data[k]) > 0:
+                    found_list = raw_data[k]
                     break
-        full_df = pd.json_normalize(raw_data) if isinstance(raw_data, list) else pd.DataFrame([raw_data])
+            if found_list is None:
+                for k, v in raw_data.items():
+                    if isinstance(v, list) and len(v) > 0 and isinstance(v[0], dict):
+                        found_list = v
+                        break
+            if found_list is not None:
+                raw_data = found_list
+
+        if isinstance(raw_data, list):
+            # Flatten nested structures cleanly using json_normalize with underscore separator
+            full_df = pd.json_normalize(raw_data, sep="_")
+        elif isinstance(raw_data, dict):
+            full_df = pd.json_normalize([raw_data], sep="_")
+        else:
+            raise ValueError("JSON file must contain an array of objects or an object with a data list.")
+
         total_rows = len(full_df)
         df = full_df.head(nrows) if nrows else full_df
     else:
@@ -137,14 +186,22 @@ def preview_import_file(file_path: str, file_type: str) -> Dict[str, Any]:
 
     sample_rows = df.head(5).fillna("").to_dict(orient="records")
 
-    # Smart column mapping suggestion
+    # Smart column mapping suggestion with camelCase to snake_case normalization
     suggested_mapping = {}
     for header in headers:
         header_lower = header.lower().strip()
+        snake_case = re.sub(r"(?<!^)(?=[A-Z])", "_", header).lower().strip()
         norm_header = re.sub(r"[\s\-]+", "_", header_lower)
+        norm_snake = re.sub(r"[\s\-]+", "_", snake_case)
         matched = False
         for system_field, patterns in COLUMN_PATTERNS.items():
-            if any(re.search(pat, header_lower) or re.search(pat, norm_header) for pat in patterns):
+            if any(
+                re.search(pat, header_lower) or 
+                re.search(pat, norm_header) or 
+                re.search(pat, snake_case) or 
+                re.search(pat, norm_snake) 
+                for pat in patterns
+            ):
                 if system_field not in suggested_mapping.values():
                     suggested_mapping[header] = system_field
                     matched = True
@@ -162,28 +219,76 @@ def preview_import_file(file_path: str, file_type: str) -> Dict[str, Any]:
 
 def execute_import_job(db: Session, job_id: str) -> ImportJob:
     job = db.query(ImportJob).filter(ImportJob.id == job_id).first()
+    if not job and db.bind and db.bind.dialect.name == "postgresql":
+        # Search public schema
+        res = db.execute(text("SELECT organization_id FROM public.import_jobs WHERE id = :jid"), {"jid": job_id}).first()
+        if res:
+            db.execute(text('SET search_path TO public'))
+            job = db.query(ImportJob).filter(ImportJob.id == job_id).first()
+        else:
+            schemas = db.execute(text("SELECT schema_name FROM organizations WHERE schema_name IS NOT NULL")).scalars().all()
+            for s in schemas:
+                res_s = db.execute(text(f'SELECT organization_id FROM "{s}".import_jobs WHERE id = :jid'), {"jid": job_id}).first()
+                if res_s:
+                    db.execute(text(f'SET search_path TO "{s}", public'))
+                    job = db.query(ImportJob).filter(ImportJob.id == job_id).first()
+                    break
+
     if not job:
         raise ValueError(f"Import job {job_id} not found")
 
+    # Read needed job fields into variables before any schema switch or commit
+    file_path = job.file_path
+    file_name = job.file_name
+    file_type = job.file_type.upper()
+    mapping = job.column_mapping or {}
+    job_org_id = job.organization_id
+    target_stage_id = job.target_stage_id
+    uploaded_by = job.uploaded_by
+    target_owner_id = job.target_owner_id
+    job_type = (job.job_type or "").upper()
+
+    # Update status to PROCESSING and expunge BEFORE switching search_path
     job.status = "PROCESSING"
     job.started_at = datetime.now(timezone.utc)
     db.commit()
+    try:
+        db.expunge(job)
+    except Exception:
+        pass
+
+    # Ensure search_path is set to tenant schema for lead/company/contact insertion
+    tenant_schema = None
+    if job_org_id and db.bind and db.bind.dialect.name == "postgresql":
+        from app.models.organization import Organization
+        org = db.query(Organization).filter(Organization.id == job_org_id).first()
+        if org and org.schema_name:
+            tenant_schema = org.schema_name
+            db.execute(text(f'SET search_path TO "{tenant_schema}", public'))
+            try:
+                db.execute(text(f'''
+                    INSERT INTO "{tenant_schema}".import_jobs 
+                    (id, organization_id, uploaded_by, job_type, file_name, file_type, file_path, column_mapping, target_stage_id, target_owner_id, status, total_rows, processed_rows, successful_rows, duplicate_rows, error_rows, created_at, started_at, error_summary)
+                    SELECT id, organization_id, uploaded_by, job_type, file_name, file_type, file_path, column_mapping, target_stage_id, target_owner_id, status, total_rows, processed_rows, successful_rows, duplicate_rows, error_rows, created_at, started_at, COALESCE(error_summary, '{{}}'::json)
+                    FROM public.import_jobs WHERE id = :jid
+                    ON CONFLICT (id) DO UPDATE SET status = 'PROCESSING', started_at = EXCLUDED.started_at
+                '''), {"jid": job_id})
+                db.commit()
+            except Exception:
+                db.rollback()
+    elif db.bind and db.bind.dialect.name == "postgresql":
+        db.execute(text('SET search_path TO public'))
 
     try:
-        file_path = job.file_path
-        file_type = job.file_type.upper()
-        mapping = job.column_mapping or {}
-
-        is_global_companies = (job.job_type or "").upper() in ("GLOBAL_COMPANIES", "GLOBAL_DATABASE")
-        is_global_people = (job.job_type or "").upper() == "GLOBAL_PEOPLE"
+        is_global_companies = job_type in ("GLOBAL_COMPANIES", "GLOBAL_DATABASE")
+        is_global_people = job_type == "GLOBAL_PEOPLE"
         is_global = is_global_companies or is_global_people
         stage = None
         organization_id = None
 
         if not is_global:
             # Resolve Target Pipeline Stage without modifying the pipeline!
-            organization_id = job.organization_id
-            target_stage_id = job.target_stage_id
+            organization_id = job_org_id
             if target_stage_id:
                 stage = get_stage_by_id(db, target_stage_id, organization_id)
             else:
@@ -194,7 +299,17 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
 
         total = len(df)
         job.total_rows = total
-        db.commit()
+        try:
+            if db.bind and db.bind.dialect.name == "postgresql":
+                db.execute(text("UPDATE public.import_jobs SET total_rows = :t WHERE id = :jid"), {"t": total, "jid": job_id})
+                if tenant_schema:
+                    db.execute(text(f'UPDATE "{tenant_schema}".import_jobs SET total_rows = :t WHERE id = :jid'), {"t": total, "jid": job_id})
+                db.commit()
+            else:
+                db.execute(text("UPDATE import_jobs SET total_rows = :t WHERE id = :jid"), {"t": total, "jid": job_id})
+                db.commit()
+        except Exception:
+            pass
 
         # Inversion of mapping: system_field -> csv_column
         reverse_map = {v: k for k, v in mapping.items() if v != "ignore"}
@@ -491,7 +606,7 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                         company_id=company.id if company else None,
                         contact_id=contact.id if contact else None,
                         pipeline_stage_id=stage.id,
-                        owner_id=job.target_owner_id or job.uploaded_by,
+                        owner_id=target_owner_id or uploaded_by,
                         title=final_title,
                         company_name=comp_name or (company.name if company else None),
                         contact_name=cont_name or (contact.full_name if contact else None),
@@ -501,7 +616,7 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                         status="OPEN",
                         priority="MEDIUM",
                         score=60,
-                        created_by=job.uploaded_by
+                        created_by=uploaded_by
                     )
                     db.add(new_lead)
                     db.flush()
@@ -512,8 +627,8 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                         lead_id=new_lead.id,
                         from_stage_id=None,
                         to_stage_id=stage.id,
-                        changed_by=job.uploaded_by,
-                        reason=f"Batch Import: {job.file_name}",
+                        changed_by=uploaded_by,
+                        reason=f"Batch Import: {file_name}",
                         duration_seconds=0
                     )
                     db.add(history)
@@ -521,17 +636,23 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
 
                 # Periodic commit every 250 rows for safety & memory control
                 if row_num % 250 == 0:
-                    job.processed_rows = row_num
-                    job.successful_rows = successful
-                    job.duplicate_rows = duplicates
-                    job.error_rows = errors
                     db.commit()
+                    try:
+                        if db.bind and db.bind.dialect.name == "postgresql":
+                            db.execute(text("UPDATE public.import_jobs SET processed_rows = :p, successful_rows = :s, duplicate_rows = :d, error_rows = :e WHERE id = :jid"),
+                                {"p": row_num, "s": successful, "d": duplicates, "e": errors, "jid": job_id})
+                            if tenant_schema:
+                                db.execute(text(f'UPDATE "{tenant_schema}".import_jobs SET processed_rows = :p, successful_rows = :s, duplicate_rows = :d, error_rows = :e WHERE id = :jid'),
+                                    {"p": row_num, "s": successful, "d": duplicates, "e": errors, "jid": job_id})
+                            db.commit()
+                    except Exception:
+                        db.rollback()
 
             except Exception as row_exc:
                 db.rollback()
                 errors += 1
                 error = ImportRowError(
-                    job_id=job.id,
+                    job_id=job_id,
                     row_number=row_num,
                     raw_data=raw_dict,
                     error_code="ROW_PROCESSING_ERROR",
@@ -540,28 +661,120 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                 db.add(error)
                 db.commit()
 
-        job.processed_rows = total
-        job.successful_rows = successful
-        job.duplicate_rows = duplicates
-        job.error_rows = errors
-        job.status = "COMPLETED" if errors == 0 else "PARTIAL"
-        job.completed_at = datetime.now(timezone.utc)
-        job.error_summary = {
+        completed_time = datetime.now(timezone.utc)
+        error_summary_dict = {
             "total_rows": total,
             "successful_rows": successful,
             "duplicate_rows": duplicates,
             "error_rows": errors,
             "completion_rate": f"{(successful / total * 100):.1f}%" if total > 0 else "0%"
         }
-        db.commit()
-        db.refresh(job)
+        final_status = "COMPLETED" if errors == 0 else "PARTIAL"
+
+        # Update in DB safely via SQL
+        if db.bind and db.bind.dialect.name == "postgresql":
+            try:
+                db.execute(text("""
+                    UPDATE public.import_jobs
+                    SET status = :status, processed_rows = :processed, successful_rows = :successful,
+                        duplicate_rows = :duplicates, error_rows = :errors, completed_at = :completed,
+                        error_summary = :summary
+                    WHERE id = :jid
+                """), {
+                    "status": final_status,
+                    "processed": total,
+                    "successful": successful,
+                    "duplicates": duplicates,
+                    "errors": errors,
+                    "completed": completed_time,
+                    "summary": json.dumps(error_summary_dict),
+                    "jid": job_id
+                })
+                db.commit()
+            except Exception:
+                db.rollback()
+
+            if tenant_schema:
+                try:
+                    db.execute(text(f"""
+                        UPDATE "{tenant_schema}".import_jobs
+                        SET status = :status, processed_rows = :processed, successful_rows = :successful,
+                            duplicate_rows = :duplicates, error_rows = :errors, completed_at = :completed,
+                            error_summary = :summary
+                        WHERE id = :jid
+                    """), {
+                        "status": final_status,
+                        "processed": total,
+                        "successful": successful,
+                        "duplicates": duplicates,
+                        "errors": errors,
+                        "completed": completed_time,
+                        "summary": json.dumps(error_summary_dict),
+                        "jid": job_id
+                    })
+                    db.commit()
+                except Exception:
+                    db.rollback()
+        else:
+            try:
+                db.execute(text("""
+                    UPDATE import_jobs
+                    SET status = :status, processed_rows = :processed, successful_rows = :successful,
+                        duplicate_rows = :duplicates, error_rows = :errors, completed_at = :completed,
+                        error_summary = :summary
+                    WHERE id = :jid
+                """), {
+                    "status": final_status,
+                    "processed": total,
+                    "successful": successful,
+                    "duplicates": duplicates,
+                    "errors": errors,
+                    "completed": completed_time,
+                    "summary": json.dumps(error_summary_dict),
+                    "jid": job_id
+                })
+                db.commit()
+            except Exception:
+                db.rollback()
+
+        # Update in-memory job if not detached
+        try:
+            job.processed_rows = total
+            job.successful_rows = successful
+            job.duplicate_rows = duplicates
+            job.error_rows = errors
+            job.status = final_status
+            job.completed_at = completed_time
+            job.error_summary = error_summary_dict
+        except Exception:
+            pass
+
         return job
 
     except Exception as exc:
         db.rollback()
-        job.status = "FAILED"
-        job.completed_at = datetime.now(timezone.utc)
-        job.error_summary = {"fatal_error": str(exc)}
-        db.commit()
-        db.refresh(job)
+        completed_time = datetime.now(timezone.utc)
+        error_summary = {"fatal_error": str(exc)}
+        try:
+            job.status = "FAILED"
+            job.completed_at = completed_time
+            job.error_summary = error_summary
+        except Exception:
+            pass
+
+        try:
+            if db.bind and db.bind.dialect.name == "postgresql":
+                db.execute(text("UPDATE public.import_jobs SET status = 'FAILED', completed_at = :c, error_summary = :s WHERE id = :jid"),
+                    {"c": completed_time, "s": json.dumps(error_summary), "jid": job_id})
+                db.commit()
+                if tenant_schema:
+                    db.execute(text(f'UPDATE "{tenant_schema}".import_jobs SET status = \'FAILED\', completed_at = :c, error_summary = :s WHERE id = :jid'),
+                        {"c": completed_time, "s": json.dumps(error_summary), "jid": job_id})
+                    db.commit()
+            else:
+                db.execute(text("UPDATE import_jobs SET status = 'FAILED', completed_at = :c, error_summary = :s WHERE id = :jid"),
+                    {"c": completed_time, "s": json.dumps(error_summary), "jid": job_id})
+                db.commit()
+        except Exception:
+            db.rollback()
         return job

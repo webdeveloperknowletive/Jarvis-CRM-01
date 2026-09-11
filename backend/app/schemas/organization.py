@@ -41,6 +41,7 @@ class OrganizationOut(BaseModel):
     id: str
     name: str
     slug: str
+    schema_name: Optional[str] = None
     status: str
     timezone: str
     currency: str

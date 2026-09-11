@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { api, GlobalPerson, AssociatedCompany } from "../services/api";
 import { UserCheck, X, Check, AlertCircle, Plus, Trash2 } from "lucide-react";
+import { cleanPhoneInput, format10DigitPhone } from "../utils/phoneHelper";
 
 interface EditPersonModalProps {
   person: any | null;
@@ -39,7 +40,7 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
     if (person) {
       setFullName(person.full_name || "");
       setEmail(person.email || "");
-      setPhone(person.phone || "");
+      setPhone(format10DigitPhone(person.phone) || "");
       setDesignation(person.designation || "");
       setCompanyName(person.company_name || "");
       setSeniority(person.seniority || "C-Level");
@@ -379,9 +380,10 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
                 </label>
                 <input
                   type="tel"
+                  maxLength={10}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="e.g. +91 98200 55667"
+                  onChange={(e) => setPhone(cleanPhoneInput(e.target.value))}
+                  placeholder="e.g. 9820055667 (10 digits)"
                   className="input-text"
                   style={{ width: "100%" }}
                   id="edit-person-phone"

@@ -1,0 +1,3002 @@
+[
+  {
+    "id": "mtvgnn7ri7cqk",
+    "companyName": "IMPEX PVT LTD",
+    "companyId": "U51900WB1953PTC009794",
+    "address": "11/1 AKHIL MITRA LANE , KOLKATA, West Bengal, India - 000000 KOLKATA West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgnn7tib7c8",
+    "companyName": "NANDAN IMPEX PVT LTD",
+    "companyId": "U24100MH1986PTC039670",
+    "address": "C-201, Lotus Corporate Park, Ram Mandir Lane, Jay Coach Junction, W.E. Highway, Gorega on (East), , Mumbai, Maharashtra, India - 400063 Mumbai Maharashtra 400063 India"
+  },
+  {
+    "id": "mtvgnn7v4im8a",
+    "companyName": "PVR IMPEX PVT. LTD.",
+    "companyId": "U23201DL2001PTC111448",
+    "address": "A-1/909, D-MALL, NETAJI SUBHASH PLACE, PITAMPURA , DELHI, Delhi, India - 110034 DELHI Delhi 110034 India"
+  },
+  {
+    "id": "mtvgnn7xaxspl",
+    "companyName": "GALAXY IMPEX PVT LTD",
+    "companyId": "U19129WB1988PTC044867",
+    "address": "17C S.N.ROY ROAD , KOLKATA, West Bengal, India - 700038 KOLKATA West Bengal 700038 India"
+  },
+  {
+    "id": "mtvgnn7z4gvq2",
+    "companyName": "SAMANTA IMPEX PVT LTD",
+    "companyId": "U19129WB1989PTC047213",
+    "address": "17 A MAHAVIRBAN RD , KOLKATA, West Bengal, India - 700029 KOLKATA West Bengal 700029 India"
+  },
+  {
+    "id": "mtvgnn81p1694",
+    "companyName": "SUNIL IMPEX PVT. LTD.",
+    "companyId": "U19129WB1993PTC059893",
+    "address": "1/4 C KHAGENDRA CHATTERJEE ROAD SHED NO 6A, 1ST FLOOR , KOLKATA, West Bengal, India - 700002 KOLKATA West Bengal 700002 India"
+  },
+  {
+    "id": "mtvgnn840qw3v",
+    "companyName": "DUNSTAN IMPEX PVT LTD",
+    "companyId": "U19129WB1994PTC063464",
+    "address": "4 JAGMOHAN MULLICK LANE P S BURRA BAZAR , KOLKATA, West Bengal, India - 700007 KOLKATA West Bengal 700007 India"
+  },
+  {
+    "id": "mtvgnn863ovbz",
+    "companyName": "GONGOTRI IMPEX PVT. LTD.",
+    "companyId": "U19129WB1994PTC063466",
+    "address": "32D SHIVAM CHAMBERS46E RAFI AHEMED KIDWAI ROAD , KOLKATA, West Bengal, India - 700016 KOLKATA West Bengal 700016 India"
+  },
+  {
+    "id": "mtvgnn88ej78y",
+    "companyName": "HEMKUNT IMPEX PVT LTD",
+    "companyId": "U19129WB1995PTC068807",
+    "address": "24 HEMANT BASU SARANI , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgnn8b59xsg",
+    "companyName": "SHEEN IMPEX PVT. LTD.",
+    "companyId": "U19201WB1993PTC059617",
+    "address": "35/7 TOPSIA ROAD , KOLKATA, West Bengal, India - 700039 KOLKATA West Bengal 700039 India"
+  },
+  {
+    "id": "mtvgnn8e4qj0t",
+    "companyName": "VINAYAK IMPEX PVT LTD",
+    "companyId": "U15900MH1985PTC036715",
+    "address": "C-90 SANJAY -5 MITTAL INDLESTATE ANDHERI E , MUMBAI, Maharashtra, India - 400059 MUMBAI Maharashtra 400059 India"
+  },
+  {
+    "id": "mtvgnn8h4wr0v",
+    "companyName": "HYDERABAD IMPEX PVT LTD,",
+    "companyId": "U18209TG1994PTC017855",
+    "address": "141/12, DURGA BHAVANR.P. ROAD SECUNDERABAD , SECUNDERABAD, Telangana, India - 500003 SECUNDERABAD Telangana 500003 India"
+  },
+  {
+    "id": "mtvgnn8me7wxd",
+    "companyName": "MONGA IMPEX PVT LTD",
+    "companyId": "U19129DL1999PTC101832",
+    "address": "HOUSE NO. 69, GROUND FLOOR, BLOCK-A NARAINA INDUSTRIAL AREA, PHASE -1 , NEW DELHI, Delhi, India - 110028 NEW DELHI Delhi 110028 India"
+  },
+  {
+    "id": "mtvgnn8pvwzed",
+    "companyName": "MONPORTE IMPEX PVT LTD",
+    "companyId": "U19129PB1989PTC009660",
+    "address": "D 379BHAI RANDHIR SINGH NAGAR LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgnn8swpz21",
+    "companyName": "SALACCIA IMPEX PVT LTD",
+    "companyId": "U21012MP1995PTC010285",
+    "address": "S.N.1, PROFESSOR COLONY, , BHOPAL,, Madhya Pradesh, India - 000000 BHOPAL, Madhya Pradesh 000000 India"
+  },
+  {
+    "id": "mtvgnn8tdztyc",
+    "companyName": "JAGUR IMPEX PVT LTD",
+    "companyId": "U28932PB1993PTC013749",
+    "address": "B-4,FRIENDS INDUSTRIAL COLONYSHERPUR LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgnn8vcrng5",
+    "companyName": "ARD IMPEX PVT LTD",
+    "companyId": "U29219TG1992PTC015039",
+    "address": "304,KALA MANSION,S.D.ROADSECUNDERABAD , NA, Telangana, India - 000000 NA Telangana 000000 India"
+  },
+  {
+    "id": "mtvgnn8wd2jwh",
+    "companyName": "GAJRAJ IMPEX PVT. LTD.",
+    "companyId": "U29219WB1991PTC051155",
+    "address": "89 KHANGRA PATTY , KOLKATA, West Bengal, India - 700007 KOLKATA West Bengal 700007 India"
+  },
+  {
+    "id": "mtvgnn8xc23ve",
+    "companyName": "KINGS IMPEX PVT LTD",
+    "companyId": "U29100MH1983PTC030834",
+    "address": "306 JOLLY BHAVAN NO 13RD FLR 10 NEW MARINE LINES , MUMBAI, Maharashtra, India - 400020 MUMBAI Maharashtra 400020 India"
+  },
+  {
+    "id": "mtvgnn8z8g2uo",
+    "companyName": "SUNCITY IMPEX PVT. LTD.",
+    "companyId": "U29111JH1991PTC009342",
+    "address": "Unit No.7, 2nd. Floor, Sri Ram Gardens, Kanke Road, , Ranchi, Jharkhand, India - 834008 Ranchi Jharkhand 834008 India"
+  },
+  {
+    "id": "mtvgnwyn6o6ag",
+    "companyName": "BOND IMPEX PVT LTD",
+    "companyId": "U29120WB1987PTC042225",
+    "address": "DEBAGRAM , NADIA, West Bengal, India - 000000 NADIA West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgnwyqyqvux",
+    "companyName": "AMUSAR IMPEX PVT LTD",
+    "companyId": "U28991WB1991PTC053901",
+    "address": "1 COCK BURN LANE4TH FLOOR , KOLKATA, West Bengal, India - 700016 KOLKATA West Bengal 700016 India"
+  },
+  {
+    "id": "mtvgnwyssp388",
+    "companyName": "PRAKRIT IMPEX PVT LTD",
+    "companyId": "U25209WB2006PTC109994",
+    "address": "155 CHITTARANJAN AVE , KOLKATA, West Bengal, India - 700007 KOLKATA West Bengal 700007 India"
+  },
+  {
+    "id": "mtvgnwyue3ie0",
+    "companyName": "BHUBANESWARI IMPEX PVT LTD",
+    "companyId": "U25919WB1996PTC078671",
+    "address": "KASBA INDUSTRIAL ESTATE PHASE-III,S-13 KOL-78 P.S.KASBA , NA, West Bengal, India - 000000 NA West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgnwyw87ndr",
+    "companyName": "SHETH IMPEX PVT LTD.",
+    "companyId": "U26960WB1992PTC054458",
+    "address": "12 POLLOCK STREET 2ND FLOOR , Kolkata, West Bengal, India - 700001 Kolkata West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgnwyzzyi7q",
+    "companyName": "ANJANI IMPEX PVT LTD",
+    "companyId": "U27310WB1988PTC045080",
+    "address": "50B MUKTARAM BABU STREET , KOLKATA, West Bengal, India - 700007 KOLKATA West Bengal 700007 India"
+  },
+  {
+    "id": "mtvgnwz1rt3eo",
+    "companyName": "BEZEL IMPEX PVT LTD",
+    "companyId": "U27109DL1999PTC100560",
+    "address": "54-A, JD-BLOCK PITAMPURA , DELHI, Delhi, India - 110088 DELHI Delhi 110088 India"
+  },
+  {
+    "id": "mtvgnwz45tx9h",
+    "companyName": "KEMI IMPEX PVT LTD",
+    "companyId": "U27109GJ1995PTC026810",
+    "address": "A-406, 4TH FLOOR, MILLENIUM PLAZA JUDGES BUNGALOW ROAD, VASTRAPUR , AHMEDABAD, Gujarat, India - 380015 AHMEDABAD Gujarat 380015 India"
+  },
+  {
+    "id": "mtvgnwz6bpjyb",
+    "companyName": "FARINNI IMPEX PVT LTD",
+    "companyId": "U27109WB1993PTC057717",
+    "address": "37 SHAKESPEARE SARANI , KOLKATA, West Bengal, India - 700017 KOLKATA West Bengal 700017 India"
+  },
+  {
+    "id": "mtvgnwz80rln1",
+    "companyName": "ALPRO IMPEX PVT. LTD.",
+    "companyId": "U27109WB1994PTC061935",
+    "address": "15 INDIA EXCHANGE PLACE , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgnwzi2oo4t",
+    "companyName": "SHIVANGI IMPEX PVT.LTD.",
+    "companyId": "U27202UP1995PTC017831",
+    "address": "100/1, JAGANNATHPURI,MATHURA , MATHURA, Uttar Pradesh, India - 000000 MATHURA Uttar Pradesh 000000 India"
+  },
+  {
+    "id": "mtvgnwznps3xx",
+    "companyName": "LMP IMPEX PVT LTD",
+    "companyId": "U24299GJ1972PTC002131",
+    "address": "MAGAN WADI SAVAJIGANJ , BARODA, Gujarat, India - 000000 BARODA Gujarat 000000 India"
+  },
+  {
+    "id": "mtvgnwzryr54v",
+    "companyName": "BIHANI IMPEX PVT LTD",
+    "companyId": "U24114WB1987PTC041709",
+    "address": "12/1/A, NORTH STATION ROAD AGARPARA , KOLKATA, West Bengal, India - 700109 KOLKATA West Bengal 700109 India"
+  },
+  {
+    "id": "mtvgnwzvqzryz",
+    "companyName": "AURO IMPEX PVT LTD",
+    "companyId": "U24121WB1975PTC030090",
+    "address": "RNM HOUSE, 3B LAL BAZAR STREET 4TH FLOOR , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgnwzz4inf3",
+    "companyName": "KELVIN IMPEX PVT. LTD.",
+    "companyId": "U24139WB1992PTC055167",
+    "address": "84, BENTICK STREET, IST FLOOR, , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgnx0avo6m0",
+    "companyName": "LAMBODAR IMPEX PVT. LTD.",
+    "companyId": "U24222WB1994PTC063803",
+    "address": "6 RAGHUNANDAN LANE1ST FLOOR P S JORABAGAN , KOKATA, West Bengal, India - 700006 KOKATA West Bengal 700006 India"
+  },
+  {
+    "id": "mtvgnx0ejjjd3",
+    "companyName": "GINI IMPEX PVT. LTD.",
+    "companyId": "U24231GJ1989PTC012676",
+    "address": "203, B. JADAV CHAMBERS, ASM RDAHMEDABAD , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtvgnx0hqkm9i",
+    "companyName": "AMBIK IMPEX PVT. LTD.",
+    "companyId": "U24231GJ1991PTC015857",
+    "address": "VIKRAM HOUSE, 142,SARDAR PATELCOLONY, NARANPURA AHMEDABAD. , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtvgnx0kpozq1",
+    "companyName": "PUSHAKI IMPEX PVT LTD",
+    "companyId": "U24231GJ1992PTC017162",
+    "address": "12-MILL OFFICER COLONY ASHRAMROAD , AHMEDABAD, Gujarat, India - 380009 AHMEDABAD Gujarat 380009 India"
+  },
+  {
+    "id": "mtvgnx0nzn3kq",
+    "companyName": "KESARIAAJI IMPEX PVT. LTD.",
+    "companyId": "U24231TN1989PTC018095",
+    "address": "NO.79,NEW AVADI ROAD,KILPAUK, CHENNAI-600 010. , KILPAUK, CHENNAI-600 010., Tamil Nadu, India - 000000 KILPAUK, CHENNAI-600 010. Tamil Nadu 000000 India"
+  },
+  {
+    "id": "mtvgpodgi9dci",
+    "companyName": "ELASTOCHEMIE IMPEX PVT LTD",
+    "companyId": "U25110MH1989PTC052081",
+    "address": "401, Kamla Hub, N. S. Road No. 1, JVPD Scheme , Vile Parle, Maharashtra, India - 400049 Vile Parle Maharashtra 400049 India"
+  },
+  {
+    "id": "mtvgpodlkfgts",
+    "companyName": "BHATIA IMPEX PVT LTD",
+    "companyId": "U25111DL1999PTC100454",
+    "address": "A-7, LOK VIHAR PITAMPURA , DELHI, Delhi, India - 110034 DELHI Delhi 110034 India"
+  },
+  {
+    "id": "mtvgpodo15onh",
+    "companyName": "PUNJAB IMPEX PVT LTD",
+    "companyId": "U25111PB1985PTC006469",
+    "address": "CHANDIGARH AMBALA ROADS DERABASSI DISTT PATIALA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgpodr7mch1",
+    "companyName": "MAGNA IMPEX PVT LTD",
+    "companyId": "U25193HR2001PTC075771",
+    "address": "Plot No. 60, Sub. Div. 15, (Metal Box) Industrial Area, N.I.T., , Faridabad, Haryana, India - 121001 Faridabad Haryana 121006 India"
+  },
+  {
+    "id": "mtvgpodusiw8m",
+    "companyName": "DSR IMPEX PVT.LTD.",
+    "companyId": "U25199WB1995PTC071791",
+    "address": "2, LAL BAZAAR STREET 1ST FLOOR , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgpodyq9ike",
+    "companyName": "STITCHMAN IMPEX PVT LTD",
+    "companyId": "U25209GJ1995PTC026406",
+    "address": "501 SARAP OPP NAVJIVAN PRESSB/H GUJARAT VIDYAPITH , AHMEDABAD, Gujarat, India - 380014 AHMEDABAD Gujarat 380014 India"
+  },
+  {
+    "id": "mtvgpoe1zqzdz",
+    "companyName": "DAYASHANKAR IMPEX PVT. LTD.",
+    "companyId": "U51109CT2006PTC018416",
+    "address": "PLOT NO. C-21SECTOR -4 DEVENDRA NAGAR , RAIPUR, Chattisgarh, India - 492001 RAIPUR Chattisgarh 492001 India"
+  },
+  {
+    "id": "mtvgpoe4pcntg",
+    "companyName": "SAMPURN IMPEX PVT LTD",
+    "companyId": "U51909CT1993PTC001661",
+    "address": "Khasra No. 44/115, SBI Colony, Mohaba Bazar Heerapur Road, Tatibandh , Raipur, Chattisgarh, India - 492099 Raipur Chattisgarh 492099 India"
+  },
+  {
+    "id": "mtvgpoe7liw53",
+    "companyName": "SIMS IMPEX PVT. LTD",
+    "companyId": "U05001TN1992PTC023235",
+    "address": "5-A,VIDYODAYA MAIN ROAD,T.NAGAR, MADRAS-600017 , MADRAS-600017, Tamil Nadu, India - 600017 MADRAS-600017 Tamil Nadu 600017 India"
+  },
+  {
+    "id": "mtvgpoeb3v0im",
+    "companyName": "JFIL IMPEX PVT LTD.",
+    "companyId": "U05005WB1988PTC045649",
+    "address": "CENTRAL PLAZA 3RD FLOORBLOCK 8 2/6 SARAT BOSE ROAD , KOLKATA, West Bengal, India - 000000 KOLKATA West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgpoeedy6tg",
+    "companyName": "TOWER IMPEX PVT LTD",
+    "companyId": "U05122MP1993PTC007871",
+    "address": "MP. , INDORE M.P., Madhya Pradesh, India - 000000 INDORE M.P. Madhya Pradesh 000000 India"
+  },
+  {
+    "id": "mtvgpoeegurej",
+    "companyName": "GAJANAND IMPEX PVT LTD",
+    "companyId": "U14101WB1996PTC080584",
+    "address": "4, Fairlie Place, Mazzanine Floor, Room No. M-32, , Kolkata, West Bengal, India - 700001 Kolkata West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgpoef5sydv",
+    "companyName": "PRANAV IMPEX PVT LTD",
+    "companyId": "U15140MH1991PTC059711",
+    "address": "18, 3rd Floor, Jay Mahal, A Road, Churchgate, , Mumbai, Maharashtra, India - 400020 Mumbai Maharashtra 400020 India"
+  },
+  {
+    "id": "mtvgpoeg9dqha",
+    "companyName": "VISHWAKRISHNA IMPEX PVT. LTD.",
+    "companyId": "U15209TG1992PTC014634",
+    "address": "H.NO. 3-10-4/1, GOKHALE NAGAR,RAMANTHAPUR HYDERABAD. , NA, Telangana, India - 000000 NA Telangana 000000 India"
+  },
+  {
+    "id": "mtvgpoegcz7xb",
+    "companyName": "UBEROI IMPEX PVT LTD.",
+    "companyId": "U05110CT2005PTC018162",
+    "address": "12 SHAKUNTALA COMPLEXNARMADA PARA GUDHIARI ROAD , RAIPUR, Chattisgarh, India - 492001 RAIPUR Chattisgarh 492001 India"
+  },
+  {
+    "id": "mtvgpoeh9gea0",
+    "companyName": "MARIGOLD IMPEX PVT LTD",
+    "companyId": "U17297WB1985PTC039740",
+    "address": "133 CANNING STREET 1ST FLOOR , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgpoeik86zk",
+    "companyName": "ARB IMPEX PVT. LTD.",
+    "companyId": "U17299DL2006PTC152357",
+    "address": "S-192, PANCHSHEEL PARK, , DELHI, Delhi, India - 110017 DELHI Delhi 110017 India"
+  },
+  {
+    "id": "mtvgpoej8bfut",
+    "companyName": "HARSH IMPEX PVT LTD",
+    "companyId": "U17299WB1985PTC038796",
+    "address": "23/24, RADHA BAZAR STREET, , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgpoejgfcao",
+    "companyName": "ARWIN IMPEX PVT LTD.",
+    "companyId": "U17299WB1992PTC053984",
+    "address": "70LAKE AVENUE , KOLKATA, West Bengal, India - 700029 KOLKATA West Bengal 700029 India"
+  },
+  {
+    "id": "mtvgpoeku387m",
+    "companyName": "FRAGNANCE IMPEX PVT.LTD.",
+    "companyId": "U15491WB1995PTC072557",
+    "address": "11A ROWDON STREET 3RD FLOORROWDON CHAMBER , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgpz0cw0afy",
+    "companyName": "NARANG IMPEX PVT LTD",
+    "companyId": "U15495PB1986PTC006851",
+    "address": "ANAJ MANDIMUKERIAN HOSHIARPUR , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgpz0d5albl",
+    "companyName": "RITZ IMPEX PVT.LTD.",
+    "companyId": "U17124TN1990PTC019617",
+    "address": "75, 12TH AVENUE ASHOK NAGARCHENNAI 83 , CHENNAI 83, Tamil Nadu, India - 000000 CHENNAI 83 Tamil Nadu 000000 India"
+  },
+  {
+    "id": "mtvgpz0fdg8hm",
+    "companyName": "RIDHIYAM IMPEX PVT LTD",
+    "companyId": "U17125WB1996PTC080386",
+    "address": "6 J L NEHRU RD , KOLKATA, West Bengal, India - 700013 KOLKATA West Bengal 700013 India"
+  },
+  {
+    "id": "mtvgpz0g7jvqq",
+    "companyName": "MANSINGHKA IMPEX PVT LTD",
+    "companyId": "U17142WB1981PTC034175",
+    "address": "P 36 INDIA EXCHANGE PLACEROOM NO48 C , KOL, West Bengal, India - 700001 KOL West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgpz0jvkias",
+    "companyName": "COASMOS IMPEX PVT.LTD.",
+    "companyId": "U17221TN1990PTC019400",
+    "address": "18, 2ND FLOOR, MALAJEE COMPLEX, 1 WALLERS LANE MOUNT ROAD, MADRAS-2. , MADRAS-2., Tamil Nadu, India - 000000 MADRAS-2. Tamil Nadu 000000 India"
+  },
+  {
+    "id": "mtvgpz0kvgxyz",
+    "companyName": "ACUS IMPEX PVT. LTD.",
+    "companyId": "U17212DL2001PTC111011",
+    "address": "53 A RAMA ROADINDUSTRIAL AREA NAJAFGARH ROAD , NEW DELHI, Delhi, India - 110015 NEW DELHI Delhi 110015 India"
+  },
+  {
+    "id": "mtvgpz0m43lz5",
+    "companyName": "KOSHI IMPEX PVT. LTD.",
+    "companyId": "U17219WB1990PTC050055",
+    "address": "31 SHSIBTOLLA STREET , KOLKATA, West Bengal, India - 700007 KOLKATA West Bengal 700007 India"
+  },
+  {
+    "id": "mtvgpz0ns8hdy",
+    "companyName": "NOPANY IMPEX PVT.LTD.",
+    "companyId": "U17219WB1995PTC075500",
+    "address": "37/A CHAULPATTY ROAD , KOLKATA, West Bengal, India - 700010 KOLKATA West Bengal 700010 India"
+  },
+  {
+    "id": "mtvgpz0porgg6",
+    "companyName": "GREATMAX IMPEX PVT LTD",
+    "companyId": "U17232WB1990PTC048630",
+    "address": "58 S K DEB ROAD , KOLKATA, West Bengal, India - 700048 KOLKATA West Bengal 700048 India"
+  },
+  {
+    "id": "mtvgpz0r98d3k",
+    "companyName": "TUSCON IMPEX PVT. LTD.",
+    "companyId": "U17232WB1990PTC048631",
+    "address": "19 R N MUKHERJEE ROAD , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgpz0s1s2sh",
+    "companyName": "LODHA IMPEX PVT LTD",
+    "companyId": "U18101MP1995PTC009108",
+    "address": "59/2, M.T. CLOTH MARKET IIndFLOOR, VIDHYALAYA BHAWAN , INDORE, Madhya Pradesh, India - 452001 INDORE Madhya Pradesh 452001 India"
+  },
+  {
+    "id": "mtvgpz0uzsg2f",
+    "companyName": "FOUNTAINHEAD IMPEX PVT. LTD",
+    "companyId": "U18101RJ1994PTC008300",
+    "address": "6/235,SFS AGARWAL FARM, MANSAROVAR, , JAIPUR, Rajasthan, India - 000000 JAIPUR Rajasthan 000000 India"
+  },
+  {
+    "id": "mtvgpz0wt9jhz",
+    "companyName": "SANCHIT IMPEX PVT LTD",
+    "companyId": "U18101RJ1996PTC012150",
+    "address": "B-40-A, GANESH MARG,BAPU NAGAR, JAIPUR , JAIPUR, Rajasthan, India - 000000 JAIPUR Rajasthan 000000 India"
+  },
+  {
+    "id": "mtvgpz0zo7ig8",
+    "companyName": "BADGES IMPEX PVT.LTD.",
+    "companyId": "U18101TN1990PTC019430",
+    "address": "49, I MAIN ROAD, INDIRA NAGAR,MADRAS-20. , MADRAS-20., Tamil Nadu, India - 000000 MADRAS-20. Tamil Nadu 000000 India"
+  },
+  {
+    "id": "mtvgpz11urzp7",
+    "companyName": "ACE IMPEX PVT LTD",
+    "companyId": "U18101WB1993PTC059458",
+    "address": "Todi Mansion, 9th Floor 1, Lu-Shun Sarani , Kolkata, West Bengal, India - 700073 Kolkata West Bengal 700073 India"
+  },
+  {
+    "id": "mtvgpz18mcizl",
+    "companyName": "RNR IMPEX PVT. LTD.",
+    "companyId": "U18101WB1994PTC061359",
+    "address": "SARADA COMPLEX 84 AGAR SARANIRAJPUR , 24 PGS, West Bengal, India - 000000 24 PGS West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgpz1au7l0s",
+    "companyName": "ADITYA IMPEX PVT.LTD.",
+    "companyId": "U18101WB1996PTC080151",
+    "address": "329 CANAL ST4TH FLOOR , KOLKATA, West Bengal, India - 700048 KOLKATA West Bengal 700048 India"
+  },
+  {
+    "id": "mtvgpz1d73dcu",
+    "companyName": "SIEGER IMPEX PVT LTD",
+    "companyId": "U18104TN1991PTC020272",
+    "address": "7-A, E K GURU STREET PERIAMETMADRAS , MADRAS, Tamil Nadu, India - 000000 MADRAS Tamil Nadu 000000 India"
+  },
+  {
+    "id": "mtvgpz1gkm8lt",
+    "companyName": "IMPETUS IMPEX PVT LTD",
+    "companyId": "U18109DL1996PTC080437",
+    "address": "B-7/101 101SAFDURJUNG ENCLAVE EXTENSION , NEW DELHI, Delhi, India - 110029 NEW DELHI Delhi 110029 India"
+  },
+  {
+    "id": "mtvgpz1iacg64",
+    "companyName": "SYNDICATE IMPEX PVT LTD",
+    "companyId": "U18109GJ1991PTC015641",
+    "address": "43/RANKODA MKT. PANKORNAKAAHMEDABAD , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtvgq8trqfowu",
+    "companyName": "ORACLE IMPEX PVT. LTD.",
+    "companyId": "U18101DL1999PTC101517",
+    "address": "C-17 GURU NANAK PURA,SHAKARPUR, , DELHI 92., Delhi, India - 000000 DELHI 92. Delhi 000000 India"
+  },
+  {
+    "id": "mtvgq8tvuxkxy",
+    "companyName": "DCP IMPEX PVT LTD",
+    "companyId": "U18101DL1999PTC101451",
+    "address": "6191/I BLOCK NO 1DEV NAGAR KAROL BAGH , NEWDELHI, Delhi, India - 110005 NEWDELHI Delhi 110005 India"
+  },
+  {
+    "id": "mtvgq8txrzzay",
+    "companyName": "MIRACLE IMPEX PVT LTD",
+    "companyId": "U18101DL1999PTC101542",
+    "address": "205 G 29I J COMPLEX LAXMI NAGAR , DELHI, Delhi, India - 110092 DELHI Delhi 110092 India"
+  },
+  {
+    "id": "mtvgq8tzumo2b",
+    "companyName": "JAPS IMPEX PVT LTD",
+    "companyId": "U17111WB1994PTC063677",
+    "address": "554/B BLOCK NNEW ALIPORE , KOLKATA, West Bengal, India - 700053 KOLKATA West Bengal 700053 India"
+  },
+  {
+    "id": "mtvgq8u2v7kq7",
+    "companyName": "GHOSE IMPEX PVT.LTD.",
+    "companyId": "U17111WB1994PTC066013",
+    "address": "23A GOVIND BANERJEE LANE , KOLKATA, West Bengal, India - 700033 KOLKATA West Bengal 700033 India"
+  },
+  {
+    "id": "mtvgq8u5hmkmr",
+    "companyName": "SANGYO IMPEX PVT. LTD.",
+    "companyId": "U17115WB1991PTC050557",
+    "address": "14/1 PAUL MANSION 6 BISHOPLEFROY ROAD , KOLKATA, West Bengal, India - 700020 KOLKATA West Bengal 700020 India"
+  },
+  {
+    "id": "mtvgq8u7cmg9v",
+    "companyName": "PARTH IMPEX PVT. LTD.",
+    "companyId": "U17119GJ1991PTC016412",
+    "address": "A/1, RAJLAXMI COMPLEX,THAKKER BAPA NAGAR ROAD, AHMEDABAD. , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtvgq8ua8bhug",
+    "companyName": "TRIVERA IMPEX PVT LTD",
+    "companyId": "U17119GJ1991PTC016457",
+    "address": "L-12 & 13,NARAYANNAGAR,OPP.ANKUR FLATS, PARVAT VILLAGE,B/H PUNA JAKAT- , NAKA, SURAT-395 010, Gujarat, India - 000000 NAKA, SURAT-395 010 Gujarat 000000 India"
+  },
+  {
+    "id": "mtvgq8udvkjzs",
+    "companyName": "PURBANCHAL IMPEX PVT LTD",
+    "companyId": "U01409WB1989PTC047940",
+    "address": "92/3, Rabindra Sarani, Liluah , Howrah, West Bengal, India - 711204 Howrah West Bengal 711204 India"
+  },
+  {
+    "id": "mtvgq8uf20s3p",
+    "companyName": "ONYX IMPEX PVT LTD",
+    "companyId": "U01409WB1993PTC057702",
+    "address": "93A TILJALA ROAD , KOLKATA, West Bengal, India - 700046 KOLKATA West Bengal 700046 India"
+  },
+  {
+    "id": "mtvgq8uiylaqz",
+    "companyName": "NIKAKA IMPEX PVT LTD",
+    "companyId": "U01110MH1985PTC037887",
+    "address": "B/14, GIRIRAJ BUILDING,2NDFL.B.P.CROSS ROAD NO.3, MULUND WEST,MUMBAI 9 , MUMBAI26/11/98, Maharashtra, India - 000000 MUMBAI26/11/98 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvgq8ullft98",
+    "companyName": "NOVA IMPEX PVT LTD",
+    "companyId": "U01122WB1992PTC108612",
+    "address": "4,B.B.D.BAG(EAST),1ST FLOOR STEPHEN HOUSE,ROOM NO.5 , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgq8uocln18",
+    "companyName": "DEVIKA IMPEX PVT LTD",
+    "companyId": "U01132WB1985PTC038385",
+    "address": "14 GOVT PLACE (EAST) , KOLKATA, West Bengal, India - 700069 KOLKATA West Bengal 700069 India"
+  },
+  {
+    "id": "mtvgq8ur1c7ea",
+    "companyName": "MAG IMPEX PVT. LTD.",
+    "companyId": "U01134WB1989PTC047374",
+    "address": "14/2, OLD CHINA BAZAR STREET, 2ND FLOOR BHIKANCHAND MARKET, ROOM - 237 , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgq8uu2wefs",
+    "companyName": "RAJGIRI IMPEX PVT LTD",
+    "companyId": "U35117GJ1995PTC026272",
+    "address": "698 KOTHARI POLEGANDHI ROAD , AHMEDABAD, Gujarat, India - 380001 AHMEDABAD Gujarat 380001 India"
+  },
+  {
+    "id": "mtvgq8uxq8v31",
+    "companyName": "DIAMOND IMPEX PVT LTD",
+    "companyId": "U35921PB1985PTC006252",
+    "address": "JUGIANA,G.T.ROAD LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgq8v0q6u4m",
+    "companyName": "DERBY IMPEX PVT LTD",
+    "companyId": "U29260PB1992PTC012436",
+    "address": "239 INDUSTRIALAREA A LUDHIANA , PUNJAB, Punjab, India - 141003 PUNJAB Punjab 141003 India"
+  },
+  {
+    "id": "mtvgq8v4vngp7",
+    "companyName": "FKP IMPEX PVT. LTD.",
+    "companyId": "U29266WB1987PTC042085",
+    "address": "129, MATHESWARTALA ROAD NEAR SCIENCE CITY , KOLKATA, West Bengal, India - 700046 KOLKATA West Bengal 700046 India"
+  },
+  {
+    "id": "mtvgq8v7kcply",
+    "companyName": "SYSCOMP IMPEX PVT. LTD.",
+    "companyId": "U30007WB1995PTC071418",
+    "address": "55B FREE SCHOOL ST , KOLKATA, West Bengal, India - 700016 KOLKATA West Bengal 700016 India"
+  },
+  {
+    "id": "mtvgq8val2nco",
+    "companyName": "ROTHSONS IMPEX PVT. LTD.",
+    "companyId": "U29299MH1986PTC041495",
+    "address": "NIRANKAR 1ST FLOOR 11333/5FERGUSSEN COLLAGE RD. SHIVAJI NAGAR PUNE , PUNE, Maharashtra, India - 000000 PUNE Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvgqnejdj9cb",
+    "companyName": "JAI IMPEX PVT. LTD",
+    "companyId": "U30007TN1993PTC024196",
+    "address": "9-A,SIR.MADHAVAN NAIR ROAD,MAHAPALIPURAM, MADRAS-600034 , MADRAS-600034, Tamil Nadu, India - 000000 MADRAS-600034 Tamil Nadu 600034 India"
+  },
+  {
+    "id": "mtvgqneokkmxd",
+    "companyName": "ALOK IMPEX PVT LTD",
+    "companyId": "U32112MH1989PTC051646",
+    "address": "3RD FLOOR, KGK TOWER II, DATTAPADA ROAD, RAJENDRA NAGAR,NEAR EKTA BHOOMI GARDENS, BORIVALI, (EAST),MUMBAI,Mumbai City,Maharashtra,400066-India Mumbai City Maharashtra 400066 India"
+  },
+  {
+    "id": "mtvgqneprb3y0",
+    "companyName": "FORTUNA IMPEX PVT LTD",
+    "companyId": "U32202WB1996PTC078383",
+    "address": "P-73, KASBA INDUSTRIAL ESTATE, PHASE-II, ANANDAPUR, , KOLKATA, West Bengal, India - 700107 KOLKATA West Bengal 700107 India"
+  },
+  {
+    "id": "mtvgqner74qjy",
+    "companyName": "PRESET IMPEX PVT LTD",
+    "companyId": "U32303DL1999PTC101469",
+    "address": "A-3/4LOCAL SHOPPING CENTRE JANAKPURI , NEW DELHI, Delhi, India - 110058 NEW DELHI Delhi 110058 India"
+  },
+  {
+    "id": "mtvgqnesg9bj7",
+    "companyName": "UNICOM IMPEX PVT LTD",
+    "companyId": "U31909DL1999PTC102443",
+    "address": "HOUSE NO 11, BLOCK 8, SINGLE STORY RAMESH NAGAR , NEW DELHI, Delhi, India - 110015 NEW DELHI Delhi 110015 India"
+  },
+  {
+    "id": "mtvgqneuvbi6q",
+    "companyName": "KENT IMPEX PVT LTD",
+    "companyId": "U32101WB1995PTC072321",
+    "address": "242, RABINDRA SARANI, 4TH FLOOR , KOLKATA, West Bengal, India - 700007 KOLKATA West Bengal 700007 India"
+  },
+  {
+    "id": "mtvgqnewfwrwm",
+    "companyName": "ABAD IMPEX PVT LTD",
+    "companyId": "U31200GJ1990PTC014062",
+    "address": "214, ABHISHREE COMPLEX OPP. STAR INDIA BAZAR, SATELLITE ROAD , AHMEDABAD, Gujarat, India - 380015 AHMEDABAD Gujarat 380015 India"
+  },
+  {
+    "id": "mtvgqnexlxqo5",
+    "companyName": "ROSEWOOD IMPEX PVT LTD",
+    "companyId": "U27101WB1985PTC039690",
+    "address": "2 GANESH CHANDRA AVENUE ROOM-NO-5 , KOLKATA, West Bengal, India - 700013 KOLKATA West Bengal 700013 India"
+  },
+  {
+    "id": "mtvgqnezzxsna",
+    "companyName": "PANAFIC IMPEX PVT LTD",
+    "companyId": "U27101WB1989PTC045944",
+    "address": "4 RIPON STREET , KOLKATA, West Bengal, India - 700016 KOLKATA West Bengal 700016 India"
+  },
+  {
+    "id": "mtvgqnf1i9pn0",
+    "companyName": "BRTC IMPEX PVT LTD",
+    "companyId": "U27101WB1995PTC071177",
+    "address": "27 NITYADHAN MUKHERJEE RD , HOWRAH, West Bengal, India - 711101 HOWRAH West Bengal 711101 India"
+  },
+  {
+    "id": "mtvgqnf3xi0ln",
+    "companyName": "OSIYA IMPEX PVT LTD",
+    "companyId": "U27101WB2006PTC109900",
+    "address": "ROOM NO-306, 3RD FLOOR 33/1 NETAJI SUBHAS ROAD , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgqnf5ko0q7",
+    "companyName": "SHARMA IMPEX PVT. LTD.",
+    "companyId": "U27106WB1994PTC061348",
+    "address": "100/B, NEW ALIPORE, BLOCK-F, , Kolkata, West Bengal, India - 700053 Kolkata West Bengal 700053 India"
+  },
+  {
+    "id": "mtvgqnf7tdaam",
+    "companyName": "TIRATHSONS IMPEX PVT LTD",
+    "companyId": "U45202PB2006PTC029772",
+    "address": "E H 172 MASTER TARA SINGH NAGAR 3 IIND FLOOR , JALANDHAR, Punjab, India - 000000 JALANDHAR Punjab 000000 India"
+  },
+  {
+    "id": "mtvgqnfan094k",
+    "companyName": "UMESH IMPEX PVT LTD",
+    "companyId": "U45202PB2006PTC029873",
+    "address": "PFL COMPLEX 8TH MILE STONEMALQUT ROAD ABOHAR DISTT FEROZEPUR , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgqnfc3faww",
+    "companyName": "REGNER IMPEX PVT LTD",
+    "companyId": "U45202PB2006PTC029912",
+    "address": "B XXX 1851 I A PHASE IIFOCAL POINT MATRO ROAD LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgqnfdx68di",
+    "companyName": "EKAM IMPEX PVT LTD",
+    "companyId": "U45202PB2006PTC030039",
+    "address": "24MODEL TOWN KAPURTHALA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgqnffmj0s1",
+    "companyName": "INTIME IMPEX PVT LTD",
+    "companyId": "U45202PB2006PTC030129",
+    "address": "IST FLOOR JANTA MEDICAL HALLBUILDING JYOTI CHOWK JALANDHAR , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgqnfgx5bw4",
+    "companyName": "SUR IMPEX PVT LTD",
+    "companyId": "U45201WB1977PTC031149",
+    "address": "P 29 C I T RD , KOLKATA, West Bengal, India - 700014 KOLKATA West Bengal 700014 India"
+  },
+  {
+    "id": "mtvgqnficfs4j",
+    "companyName": "INCENTS IMPEX PVT.LTD.",
+    "companyId": "U45201WB1994PTC066385",
+    "address": "2B GRANT LANER NO 43E , KOLKATA, West Bengal, India - 700012 KOLKATA West Bengal 700012 India"
+  },
+  {
+    "id": "mtvgqnfkfafq3",
+    "companyName": "MASTER IMPEX PVT LTD",
+    "companyId": "U47890WB1994PTC066517",
+    "address": "46 CIRCUS AVENUE , KOLKATA, West Bengal, India - 700017 KOLKATA West Bengal 700017 India"
+  },
+  {
+    "id": "mtvgyc08zvgq7",
+    "companyName": "IMPEX INTERNATIONAL PVT LTD",
+    "companyId": "U50300NL1980PTC001836",
+    "address": "Circular Road, , Dimapur, Nagaland, India - 797112 Dimapur Nagaland 797112 India"
+  },
+  {
+    "id": "mtvgyc0wxar3x",
+    "companyName": "HILLMAN IMPEX PVT. LTD.",
+    "companyId": "U36910MH1991PTC061755",
+    "address": "3, GIFT HOUSE, 940, NEWPRABHADEVI ROAD, BOMBAY 25. , MUMBAI-400025, Maharashtra, India - 000000 MUMBAI-400025 Maharashtra 400025 India"
+  },
+  {
+    "id": "mtvgyc14215iw",
+    "companyName": "GANPATI IMPEX PVT. LTD",
+    "companyId": "U36911RJ1987PTC004041",
+    "address": "2, LEKHI NIWAS, HAWA SARAKCIVIL LINES. JAIPUR. , NA, Rajasthan, India - 000000 NA Rajasthan 000000 India"
+  },
+  {
+    "id": "mtvgyc1at1cg7",
+    "companyName": "PRESTIGE IMPEX PVT LTD",
+    "companyId": "U36911WB1982PTC034828",
+    "address": "34 A METCALFE STREET , KOLKATA, West Bengal, India - 000000 KOLKATA West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgyc1hgj6g9",
+    "companyName": "TITU IMPEX PVT. LTD.",
+    "companyId": "U36911WB1994PTC064287",
+    "address": "74,MAHARAJA TAGORE ROAD DHAKURIA , KOLKATA, West Bengal, India - 700031 KOLKATA West Bengal 700031 India"
+  },
+  {
+    "id": "mtvgyc1noqsal",
+    "companyName": "GLANZ IMPEX PVT.LTD.",
+    "companyId": "U36939GJ1991PTC015248",
+    "address": "314, SHIVSHANTI COMM. COMPLEX,HIGH COURT ROAD BHAVNAGAR. , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtvgyc1qf5ouh",
+    "companyName": "KALYANA IMPEX PVT. LTD.",
+    "companyId": "U51431WB1990PTC049089",
+    "address": "5/1, LANSDOWNE PLACE , KOLKATA, West Bengal, India - 700029 KOLKATA West Bengal 700029 India"
+  },
+  {
+    "id": "mtvgyc1sccok0",
+    "companyName": "ROY IMPEX PVT LTD.",
+    "companyId": "U51420WB1988PTC045813",
+    "address": "P/24 VALLY PARK , KOLKATA, West Bengal, India - 000000 KOLKATA West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgyc1vtgty1",
+    "companyName": "SPECTRUM IMPEX PVT LTD",
+    "companyId": "U51420WB1990PTC050373",
+    "address": "2,INDIA EXCHANGE PLACE 2ND FLOOR,ROOM NO-13 , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgyc1yiwlkd",
+    "companyName": "QUANTUM IMPEX PVT LTD",
+    "companyId": "U51420WB1993PTC059540",
+    "address": "9/12, LALBAZAR STREET, MERCANTILE BUILDING BLOCK- B, 1ST FLOOR , R.NO -4 , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgyc21v1qjv",
+    "companyName": "HIMKANCHAN IMPEX PVT LTD",
+    "companyId": "U51431MH1992PTC068945",
+    "address": "3 NEEM CHHAYA M G ROADGHATKOPAR EAST , MUMBAI, Maharashtra, India - 400077 MUMBAI Maharashtra 400077 India"
+  },
+  {
+    "id": "mtvgyc24zgysr",
+    "companyName": "RIMBENI IMPEX PVT LTD.",
+    "companyId": "U51490MH1992PTC065617",
+    "address": "F/9,SHANTI BHUVAN,S.N.ROADMULUND(W),BOMBAY-30 , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvgyc27x1lgo",
+    "companyName": "EBONY IMPEX PVT. LTD",
+    "companyId": "U51491WB1991PTC050710",
+    "address": "48 A, PARK STREET 3RD FLOOR , KOLKATA, West Bengal, India - 700016 KOLKATA West Bengal 700016 India"
+  },
+  {
+    "id": "mtvgyc2ad4tuy",
+    "companyName": "NISCHAY IMPEX PVT.LTD.",
+    "companyId": "U51491WB1992PTC057081",
+    "address": "100/1 G.T. ROAD, BL-B; FL-305, LP-22/19, RISHRA , HOOGHLY, West Bengal, India - 712248 HOOGHLY West Bengal 712248 India"
+  },
+  {
+    "id": "mtvgyc2db9jcd",
+    "companyName": "BRIJ IMPEX PVT.LTD.",
+    "companyId": "U51491WB1994PTC066007",
+    "address": "23A NETAJI SUBHAS RD , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgyc2gydetx",
+    "companyName": "MAHANAM IMPEX PVT LTD",
+    "companyId": "U51491WB1995PTC071079",
+    "address": "143/1, S.K. DEB ROAD, , KOLKATA, West Bengal, India - 700048 KOLKATA West Bengal 700048 India"
+  },
+  {
+    "id": "mtvgyc2jtnhpv",
+    "companyName": "SIERA IMPEX PVT LTD",
+    "companyId": "U51494PB1993PTC013536",
+    "address": "1-SUGANDH VIHARVILL PHULLANWAL LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgyc2npnesq",
+    "companyName": "ARORA IMPEX PVT LTD",
+    "companyId": "U51494PB1993PTC013812",
+    "address": "11 NEERA MEERA MARKETNEAR LOVELY AUTOS JALANDHAR , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgyc2qebxxx",
+    "companyName": "TRISTAR IMPEX PVT.LTD.",
+    "companyId": "U51496MH1993PTC071163",
+    "address": "272 NARSHINATH STREET,OFFICE NO.304,3RD FLOOR, BHAT BAZAR MASJID BUNDER, , BOMBAY-9., Maharashtra, India - 000000 BOMBAY-9. Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvgyc2u39oe1",
+    "companyName": "DHEER IMPEX PVT. LTD.",
+    "companyId": "U51494WB1987PTC041971",
+    "address": "89 ALIPORE ROAD P S ALIPORE , KOLKATA, West Bengal, India - 700027 KOLKATA West Bengal 700027 India"
+  },
+  {
+    "id": "mtvgyvuutc2s4",
+    "companyName": "ANURODH IMPEX PVT. LTD",
+    "companyId": "U51494WB1992PTC056693",
+    "address": "3B CAMAC STREET MANSAROWAR BUILDING , KOLKATA, West Bengal, India - 700016 KOLKATA West Bengal 700016 India"
+  },
+  {
+    "id": "mtvgyvv6tfrih",
+    "companyName": "BESTWIN IMPEX PVT LTD",
+    "companyId": "U51500MH1991PTC060921",
+    "address": "12-A,TEXILA BUILDING NO.29,MAHAKALI CAVES ROAD, ANDHERI EAST,MUMBAI-93. , MUMBAI.400 093, Maharashtra, India - 000000 MUMBAI.400 093 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvgyvvfcu1ht",
+    "companyName": "MEHRA IMPEX PVT. LTD.",
+    "companyId": "U51502WB1991PTC052017",
+    "address": "6 MANGOE LANE , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgyvvllh3k0",
+    "companyName": "CHIRA IMPEX PVT.LTD.",
+    "companyId": "U51504WB1991PTC053093",
+    "address": "CS 8/3 GOLF GREEN PHASE10TH STREET , KOLKATA, West Bengal, India - 000000 KOLKATA West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgyvvo1200t",
+    "companyName": "DIVERSE IMPEX PVT. LTD",
+    "companyId": "U51504WB1992PTC056139",
+    "address": "14/2 OLD CHINA BAZAR STREET4TH FLOOR ROOM NO 419 , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgyvvsh45re",
+    "companyName": "PRINCE IMPEX PVT LTD",
+    "companyId": "U51505PB1980PTC004209",
+    "address": "19ATAM NAGAR LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgyvvw2tl14",
+    "companyName": "GRACE IMPEX PVT. LTD.",
+    "companyId": "U51505WB1992PTC054349",
+    "address": "128 RASH BEHARI AVENUE , KOLKATA, West Bengal, India - 700029 KOLKATA West Bengal 700029 India"
+  },
+  {
+    "id": "mtvgyvw0txdm2",
+    "companyName": "RAYSUN IMPEX PVT LTD",
+    "companyId": "U51505WB1994PTC061691",
+    "address": "4 G C AVENUE , KOLKATA, West Bengal, India - 000000 KOLKATA West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgyvw4zx3tr",
+    "companyName": "VIJOY IMPEX PVT LTD",
+    "companyId": "U51505WB2006PTC107973",
+    "address": "67 B NETAJI SUBHAS RD , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgyvw80gwu4",
+    "companyName": "ALECXY IMPEX PVT. LTD.",
+    "companyId": "U52311WB1993PTC061120",
+    "address": "138 G.T. ROAD (SOUTH), SHREE APARTMENT FLAT NO. 821/A, 8TH FLOOR, BLOCK - A , HOWRAH, West Bengal, India - 711102 HOWRAH West Bengal 711102 India"
+  },
+  {
+    "id": "mtvgyvwd0hh24",
+    "companyName": "SWETHA IMPEX PVT LTD.",
+    "companyId": "U52599TN1989PTC018118",
+    "address": "4, KUSTIAN BEACH ROAD,SANTHOME, MADRAS , SANTHOME, MADRAS, Tamil Nadu, India - 000000 SANTHOME, MADRAS Tamil Nadu 000000 India"
+  },
+  {
+    "id": "mtvgyvwe1ncnm",
+    "companyName": "HARINI IMPEX PVT LTD",
+    "companyId": "U52599TN1991PTC020346",
+    "address": "104/1, SIR P S SIVASAMI SALAIMYLAPORE MADRAS , MYLAPORE MADRAS, Tamil Nadu, India - 000000 MYLAPORE MADRAS Tamil Nadu 000000 India"
+  },
+  {
+    "id": "mtvgyvwf4us3p",
+    "companyName": "AXON IMPEX PVT. LTD",
+    "companyId": "U52599TN1993PTC024662",
+    "address": "242,KILPAUK GARDEN ROAD,KILPAUK, MADRAS-600010 , MADRAS-600010, Tamil Nadu, India - 000000 MADRAS-600010 Tamil Nadu 600010 India"
+  },
+  {
+    "id": "mtvgyvwhfulz3",
+    "companyName": "ETHIRAJ IMPEX PVT. LTD.",
+    "companyId": "U52599TN1991PTC021263",
+    "address": "18, EVENING BAZAAR, , MADRAS, Tamil Nadu, India - 000000 MADRAS Tamil Nadu 000000 India"
+  },
+  {
+    "id": "mtvgyvwicqo38",
+    "companyName": "SAKAR IMPEX PVT. LTD.",
+    "companyId": "U52322DL1992PTC049644",
+    "address": "B-23A SAGAR APARTMENTS 6TILAK MARG NEW DELHI , NA, Delhi, India - 000000 NA Delhi 000000 India"
+  },
+  {
+    "id": "mtvgyvwj35c6x",
+    "companyName": "VANSHIKA IMPEX PVT. LTD.",
+    "companyId": "U52322DL1999PTC100187",
+    "address": "100-HIMAYUN PURSAGDARJUNG ENCLAVE, , NEW DELHI, Delhi, India - 000000 NEW DELHI Delhi 000000 India"
+  },
+  {
+    "id": "mtvgyvwlnqy26",
+    "companyName": "REDBUD IMPEX PVT.LTD.",
+    "companyId": "U52322MH1992PTC067332",
+    "address": "A-508 ,Harishchandra CHSL, Raheja Township, L. S. Raheja Marg, Malad (East) , Mumbai, Maharashtra, India - 400097 Mumbai Maharashtra 400097 India"
+  },
+  {
+    "id": "mtvgyvwmyayki",
+    "companyName": "GROWEL IMPEX PVT. LTD.",
+    "companyId": "U52322DL1999PTC100566",
+    "address": "E - 16 GREATER KAILASH II , NEW DELHI, Delhi, India - 110048 NEW DELHI Delhi 110048 India"
+  },
+  {
+    "id": "mtvgyvwo53uq5",
+    "companyName": "EXQUISITE IMPEX PVT LTD",
+    "companyId": "U52324WB1980PTC032825",
+    "address": "P-38, INDIA EXCHANGE PLACECALCUTTA-1 , CALCUTTA-1, West Bengal, India - 000000 CALCUTTA-1 West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgyvwpx4bzr",
+    "companyName": "REGENCY IMPEX PVT LTD",
+    "companyId": "U52322PB1992PTC012495",
+    "address": "431 A GOVT COLLEGE ROADCIVIL LINES LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvgzb4dcu0og",
+    "companyName": "MEENAKSHI IMPEX PVT. LTD.",
+    "companyId": "U52322WB1993PTC061085",
+    "address": "8A LAKE VIEW ROAD , KOLKATA, West Bengal, India - 700029 KOLKATA West Bengal 700029 India"
+  },
+  {
+    "id": "mtvgzb4hxvx72",
+    "companyName": "PETAL IMPEX PVT. LTD.",
+    "companyId": "U52324WB1989PTC046414",
+    "address": "99/20 SUKANTA SARANI , KOLKATA, West Bengal, India - 700085 KOLKATA West Bengal 700085 India"
+  },
+  {
+    "id": "mtvgzb4j2tjvj",
+    "companyName": "RASHRAJ IMPEX PVT. LTD.",
+    "companyId": "U52324WB1992PTC054531",
+    "address": "39 STRAND ROAD GROUND FLOOR , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgzb4lklczw",
+    "companyName": "SWIFT IMPEX PVT. LTD.",
+    "companyId": "U52341DL2001PTC110622",
+    "address": "205-208, ANARKALI COMPLEX JHANDEWALAN EXTENSION , NEW DELHI, Delhi, India - 110055 NEW DELHI Delhi 110055 India"
+  },
+  {
+    "id": "mtvgzb4mx4155",
+    "companyName": "JFC IMPEX PVT. LTD.",
+    "companyId": "U52109WB1989PTC047316",
+    "address": "42 DILKHUSHA STREET,KOLKATA,West Bengal,700017-India KOLKATA West Bengal 700017 India"
+  },
+  {
+    "id": "mtvgzb4o8bfl4",
+    "companyName": "SAMANIA IMPEX PVT LTD",
+    "companyId": "U52110WB1994PTC061364",
+    "address": "14C MAHARSHI DEVENDRA ROAD2ND FLOOR , KOLKATA, West Bengal, India - 700007 KOLKATA West Bengal 700007 India"
+  },
+  {
+    "id": "mtvgzb4q65huo",
+    "companyName": "KRS IMPEX PVT LTD",
+    "companyId": "U52110WB1996PTC080585",
+    "address": "NARAYANPUR, BATTALA, PO.R. GOPALPUR, NORTH 24 PGS. , KOLKATA, West Bengal, India - 700136 KOLKATA West Bengal 700136 India"
+  },
+  {
+    "id": "mtvgzb4rn135y",
+    "companyName": "INDIRA IMPEX PVT LTD",
+    "companyId": "U52190HR1996PTC033429",
+    "address": "96/17, HET RAM PARAK,DELHI-ROAD, HISSAR-125001. , NA, Haryana, India - 000000 NA Haryana 125001 India"
+  },
+  {
+    "id": "mtvgzb4t61fyj",
+    "companyName": "JNK IMPEX PVT LTD",
+    "companyId": "U52190DL2001PTC111416",
+    "address": "S-46 GREATER KAILASHPART-I , NEW DELHI, Delhi, India - 110048 NEW DELHI Delhi 110048 India"
+  },
+  {
+    "id": "mtvgzb4vg1t37",
+    "companyName": "RADO IMPEX PVT LTD",
+    "companyId": "U52190WB1988PTC043926",
+    "address": "23A NETAJI SUBHAS ROAD , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgzb4xuc8v1",
+    "companyName": "BUNTY IMPEX PVT.LTD.",
+    "companyId": "U51909WB1995PTC074535",
+    "address": "154 J L BAJAJ ST2ND FL , KOLKATA, West Bengal, India - 700007 KOLKATA West Bengal 700007 India"
+  },
+  {
+    "id": "mtvgzb4zj27ly",
+    "companyName": "BROTHERS IMPEX PVT.LTD.",
+    "companyId": "U51909WB1995PTC075727",
+    "address": "168 G T ROAD (SOUTH)1ST FLOOR SHIBPUR , HOWRAH, West Bengal, India - 000000 HOWRAH West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgzb51jm6tw",
+    "companyName": "BRIGHT IMPEX PVT LTD",
+    "companyId": "U51909WB1995PTC076007",
+    "address": "HI-TECH CHAMBERS 84/1B, TOPSIA ROAD (SOUTH), 7TH FLOOR , KOLKATA, West Bengal, India - 700046 KOLKATA West Bengal 700046 India"
+  },
+  {
+    "id": "mtvgzb53k7y23",
+    "companyName": "SHILPI IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC076368",
+    "address": "10 GANESH CH AVENUE , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgzb56qkbwk",
+    "companyName": "RAJHANS IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC076391",
+    "address": "54/5A STRAND RD , KOLKATA, West Bengal, India - 700006 KOLKATA West Bengal 700006 India"
+  },
+  {
+    "id": "mtvgzb58h17oz",
+    "companyName": "ANUVRAT IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC077117",
+    "address": "21 N S RD3RD FLOOR , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgzb5bfyoo5",
+    "companyName": "PANSARI IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC077527",
+    "address": "158,LENIN SARANI,GROUND FL.CAL-13 , CAL-13, West Bengal, India - 000000 CAL-13 West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgzb5du1d06",
+    "companyName": "SEHGAL IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC077838",
+    "address": "NH-31 SHIV NAGAR COLONYNEAR DARJEELING MORE PRADHAN NAGAR , SILIGURI, West Bengal, India - 000000 SILIGURI West Bengal 000000 India"
+  },
+  {
+    "id": "mtvgzb5g11d7y",
+    "companyName": "SHANKER IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC078204",
+    "address": "16B SHAKESPEARE SARANI(B K MARKET) , KOLKATA, West Bengal, India - 700071 KOLKATA West Bengal 700071 India"
+  },
+  {
+    "id": "mtvgzb5imhkeo",
+    "companyName": "RODRIFUES IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC078258",
+    "address": "BB - 52, SECTOR - I, GROUND FLOOR SALT LAKE CITY , KOLKATA, West Bengal, India - 700064 KOLKATA West Bengal 700064 India"
+  },
+  {
+    "id": "mtvgzo6mnwtyn",
+    "companyName": "ELEXI IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC079493",
+    "address": "1,SAROJINI NAIDU SARANI 2ND FLOOR ROOM-205 , KOLKATA, West Bengal, India - 700017 KOLKATA West Bengal 700017 India"
+  },
+  {
+    "id": "mtvgzo6vjb85k",
+    "companyName": "KCM IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC080214",
+    "address": "TOWER-II, APARTMENT-20H, SOUTH CITY 375, PRINCE ANWAR SHAH ROAD , KOLKATA, West Bengal, India - 700068 KOLKATA West Bengal 700068 India"
+  },
+  {
+    "id": "mtvgzo6zkjs47",
+    "companyName": "HAPS IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC079546",
+    "address": "5B EVEREST46C CHOWRINGHEE RD , KOLKATA, West Bengal, India - 700071 KOLKATA West Bengal 700071 India"
+  },
+  {
+    "id": "mtvgzo74kxqdn",
+    "companyName": "SUMEX IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC079558",
+    "address": "CITY CENTRE 19, SYNAGOGUE STREET 1ST FLOOR, ROOM NO, 123A , Kolkata, West Bengal, India - 700001 Kolkata West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgzo795qr2u",
+    "companyName": "PANKAJ IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC079801",
+    "address": "MARTIN BURN HOUSE,1 R.N. MUKHERJEE ROAD 4TH FLOOR, ROOM NO. 29 , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgzo7d2jbq7",
+    "companyName": "OPTIMA IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC080461",
+    "address": "41NETAJI SUBHAS RD SUIT NO , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgzo7gkfhnd",
+    "companyName": "SWETA IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC080529",
+    "address": "5,NIMTOLA GHAT STREET , KOLKATA, West Bengal, India - 700016 KOLKATA West Bengal 700016 India"
+  },
+  {
+    "id": "mtvgzo7jzdz2d",
+    "companyName": "CHESSMAN IMPEX PVT LTD",
+    "companyId": "U51909WB1996PTC080934",
+    "address": "66, NALINI SETH ROAD, POSTA, , KOLKATA, West Bengal, India - 700007 KOLKATA West Bengal 700007 India"
+  },
+  {
+    "id": "mtvgzo7m2m8rp",
+    "companyName": "SUPERFINE IMPEX PVT LTD",
+    "companyId": "U51909WB2006PTC107797",
+    "address": "113, PARK STREET, , KOLKATA, West Bengal, India - 700016 KOLKATA West Bengal 700016 India"
+  },
+  {
+    "id": "mtvgzo7p622ui",
+    "companyName": "COSTCO IMPEX PVT LTD",
+    "companyId": "U51909WB2006PTC108172",
+    "address": "53, NETAJI SHUBHASH ROAD, 2ND FLOOR , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvgzo7sd5dhl",
+    "companyName": "DIANA IMPEX PVT LTD",
+    "companyId": "U51909WB2006PTC108270",
+    "address": "T 135/5/A/1 MURRAY RD , KOLKATA, West Bengal, India - 700018 KOLKATA West Bengal 700018 India"
+  },
+  {
+    "id": "mtvgzo7wxn3zz",
+    "companyName": "YPB IMPEX PVT LTD",
+    "companyId": "U51909WB2006PTC108351",
+    "address": "47,MUKTARAM BABU STREET GROUND FLOOR , KOLKATA, West Bengal, India - 700007 KOLKATA West Bengal 700007 India"
+  },
+  {
+    "id": "mtvgzo7zcbrjh",
+    "companyName": "SUREKA IMPEX PVT LTD",
+    "companyId": "U51909WB2006PTC108566",
+    "address": "VICTORIA-GF, DUKE GARDENS VIP ROAD, RAGHUNATHPUR , KOLKATA, West Bengal, India - 700059 KOLKATA West Bengal 700059 India"
+  },
+  {
+    "id": "mtvgzo82c1kx6",
+    "companyName": "SARADA IMPEX PVT LTD",
+    "companyId": "U51909WB2006PTC109813",
+    "address": "P-3, NEW CIT ROAD 2ND FLOOR , KOLKATA, West Bengal, India - 700073 KOLKATA West Bengal 700073 India"
+  },
+  {
+    "id": "mtvgzo86rj4rf",
+    "companyName": "VIMAL IMPEX PVT LTD",
+    "companyId": "U51311MH1989PTC051273",
+    "address": "701 PANCHSHEELGOKULDHAMFILM CITY RD GOREGAON (E) , MUMABI, Maharashtra, India - 400063 MUMABI Maharashtra 400063 India"
+  },
+  {
+    "id": "mtvgzo89fintk",
+    "companyName": "SAKA IMPEX PVT LTD",
+    "companyId": "U51311RJ1989PTC005233",
+    "address": "G-70 TARUN PATH SHYAM NAGAR,EXTENTION, , JAIPUR, Rajasthan, India - 000000 JAIPUR Rajasthan 000000 India"
+  },
+  {
+    "id": "mtvgzo8fhjzz9",
+    "companyName": "TRUWORTH IMPEX PVT LTD",
+    "companyId": "U51311RJ1996PTC012052",
+    "address": "3rd Floor, 306 308 309, Big Bazar Building Gomes Defence Colony, Vaishali Circle , Jaipur, Rajasthan, India - 302021 Jaipur Rajasthan 302021 India"
+  },
+  {
+    "id": "mtvgzo8ickveg",
+    "companyName": "RANK IMPEX PVT LTD",
+    "companyId": "U51311RJ1996PTC012055",
+    "address": "101 KAMAL APARTMENTS,S.J.S. HIGHWAY, BANI PARK, JAIPUR , NA, Rajasthan, India - 000000 NA Rajasthan 000000 India"
+  },
+  {
+    "id": "mtvgzo8mxvl4f",
+    "companyName": "CAMAC IMPEX PVT. LTD.",
+    "companyId": "U51311WB1991PTC053535",
+    "address": "4/1 MIDDLETON STREET , KOLKATA, West Bengal, India - 700071 KOLKATA West Bengal 700071 India"
+  },
+  {
+    "id": "mtvgzo8q6utt8",
+    "companyName": "SOUTHERN IMPEX PVT LTD",
+    "companyId": "U51390AP1969PTC001268",
+    "address": "5/406, NRT CENTRE , CHILAKALURIPET, Andhra Pradesh, India - 522616 CHILAKALURIPET Andhra Pradesh 522616 India"
+  },
+  {
+    "id": "mtvh242py8cfh",
+    "companyName": "KINNER IMPEX PVT LTD",
+    "companyId": "U51394HP1990PTC010251",
+    "address": "AANCHAL BLAIRETHAL ESTATENEAR PORTMORE SHIMLA , HIMACHAL PRADESH, Himachal Pradesh, India - 000000 HIMACHAL PRADESH Himachal Pradesh 000000 India"
+  },
+  {
+    "id": "mtvh243ij9jkk",
+    "companyName": "HIRAL IMPEX PVT.LTD.",
+    "companyId": "U51395MH1993PTC070849",
+    "address": "101 TIRUPATI BLDG., 292 C S TROAD,VIDYA NAGARI BOMBAY -98. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvh243lvaco7",
+    "companyName": "SANGHERA IMPEX PVT LTD",
+    "companyId": "U51395PB1995PTC015866",
+    "address": "VILL. & P O BILGAPATTI BHALLI KI DISTT JALANDHAR , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvh243nb5nrm",
+    "companyName": "SARAOGI IMPEX PVT LTD",
+    "companyId": "U51396MH1992PTC069439",
+    "address": "KARANJIA HOUSE65377 GIRAN ROAD , MUMBAI, Maharashtra, India - 400002 MUMBAI Maharashtra 400002 India"
+  },
+  {
+    "id": "mtvh243qhf2jz",
+    "companyName": "BRAHMSON IMPEX PVT. LTD.",
+    "companyId": "U51397MH1989PTC051905",
+    "address": "89, PRINCESS ST. PEER BHOY BLD2ND FLOOR, BOMBAY , MUMBAI-400002, Maharashtra, India - 000000 MUMBAI-400002 Maharashtra 400002 India"
+  },
+  {
+    "id": "mtvh243thgynf",
+    "companyName": "PAYAMBIK IMPEX PVT.LTD.",
+    "companyId": "U51397MH1993PTC070771",
+    "address": "SHOP NO.1,NAYADEEP BLDG.,OFF LINK ROAD BOMBAY -58. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvh243u3qjcd",
+    "companyName": "KOTHARI IMPEX PVT LTD",
+    "companyId": "U51397GA1988PTC000839",
+    "address": "GOSALIA BUILDING,2ND FLOOR,BLOCK NO.2, VASCO DA GAMA , GOA, Goa, India - 403802 GOA Goa 403802 India"
+  },
+  {
+    "id": "mtvh243wxvv48",
+    "companyName": "BLAISE IMPEX PVT. LTD.",
+    "companyId": "U51397GJ1994PTC081609",
+    "address": "2nd Floor,Office No B-202,Wing B, International Trade Centre, Majura Gate, , Surat, Gujarat, India - 395002 Surat Gujarat 395002 India"
+  },
+  {
+    "id": "mtvh243y89lsl",
+    "companyName": "SOLVAY IMPEX PVT LTD",
+    "companyId": "U51397WB1989PTC047258",
+    "address": "227 A J C BOSE ROAD , KOLKATA, West Bengal, India - 700020 KOLKATA West Bengal 700020 India"
+  },
+  {
+    "id": "mtvh243zoi6qi",
+    "companyName": "LALIT IMPEX PVT LTD",
+    "companyId": "U51100MH1987PTC042258",
+    "address": "Floor Grd, Plot-31, 2, Kishor Kunj, N S Mankikar Marg, Sion Talao, Sion(E) , Mumbai, Maharashtra, India - 400022 Mumbai Maharashtra 400022 India"
+  },
+  {
+    "id": "mtvh2441egfi2",
+    "companyName": "GIARE IMPEX PVT LTD",
+    "companyId": "U51101DL1992PTC050762",
+    "address": "206,6/1191,IIND FLOOR,NAIWALA, KAROL BAGH, NEW DELHI.5. , NA, Delhi, India - 000000 NA Delhi 000000 India"
+  },
+  {
+    "id": "mtvh2443qcuz6",
+    "companyName": "PANNA IMPEX PVT.LTD.",
+    "companyId": "U51101RJ1992PTC006651",
+    "address": "5/94, ASHOKA APPARTMENT,BHAWANI SINGH LANE JAIPUR. 302001 , C, Rajasthan, India - 000000 C Rajasthan 302001 India"
+  },
+  {
+    "id": "mtvh24453i2rp",
+    "companyName": "PAOX IMPEX PVT. LTD",
+    "companyId": "U51101RJ1993PTC007235",
+    "address": "258,GALINO.4,RAJA PARK,JAIPUR , NA, Rajasthan, India - 000000 NA Rajasthan 000000 India"
+  },
+  {
+    "id": "mtvh2447eth5j",
+    "companyName": "SINGHAL IMPEX PVT. LTD",
+    "companyId": "U51101RJ1993PTC007677",
+    "address": "B-189/A,UNIVERSITY MARG,JAIPUR , NA, Rajasthan, India - 000000 NA Rajasthan 000000 India"
+  },
+  {
+    "id": "mtvh2449a1sot",
+    "companyName": "UNICOM IMPEX PVT. LTD",
+    "companyId": "U51101RJ1994PTC008747",
+    "address": "C-165A,PANCHVATI,SUNDER MARG,TILAK NAGAR,JAIPUR , NA, Rajasthan, India - 000000 NA Rajasthan 000000 India"
+  },
+  {
+    "id": "mtvh244bnrrbv",
+    "companyName": "VIJAY IMPEX PVT. LTD",
+    "companyId": "U51101RJ1994PTC008590",
+    "address": "B-10,TULSI DAS JI KI BAGICHI, JANTA COLONY, , JAIPUR, Rajasthan, India - 000000 JAIPUR Rajasthan 000000 India"
+  },
+  {
+    "id": "mtvh244echcf8",
+    "companyName": "PRINCIPAL IMPEX PVT LTD",
+    "companyId": "U51900MH2004PTC044976",
+    "address": "F R PATEL & CO HOLLANDHOUSE BEHIND DYNA ECLIPS COLABA , MUMBAI, Maharashtra, India - 400039 MUMBAI Maharashtra 400039 India"
+  },
+  {
+    "id": "mtvh244gnwb30",
+    "companyName": "ADVENTURE IMPEX PVT LTD",
+    "companyId": "U51900MH2006PTC158857",
+    "address": "B-102,1ST FLOOR, TWINE ARCADEMILITARY RD MAROL ANDHERI EAST MUMBAI-59 , MUMBAI-59, Maharashtra, India - 000000 MUMBAI-59 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvh244iyzmvm",
+    "companyName": "ALOHA IMPEX PVT LTD",
+    "companyId": "U51900MH2006PTC159948",
+    "address": "KAMALA VIHAR G WING BLDG NO.5FLAT NO.203 MAHAVEER NAGAR KANDIVALI WEST,MUMBAI-64 , MUMBAI-64, Maharashtra, India - 000000 MUMBAI-64 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvh244lxvtkr",
+    "companyName": "BASANT IMPEX PVT. LTD.",
+    "companyId": "U51900WB1994PTC066902",
+    "address": "TOWER-II, APARTMENT-20H, SOUTH CITY 375, PRINCE ANWAR SHAH ROAD , KOLKATA, West Bengal, India - 700068 KOLKATA West Bengal 700068 India"
+  },
+  {
+    "id": "mtvh2fo8xbyfe",
+    "companyName": "VICTOR IMPEX PVT LTD",
+    "companyId": "U51900WB1986PTC040070",
+    "address": "TRANSFER COFROM WB TO DELHI , KOLKATA, West Bengal, India - 000000 KOLKATA West Bengal 000000 India"
+  },
+  {
+    "id": "mtvh2fogc0k43",
+    "companyName": "AKHILESH IMPEX PVT LTD",
+    "companyId": "U51900WB2005PTC106281",
+    "address": "KOLKATA , KOLKATA, West Bengal, India - 700052 KOLKATA West Bengal 700052 India"
+  },
+  {
+    "id": "mtvh2folf4a2w",
+    "companyName": "AAPAAR IMPEX PVT LTD",
+    "companyId": "U51900WB2005PTC106505",
+    "address": "89 N S RD3RD FLOOR R NO 366 , KOLKATA, West Bengal, India - 000000 KOLKATA West Bengal 000000 India"
+  },
+  {
+    "id": "mtvh2foq0rvrx",
+    "companyName": "DIONYSIAIN IMPEX PVT LTD",
+    "companyId": "U51900WB2006PTC109990",
+    "address": "VILL & P. O- KASHINATHPUR PS-RAJARHAT , Rohanda, West Bengal, India - 700135 Rohanda West Bengal 700135 India"
+  },
+  {
+    "id": "mtvh2fow3x8u1",
+    "companyName": "PALM IMPEX PVT.LTD.",
+    "companyId": "U51902MP1992PTC006880",
+    "address": "98,BHARAT NAGAR,P.O.-PIPANI,BHOPAL , M.P., Madhya Pradesh, India - 000000 M.P. Madhya Pradesh 000000 India"
+  },
+  {
+    "id": "mtvh2fp1zlkam",
+    "companyName": "FAIRTRADE IMPEX PVT.LTD.",
+    "companyId": "U51909AP1992PTC014905",
+    "address": "PLOT NO. 79, NORTH EXTENSIONT.P.T. COLONY VISAKHAPATNAM , NA, Andhra Pradesh, India - 000000 NA Andhra Pradesh 000000 India"
+  },
+  {
+    "id": "mtvh2fp714lwa",
+    "companyName": "FERRO IMPEX PVT LTD",
+    "companyId": "U51909CH1982PTC004874",
+    "address": "NO.3153, SECTOR-21-D.,CHANDIGARH , NA, Chandigarh, India - 000000 NA Chandigarh 000000 India"
+  },
+  {
+    "id": "mtvh2fpcgudum",
+    "companyName": "SONA IMPEX PVT.LTD.",
+    "companyId": "U51909CH1994PTC014954",
+    "address": "H NO 164SECTOR 27 A CHANDIGARH , UT, Chandigarh, India - 000000 UT Chandigarh 000000 India"
+  },
+  {
+    "id": "mtvh2fpf3fgui",
+    "companyName": "STANDARD IMPEX PVT LTD",
+    "companyId": "U51909CH1977PTC003760",
+    "address": "CHANDIGARH CHANDIGARH , UT, Chandigarh, India - 000000 UT Chandigarh 000000 India"
+  },
+  {
+    "id": "mtvh2fpig5dn9",
+    "companyName": "LALLY IMPEX PVT LTD",
+    "companyId": "U51909CH1993PTC013122",
+    "address": "# 454 CSECTOER 33 A CHANDIGARH , UT, Chandigarh, India - 000000 UT Chandigarh 000000 India"
+  },
+  {
+    "id": "mtvh2fpl4uua1",
+    "companyName": "DASWAND IMPEX PVT LTD",
+    "companyId": "U51909CH1993PTC014031",
+    "address": "4533SECTOR 36 B CHANDIGARH , UT, Chandigarh, India - 000000 UT Chandigarh 000000 India"
+  },
+  {
+    "id": "mtvh2fpoyp8zl",
+    "companyName": "VATS IMPEX PVT LTD",
+    "companyId": "U51909CH1994PTC014708",
+    "address": "3417 SECTOR 23 DCHANDIGARH , U T, Chandigarh, India - 000000 U T Chandigarh 000000 India"
+  },
+  {
+    "id": "mtvh2fprg5qld",
+    "companyName": "SHERPUR IMPEX PVT LTD",
+    "companyId": "U51909CH1994PTC014984",
+    "address": "SCO 43SECTOR 41 D CHANDIGARH , U T, Chandigarh, India - 000000 U T Chandigarh 000000 India"
+  },
+  {
+    "id": "mtvh2fpuwtjqp",
+    "companyName": "SANDHU IMPEX PVT LTD",
+    "companyId": "U51909CH1994PTC015102",
+    "address": "SCO 2415/16SECTOR 22 C CHANDIGARH , UT, Chandigarh, India - 000000 UT Chandigarh 000000 India"
+  },
+  {
+    "id": "mtvh2fpyf0pho",
+    "companyName": "ASSOCIATED IMPEX PVT LTD",
+    "companyId": "U51909DL1973PTC006640",
+    "address": "B-95, GREATER KAILASH, NEWDELHI. , NA, Delhi, India - 000000 NA Delhi 000000 India"
+  },
+  {
+    "id": "mtvh2fq1h9o6o",
+    "companyName": "GARIMA IMPEX PVT LTD",
+    "companyId": "U51102RJ1995PTC010106",
+    "address": "E-176, RAMESH MARG, C-SCHEME,JAIPUR , NA, Rajasthan, India - 000000 NA Rajasthan 000000 India"
+  },
+  {
+    "id": "mtvh2fq4nzpno",
+    "companyName": "NOBLE IMPEX PVT LTD",
+    "companyId": "U51102WB1987PTC042725",
+    "address": "111 BLOCK A TIVOLI COURT1A BALLYGUNGE CIRCULAR ROAD , KOLKATA, West Bengal, India - 000000 KOLKATA West Bengal 000000 India"
+  },
+  {
+    "id": "mtvh2fq8etrdj",
+    "companyName": "ANIRBAN IMPEX PVT. LTD.",
+    "companyId": "U51102WB1993PTC060997",
+    "address": "09, MOORE AVENUE, , KOLKATA, West Bengal, India - 700040 KOLKATA West Bengal 700040 India"
+  },
+  {
+    "id": "mtvh2fqbjwl4t",
+    "companyName": "PAROLIA IMPEX PVT LTD",
+    "companyId": "U51103WB1984PTC037577",
+    "address": "33/1 NETAJI SUBHAS ROAD , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvh2fqfhy9pk",
+    "companyName": "SANSUM IMPEX PVT LTD",
+    "companyId": "U51109CH1993PTC014047",
+    "address": "H.NO 20 ASECTOR 9 A CHANDIGARH , U T, Chandigarh, India - 000000 U T Chandigarh 000000 India"
+  },
+  {
+    "id": "mtvh2pqs34625",
+    "companyName": "BLISS IMPEX PVT. LTD.",
+    "companyId": "U51109DL1999PTC101075",
+    "address": "FLATNO14,92 KRISHNA NAGAR,SAFDARJUNF ENCLAVE, , NEW DELHI, Delhi, India - 110029 NEW DELHI Delhi 110029 India"
+  },
+  {
+    "id": "mtvh2pqx6du8w",
+    "companyName": "DEVVRAT IMPEX PVT LTD",
+    "companyId": "U51109DL2001PTC111429",
+    "address": "B-8 GITANJALI ENCLAVE , NEW DELHI, Delhi, India - 110017 NEW DELHI Delhi 110017 India"
+  },
+  {
+    "id": "mtvh2pr11d673",
+    "companyName": "APG IMPEX PVT. LTD.",
+    "companyId": "U51109DL2001PTC111520",
+    "address": "B 161 DDA BUILD SHEDOKHLA INDUSTRIES AREA PHASE I , NEW DELHI, Delhi, India - 110020 NEW DELHI Delhi 110020 India"
+  },
+  {
+    "id": "mtvh2pr43qvc2",
+    "companyName": "MARTINS IMPEX PVT. LTD.",
+    "companyId": "U51109HR1998PTC034063",
+    "address": "Plot No 266 Industrial Area, Phase -2 , Panchkula, Haryana, India - 134109 Panchkula Haryana 134109 India"
+  },
+  {
+    "id": "mtvh2pr89sabe",
+    "companyName": "SATYANARAYAN IMPEX PVT. LTD.",
+    "companyId": "U51109JH1990PTC001791",
+    "address": "Post Box No. 1 Barganda , Giridih, Jharkhand, India - 815301 Giridih Jharkhand 815301 India"
+  },
+  {
+    "id": "mtvh2prcidhp1",
+    "companyName": "MANALI IMPEX PVT LTD.",
+    "companyId": "U51109MH1989PTC052024",
+    "address": "16, SAGAR, 327, N.M.ST MASJIDBOMBAY. , MUMBAI-400009, Maharashtra, India - 000000 MUMBAI-400009 Maharashtra 400009 India"
+  },
+  {
+    "id": "mtvh2prgwuq4b",
+    "companyName": "AEGIR IMPEX PVT LTD",
+    "companyId": "U50300PB1995PTC015651",
+    "address": "PB LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtvh2prjt890y",
+    "companyName": "DHARMA IMPEX PVT LTD",
+    "companyId": "U51100MH1987PTC045311",
+    "address": "214, DEEPAK NIWAS, 10TH RD,KHAR, BOMBAY. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvh2prnda7ew",
+    "companyName": "CHHOTAI IMPEX PVT.LTD.",
+    "companyId": "U51100MH1993PTC071746",
+    "address": "36 ROLLING HILLS,JIVAN BIMANAGAR,BORIVALI WEST, BOMBAY -103. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvh2prrpiq7f",
+    "companyName": "NEELKAMAL IMPEX PVT. LTD.",
+    "companyId": "U51211DL2001PTC110849",
+    "address": "PLOT NO 67, 2nd FLOOR PKT-N, SECTOR-1 BAWANA INDUSTRIAL AREA DSIDC, DELHI 1100 39 , DELHI, Delhi, India - 110039 DELHI Delhi 110039 India"
+  },
+  {
+    "id": "mtvh2prvwjezg",
+    "companyName": "EXCELAN IMPEX PVT LTD",
+    "companyId": "U51211WB1990PTC050299",
+    "address": "8 LAL BAZAR STREET , KOLKATA, West Bengal, India - 000000 KOLKATA West Bengal 000000 India"
+  },
+  {
+    "id": "mtvh2prwqhtig",
+    "companyName": "NITVA IMPEX PVT. LTD.",
+    "companyId": "U51215WB1994PTC061521",
+    "address": "GC-210 SECTOR-III SALT LAKE , KOLKATA, West Bengal, India - 700091 KOLKATA West Bengal 700091 India"
+  },
+  {
+    "id": "mtvh2prxg9s6t",
+    "companyName": "NECTAR IMPEX PVT. LTD.",
+    "companyId": "U51216WB1992PTC054545",
+    "address": "63 RADHABAZAR STREET HARE STREET , KOLKATA, West Bengal, India - 700000 KOLKATA West Bengal 700000 India"
+  },
+  {
+    "id": "mtvh2ps0dcimt",
+    "companyName": "SWAGTAM IMPEX PVT. LTD.",
+    "companyId": "U51216WB1992PTC055002",
+    "address": "4/1 MIDDLETON STREET2ND FLOOR P S PARK STREET , KOLKATA, West Bengal, India - 700071 KOLKATA West Bengal 700071 India"
+  },
+  {
+    "id": "mtvh2ps16gmbo",
+    "companyName": "ELEGANT IMPEX PVT LTD",
+    "companyId": "U51216WB1995PTC076229",
+    "address": "2B COLONEL BISWAS ROAD , KOLKATA, West Bengal, India - 700019 KOLKATA West Bengal 700019 India"
+  },
+  {
+    "id": "mtvh2ps2qu6it",
+    "companyName": "NENI IMPEX PVT LTD",
+    "companyId": "U51219WB1994PTC062998",
+    "address": "S/2 4TH FLOOR 77 N S RD , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvh2ps4c3cdx",
+    "companyName": "CONNECT IMPEX PVT.LTD.",
+    "companyId": "U51219WB1994PTC064416",
+    "address": "8 HO CHI MINH SARANISUITE NO.26 , KOLKATA, West Bengal, India - 700071 KOLKATA West Bengal 700071 India"
+  },
+  {
+    "id": "mtvh2ps571zpc",
+    "companyName": "AAHUTI IMPEX PVT.LTD.",
+    "companyId": "U51219WB1994PTC065048",
+    "address": "13 B ANKUR10 LORD SINHA RD , KOLKATA, West Bengal, India - 700071 KOLKATA West Bengal 700071 India"
+  },
+  {
+    "id": "mtvh2ps7h59lj",
+    "companyName": "DICO IMPEX PVT LTD",
+    "companyId": "U51223WB1985PTC039411",
+    "address": "17 DARIDA ROAD P S SALT LAKE , KOLKATA, West Bengal, India - 700059 KOLKATA West Bengal 700059 India"
+  },
+  {
+    "id": "mtvh2ps8uu80i",
+    "companyName": "NEHA IMPEX PVT.LTD.",
+    "companyId": "U51225WB1991PTC050798",
+    "address": "161/1 M G ROAD , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvh308k8n67g",
+    "companyName": "LIMTEX IMPEX PVT LTD",
+    "companyId": "U51225WB1994PTC065523",
+    "address": "53A TOWNSHEND ROAD PS BHOWANIPORE , KOLKATA, West Bengal, India - 700025 KOLKATA West Bengal 700025 India"
+  },
+  {
+    "id": "mtvh308mke3z0",
+    "companyName": "WINART IMPEX PVT LTD",
+    "companyId": "U51226WB1984PTC037061",
+    "address": "28/1 SHAKESPEARE SARANI , KOLKATA, West Bengal, India - 700017 KOLKATA West Bengal 700017 India"
+  },
+  {
+    "id": "mtvh308odtcxq",
+    "companyName": "UPSONS IMPEX PVT LTD",
+    "companyId": "U51226WB1985PTC038972",
+    "address": "SAHA BHAWAN, FIRST FLOOR 8, CIRCUS MARKET PLACE , KOLKATA, West Bengal, India - 700017 KOLKATA West Bengal 700017 India"
+  },
+  {
+    "id": "mtvh308qda3ai",
+    "companyName": "RWIN IMPEX PVT.LTD.",
+    "companyId": "U51226WB1995PTC072143",
+    "address": "70 LAKE AVE , KOLKATA, West Bengal, India - 700017 KOLKATA West Bengal 700017 India"
+  },
+  {
+    "id": "mtvh308sm7bdf",
+    "companyName": "ROSE IMPEX PVT LTD",
+    "companyId": "U51228WB1996PTC076837",
+    "address": "Purbachal, Cluster VIII, Q2, Salt Lake, Kolkata-700097 , Kolkata, West Bengal, India - 700097 Kolkata West Bengal 700097 India"
+  },
+  {
+    "id": "mtvh308uurv8v",
+    "companyName": "MARVEL IMPEX PVT. LTD.",
+    "companyId": "U51229WB1991PTC053491",
+    "address": "20 MAY FAIR ROAD , KOLKATA, West Bengal, India - 700019 KOLKATA West Bengal 700019 India"
+  },
+  {
+    "id": "mtvh308xqxkuo",
+    "companyName": "SRL IMPEX PVT LTD",
+    "companyId": "U51229WB1992PTC056892",
+    "address": "NPS BUSINESS CENTRE, 7A, KIRAN SHANKAR ROY ROAD , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtvh308zkkuym",
+    "companyName": "ASCO IMPEX PVT LTD",
+    "companyId": "U51311CH1994PTC014404",
+    "address": "SCF 352MOTOR MARKET MANIMAJRA , CHANDIGARH, Chandigarh, India - 000000 CHANDIGARH Chandigarh 000000 India"
+  },
+  {
+    "id": "mtvh3091g44ng",
+    "companyName": "SHERWOOD IMPEX PVT LTD",
+    "companyId": "U51311CH1994PTC014892",
+    "address": "# 3049SECTOR 21 D CHANDIGARH , UT, Chandigarh, India - 000000 UT Chandigarh 000000 India"
+  },
+  {
+    "id": "mtvh3093dh65z",
+    "companyName": "SAHIBABAD IMPEX PVT. LTD.",
+    "companyId": "U51311DL1990PTC040339",
+    "address": "W-102 GREATER KAILASH PART-IINEW DELHI , NA, Delhi, India - 000000 NA Delhi 000000 India"
+  },
+  {
+    "id": "mtvh3096rzv7z",
+    "companyName": "RITESH IMPEX PVT LTD",
+    "companyId": "U51311DL1994PTC269851",
+    "address": "11/5B, PUSA ROAD , NEW DELHI, Delhi, India - 110060 NEW DELHI Delhi 110060 India"
+  },
+  {
+    "id": "mtvh309ab2szl",
+    "companyName": "HARLAJ IMPEX PVT. LTD.",
+    "companyId": "U51311DL1999PTC101221",
+    "address": "GF-6 10679-80JHANDEWALAN ROAD NABIKARIM , NEW DELHI, Delhi, India - 110055 NEW DELHI Delhi 110055 India"
+  },
+  {
+    "id": "mtvh309cdve7p",
+    "companyName": "SARGO IMPEX PVT LTD",
+    "companyId": "U51311DL2000PTC107309",
+    "address": "C-32B MANSAROVER GARDENKIRIT NAGAR , NEW DELHI, Delhi, India - 110015 NEW DELHI Delhi 110015 India"
+  },
+  {
+    "id": "mtvh309gbdx1x",
+    "companyName": "STS IMPEX PVT LTD",
+    "companyId": "U51311DL2001PTC111241",
+    "address": "B-1/150A,STREET NO.5, NEW ASHOK NAGAR, , DELHI, Delhi, India - 110096 DELHI Delhi 110096 India"
+  },
+  {
+    "id": "mtvh309isstja",
+    "companyName": "SAMBHAW IMPEX PVT LTD",
+    "companyId": "U51311MH1985PTC035511",
+    "address": "107,MAKER CHAMBER III,NARIMANPOINT,BOMBAY , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvh309l8ixvl",
+    "companyName": "PARAG IMPEX PVT LTD",
+    "companyId": "U51311MH1986PTC039529",
+    "address": "43 BAZAR GATE STREETGROUND FL, FORT ,MUMBAI , MUMBAI-1, Maharashtra, India - 000000 MUMBAI-1 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvh309p6q1wq",
+    "companyName": "SHELSON IMPEX PVT LTD.",
+    "companyId": "U51311MH1989PTC051862",
+    "address": "A-601, WOOD ROSE LOKHANDWALACOMPLEX, ANDHERI (W) BOMBAY. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvh309sth3em",
+    "companyName": "RAVIKIRAN IMPEX PVT LTD",
+    "companyId": "U51311MH1992PTC066373",
+    "address": "343-A, KALBADE RD, BADAMWADI3RD FLR, NO 29 BOMBAY 2 , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvh309w87pl2",
+    "companyName": "BHAGYALAXMI IMPEX PVT LTD",
+    "companyId": "U51311MH1992PTC066484",
+    "address": "343-A, KALBADEVI RD, 3/29,BADAMWADI BOMBAY 2 , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtvh309ze4yik",
+    "companyName": "SWAPNA IMPEX PVT LTD",
+    "companyId": "U51900MH1981PTC024160",
+    "address": "304, DOL-BIN-SHIR, 69-71,GHOGA ST, BOMBAY-23 , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj4yqva46wz",
+    "companyName": "BEAM IMPEX PVT LTD",
+    "companyId": "U51900MH1981PTC024808",
+    "address": "SALDEEP, PARADE, COLABA,BOMBAY-5 , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj4ys2yc6j6",
+    "companyName": "VISHAL IMPEX PVT LTD",
+    "companyId": "U51900MH1982PTC027749",
+    "address": "ELPHINSTON HOUSE, 5/6,3RD FLOOR, 17 MURZBAN ROAD, V.T. , MUMBAI-1., Maharashtra, India - 000000 MUMBAI-1. Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj4ys7tlp4l",
+    "companyName": "SHASMIRA IMPEX PVT LTD",
+    "companyId": "U51900MH1982PTC028433",
+    "address": "137, HIND RAJASTHAN DEPTT DADASAHEB PHALKE RD. DADAR, BOMBAY-14 , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj4yscy6bcb",
+    "companyName": "STAR IMPEX PVT LTD",
+    "companyId": "U51900MH1982PTC028681",
+    "address": "WARDEN HOUSE, 2ND FLR, SIR P.M. ROAD, BOMBAY-1 , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj4yshc79sd",
+    "companyName": "SHYAM IMPEX PVT LTD",
+    "companyId": "U51900MH1983PTC029655",
+    "address": "335, BM PANCHRATNA,OPERA HOUSE,,MUMBAI-400 004. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj4ysltko04",
+    "companyName": "INTEGRATED IMPEX PVT LTD",
+    "companyId": "U51900MH1983PTC029961",
+    "address": "310-A, NARSI NATHA STREET,BOMBAY- , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj4ysqn8h79",
+    "companyName": "JAYSHREE IMPEX PVT LTD",
+    "companyId": "U51900MH1983PTC030064",
+    "address": "2, MORVI HOUSE, 28/30, GOASTREET BOMBAY-1 , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj4ysv8dvwn",
+    "companyName": "TRADE IMPEX PVT LTD",
+    "companyId": "U51900MH1953PTC009181",
+    "address": "Floor-0, Plot - 24 Monica CHS, Fazal Road, Near Star Mansion, Colaba, MUMBAI 400005 , Mumbai, Maharashtra, India - 400005 Mumbai Maharashtra 400005 India"
+  },
+  {
+    "id": "mtwj4yt0dz59a",
+    "companyName": "GAYATRI IMPEX PVT LTD",
+    "companyId": "U51900MH1980PTC022903",
+    "address": "41 CRESCENT MANSIONOPP GAMDEVI POLICE STATION NANA CHOWK , MUMBAI, Maharashtra, India - 400007 MUMBAI Maharashtra 400007 India"
+  },
+  {
+    "id": "mtwj4yt4zwoei",
+    "companyName": "EVERET IMPEX PVT LTD",
+    "companyId": "U51900MH1981PTC024959",
+    "address": "12 SAGAR TARANG 2ND FLRMADHUKAR RAUT RD SHIVAJI PARK V S MARG , MUMBAI, Maharashtra, India - 400028 MUMBAI Maharashtra 400028 India"
+  },
+  {
+    "id": "mtwj4yt9h17rq",
+    "companyName": "URVI IMPEX PVT LTD",
+    "companyId": "U51900MH1981PTC025293",
+    "address": "111-A MITTAL CHAMBERS228 NARIMAN POINT , MUMBAI, Maharashtra, India - 400021 MUMBAI Maharashtra 400021 India"
+  },
+  {
+    "id": "mtwj4ytdmnfbn",
+    "companyName": "VINIT IMPEX PVT LTD",
+    "companyId": "U51900MH1982PTC026120",
+    "address": "B-1, TULSI VIAHR DR.A.B.ROAD, WORLI NAKA, , MUMBAI, Maharashtra, India - 400018 MUMBAI Maharashtra 400018 India"
+  },
+  {
+    "id": "mtwj4ytjc2h0c",
+    "companyName": "KAY IMPEX PVT LTD",
+    "companyId": "U51900MH1982PTC027974",
+    "address": "B-52 GIRIRAJ IND ESTATE1ST FLR MAHAKALI CAVES RAOD ANDHERI E , MUMBAI, Maharashtra, India - 400093 MUMBAI Maharashtra 400093 India"
+  },
+  {
+    "id": "mtwj4ytn6ie4h",
+    "companyName": "APU IMPEX PVT LTD",
+    "companyId": "U51900MH1982PTC028494",
+    "address": "PUSHPACHANDRA APARTMENT7TH FLOOR 559/1 S V ROAD MALAD WEST , MUMBAI, Maharashtra, India - 400064 MUMBAI Maharashtra 400064 India"
+  },
+  {
+    "id": "mtwj4ytr5vjzr",
+    "companyName": "NIDHI IMPEX PVT LTD",
+    "companyId": "U51900MH1983PTC029846",
+    "address": "21 GURU NIWAS 292V P ROAD , MUMBAI, Maharashtra, India - 400004 MUMBAI Maharashtra 400004 India"
+  },
+  {
+    "id": "mtwj4ytvb4ui7",
+    "companyName": "BIMLA IMPEX PVT LTD",
+    "companyId": "U51900MH1983PTC030029",
+    "address": "DAFFODILS,240,SHER-E-PUNJABSOCIETYMAHAKALICAVESROAD,ANDHERI-EAST , MUMBAI, Maharashtra, India - 400093 MUMBAI Maharashtra 400093 India"
+  },
+  {
+    "id": "mtwj4ytzvip71",
+    "companyName": "VERMA IMPEX PVT LTD",
+    "companyId": "U51900MH1983PTC030757",
+    "address": "226 SHERE PUNJAB CO-OP SOC,OFF MAHAKALI CAVES ROAD ANDHERI EAST MUMBAI-93 , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj4yu3461vq",
+    "companyName": "GODHWANI IMPEX PVT LTD",
+    "companyId": "U51900MH1983PTC031037",
+    "address": "132,JOLLY MAKER CHAMBERS,II,,NARIMAN POINT BOMBAY-21 , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj4yu89ucny",
+    "companyName": "VIREN IMPEX PVT LTD",
+    "companyId": "U51900MH1983PTC031730",
+    "address": "B/205, SIMLA HOUSE, NEPEAN SEARD, BOMBAY-6 , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj4yuc85kc8",
+    "companyName": "RINCO IMPEX PVT LTD",
+    "companyId": "U51900MH1984PTC032311",
+    "address": "36,QUEEN'S LAWN,967,S V ROAD,,VILE PARLE(W) BOMBAY-56 , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a0n29xs8",
+    "companyName": "MIDLAND IMPEX PVT.LTD,",
+    "companyId": "U51900MH1984PTC033775",
+    "address": "B-4,UNIQUE INDUSTRIAL ESTATE,,CHAKALA ROAD ANDHERI (E), ,BOMBAY-93. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a0rzg5fg",
+    "companyName": "GAURAV IMPEX PVT LTD",
+    "companyId": "U51900MH1984PTC034558",
+    "address": "3,AMRIT KESHAV NAIK MARG,,OFFICE28,2ND FLOOR NEAR NEW EMPIRE THEATRE,BOMBAY , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a0sjqwp8",
+    "companyName": "LATA IMPEX PVT LTD",
+    "companyId": "U51900MH1984PTC034728",
+    "address": "IPCON INVESTMENTS & FINANCIALCONSULTANTS 121 AGRA BLDG M G RD , MUMBAI, Maharashtra, India - 400023 MUMBAI Maharashtra 400021 India"
+  },
+  {
+    "id": "mtwj9a0u7osiv",
+    "companyName": "MULTI IMPEX PVT LTD",
+    "companyId": "U51900MH1984PTC034766",
+    "address": "F-22, CHAND SOCIETY JUHUCHURCH RAOD SANTACRUZ (W) BOMBAY , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a0w1ell0",
+    "companyName": "ARAMA IMPEX PVT LTD",
+    "companyId": "U51900MH1985PTC036825",
+    "address": "73-A ALIUMER STREET , MUMBAI, Maharashtra, India - 400003 MUMBAI Maharashtra 400003 India"
+  },
+  {
+    "id": "mtwj9a0yi0cic",
+    "companyName": "IMPEX DADIA PVT LTD",
+    "companyId": "U51900MH1985PTC037317",
+    "address": "5/20 ARUN CHEMBER, TARDEO RD.,BOMBAY. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a1090hq9",
+    "companyName": "SHIVTRISHUL IMPEX PVT LTD",
+    "companyId": "U51900MH1985PTC037334",
+    "address": "220, KALYANDAS BHAVAN,PRABHADEVI WORLI, BOMBAY. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a120v8zf",
+    "companyName": "SHAKTI IMPEX PVT LTD",
+    "companyId": "U51900MH1985PTC037911",
+    "address": "NEW BARDAN LANE, KIDIWALA BLDG, 5TH FLOOR BOMBAY-3. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a150f40o",
+    "companyName": "DEEGEESON IMPEX PVT LTD",
+    "companyId": "U51900MH1986PTC040737",
+    "address": "213 A JOLY MAKER APARTMENT NO1 95/97 CUFFE PARADE BOMBAY , MUMBAI-400005, Maharashtra, India - 000000 MUMBAI-400005 Maharashtra 400005 India"
+  },
+  {
+    "id": "mtwj9a166dp5t",
+    "companyName": "POPSON IMPEX PVT LTD",
+    "companyId": "U51900MH1987PTC042210",
+    "address": "72, LAXMIDAS MARKET, ZAVERIBAZAR BOMBAY-2. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a185xs9w",
+    "companyName": "SWAN IMPEX PVT LTD",
+    "companyId": "U51900MH1987PTC042500",
+    "address": "480 KALBADEVI DHANUKAR BLDG.,BOMBAY-2 , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a1ad0j47",
+    "companyName": "RAVI IMPEX PVT LTD",
+    "companyId": "U51900MH1987PTC043181",
+    "address": "92 MISTRY PALACE 77 BHULABHATDESAI ROAD BOMBAY- 36. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a1cw6u2g",
+    "companyName": "GAJANAN IMPEX PVT LTD",
+    "companyId": "U51900MH1987PTC043929",
+    "address": "A-2/460, SHAH & NAHAR INDUST-RIAL ESTATE LOWER PAREL W. MUMBAI, , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a1fp9y6p",
+    "companyName": "BUDHRANI IMPEX PVT LTD",
+    "companyId": "U51900MH1987PTC044381",
+    "address": "94, MAKER CHAMBERS VI CEREMONIAL BOULE VARD N ARIMAN POINT, , BOMBAY , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a1hjfrzz",
+    "companyName": "SUDAN'S IMPEX PVT LTD",
+    "companyId": "U51900MH1988PTC048408",
+    "address": "R.NO. 53, CHHOTALAL BHAVAN,418, KALBADEVI RD BOMBAY-2. , MUMBAI 400002, Maharashtra, India - 000000 MUMBAI 400002 Maharashtra 400002 India"
+  },
+  {
+    "id": "mtwj9a1jqub9v",
+    "companyName": "SWASTIKA IMPEX PVT. LTD.",
+    "companyId": "U51900MH1988PTC049610",
+    "address": "44, CAWASJI PATEL ST., FORT,BOMBAY-23. , MUMBAI.400 023, Maharashtra, India - 000000 MUMBAI.400 023 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9a1lpqnmi",
+    "companyName": "JAINSONS IMPEX PVT LTD",
+    "companyId": "U51900MH1983PTC031234",
+    "address": "145, Sankalp Sidhi Bapuram Pathe Marg , Mumbai, Maharashtra, India - 400007 Mumbai Maharashtra 400007 India"
+  },
+  {
+    "id": "mtwj9a1n0tr8l",
+    "companyName": "KAVERI IMPEX PVT LTD",
+    "companyId": "U51900MH1983PTC049621",
+    "address": "115 CREATIVE INDL ESTATESITARAM MILLS COMPOUND N M JOSHI MARG , MUMBAI, Maharashtra, India - 400011 MUMBAI Maharashtra 400011 India"
+  },
+  {
+    "id": "mtwj9a1pch6vv",
+    "companyName": "CHASMAWALA IMPEX PVT LTD",
+    "companyId": "U51900MH1984PTC032224",
+    "address": "4th floor, Mahavir sadan, 34 Balaram street, Grant Road, , MUMBAI, Maharashtra, India - 400007 MUMBAI Maharashtra 400007 India"
+  },
+  {
+    "id": "mtwj9a1rqbq0f",
+    "companyName": "WESTPOINT IMPEX PVT LTD",
+    "companyId": "U51900MH1984PTC032591",
+    "address": "UNIT NO.15,3RD FLOOR,MASHQURE FRIENDS UNION PREMISES CO-OP SOCIETY LTD,227 P.D MELLO ROAD,FORT , MUMBAI, Maharashtra, India - 400001 MUMBAI Maharashtra 400001 India"
+  },
+  {
+    "id": "mtwj9tp5ulj1p",
+    "companyName": "SHAMROCK IMPEX PVT LTD",
+    "companyId": "U51900MH1984PTC032765",
+    "address": "15-AHORNIMAN CIRCLE FORT , MUMBAI, Maharashtra, India - 400001 MUMBAI Maharashtra 400001 India"
+  },
+  {
+    "id": "mtwj9tphr95kp",
+    "companyName": "HIMATLAL IMPEX PVT LTD",
+    "companyId": "U51900MH1984PTC034307",
+    "address": "DOOLY CHAMBERS 6TH FLRSTRAND CINEMA RD COLABA , MUMBAI, Maharashtra, India - 400005 MUMBAI Maharashtra 400005 India"
+  },
+  {
+    "id": "mtwj9tprjdvgp",
+    "companyName": "APJESH IMPEX PVT LTD",
+    "companyId": "U51900MH1984PTC034924",
+    "address": "FOODS AND INNS LTD PREMISESSION TROMBAY RD DEONAR , MUMBAI, Maharashtra, India - 400088 MUMBAI Maharashtra 400088 India"
+  },
+  {
+    "id": "mtwj9tpz1r3uy",
+    "companyName": "VALIA IMPEX PVT LTD",
+    "companyId": "U51900MH1985PTC037040",
+    "address": "1A /1B KAILASH TOWERSA WING WESTRN EXPRESS HIGHWAY ANDHERI (EAST) , MUMBAI, Maharashtra, India - 400069 MUMBAI Maharashtra 400069 India"
+  },
+  {
+    "id": "mtwj9tq6eqw1v",
+    "companyName": "BLUECHIP IMPEX PVT LTD",
+    "companyId": "U51900MH1985PTC037190",
+    "address": "260 ABDUL REHMAN STENAYAT MANZIL 2ND FLR , MUMBAI, Maharashtra, India - 400003 MUMBAI Maharashtra 400003 India"
+  },
+  {
+    "id": "mtwj9tqcvhqvz",
+    "companyName": "SEADRILL IMPEX PVT LTD",
+    "companyId": "U51900MH1985PTC038125",
+    "address": "101 AFROZ APARTMENTBHARDAWADI ROAD AMBIVLI ANDHERI (W) , MUMBAI, Maharashtra, India - 400058 MUMBAI Maharashtra 400058 India"
+  },
+  {
+    "id": "mtwj9tqjofga8",
+    "companyName": "TRANS IMPEX PVT LTD",
+    "companyId": "U51900MH1985PTC038293",
+    "address": "DARABSHAW HOUSE SOORJIVALLABHDAS MARG BALLARD ESTATE , MUMBAI, Maharashtra, India - 400038 MUMBAI Maharashtra 400038 India"
+  },
+  {
+    "id": "mtwj9tqomgt11",
+    "companyName": "KAVIUM IMPEX PVT LTD",
+    "companyId": "U51900MH1986PTC039480",
+    "address": "107 B MITTAL TOWER NARIMANPOINT BOMBAY , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9tque4xcz",
+    "companyName": "KANCHANJUNGA IMPEX PVT LTD",
+    "companyId": "U51900MH1987PTC042165",
+    "address": "157/5 5TH CAVEL CROSS LANEDR VEIGAS STREET KALBADEVI , MUMBAI, Maharashtra, India - 400002 MUMBAI Maharashtra 400002 India"
+  },
+  {
+    "id": "mtwj9tqzk82y2",
+    "companyName": "PRATAPRAI IMPEX PVT LTD",
+    "companyId": "U51900MH1987PTC042286",
+    "address": "D-1/501, SUVADHI APT, SARVODAYA NAGAR, NAHUR ROAD, MULUND (WEST) , MUMBAI, Maharashtra, India - 400080 MUMBAI Maharashtra 400080 India"
+  },
+  {
+    "id": "mtwj9tr3kgozw",
+    "companyName": "SHAKUN IMPEX PVT LTD",
+    "companyId": "U51900MH1987PTC042541",
+    "address": "02, Ground Floor, 139, Ivanhoe Building,G. J. Bosle Marg, Sachivayala Gymkhana, Narima n Point , MUMBAI, Maharashtra, India - 400021 MUMBAI Maharashtra 400021 India"
+  },
+  {
+    "id": "mtwj9tr9zv5wh",
+    "companyName": "NEESIBA IMPEX PVT LTD",
+    "companyId": "U51900MH1987PTC043766",
+    "address": "208 REWA CHAMBERS31 MARINE LINES , MUMBAI, Maharashtra, India - 400020 MUMBAI Maharashtra 400020 India"
+  },
+  {
+    "id": "mtwj9tre5a5dn",
+    "companyName": "SANJAY IMPEX PVT LTD",
+    "companyId": "U51900MH1987PTC045384",
+    "address": "204, KALPATARU PLAZA, CHINCHOLI BUNDER ROAD OFF S.V. ROAD, MALAD (WEST) , MUMBAI, Maharashtra, India - 400064 MUMBAI Maharashtra 400064 India"
+  },
+  {
+    "id": "mtwj9tridefjv",
+    "companyName": "CHNEENA IMPEX PVT LTD",
+    "companyId": "U51900MH1988PTC049287",
+    "address": "VAIBHAV CHAMBERS, 9th FLOOR, OPPOSITE INCOME TAX OFFICE,BANDRA-KURLA COMPLEX,BANDRA EAST , MUMBAI, Maharashtra, India - 400051 MUMBAI Maharashtra 400051 India"
+  },
+  {
+    "id": "mtwj9trmr4m26",
+    "companyName": "SMITASHA IMPEX PVT LTD",
+    "companyId": "U51900MH1988PTC049290",
+    "address": "VAIBHAV CHAMBERS, 9th FLOOR, OPPOSITE INCOME TAX OFFICE,BANDRA-KURLA COMPLEX,BANDRA EAST , MUMBAI, Maharashtra, India - 400051 MUMBAI Maharashtra 400051 India"
+  },
+  {
+    "id": "mtwj9trqvoeaf",
+    "companyName": "SMASH IMPEX PVT LTD.",
+    "companyId": "U51900MH1989PTC052121",
+    "address": "SUNDER MAHAL, R.NO.47, IIIRDFL, VEER NARIMAN RD BOMBAY. , MUMBAI 400020, Maharashtra, India - 000000 MUMBAI 400020 Maharashtra 400020 India"
+  },
+  {
+    "id": "mtwj9tru7v3le",
+    "companyName": "CHIRAG IMPEX PVT. LTD.",
+    "companyId": "U51900MH1989PTC052321",
+    "address": "25, DHARAVI SHOPPING CENTRE,DHARAVI, BOMBAY , MUMBAI-400016, Maharashtra, India - 000000 MUMBAI-400016 Maharashtra 400016 India"
+  },
+  {
+    "id": "mtwj9trygas20",
+    "companyName": "LYNRON IMPEX PVT. LTD.",
+    "companyId": "U51900MH1989PTC052425",
+    "address": "51/54, PATTANI CHAMBERS S.V.ROAD, MALAD (W) BOMBAY , MUMBAI 40004, Maharashtra, India - 000000 MUMBAI 40004 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwj9ts2dh1zu",
+    "companyName": "RAJDAN IMPEX PVT LTD.",
+    "companyId": "U51900MH1989PTC052470",
+    "address": "610 EMBASSY CENTRE NARIMAN POINT BOMBAY-21 , MUMBAI-400021, Maharashtra, India - 000000 MUMBAI-400021 Maharashtra 400021 India"
+  },
+  {
+    "id": "mtwj9ts6ff4ul",
+    "companyName": "SHREYAS IMPEX PVT LTD",
+    "companyId": "U51900MH1989PTC052603",
+    "address": "111,, Akurli Industrial Estate, Akurli Road, Kandivali (E), , Mumbai, Maharashtra, India - 400101 Mumbai Maharashtra 400101 India"
+  },
+  {
+    "id": "mtwjhxofot8ep",
+    "companyName": "PRUDENTIAL IMPEX PVT. LTD.",
+    "companyId": "U51900MH1989PTC053159",
+    "address": "4 OM CHAMBERS KEMP'S CORNERBOMBAY , MUMBAI-400026, Maharashtra, India - 000000 MUMBAI-400026 Maharashtra 400026 India"
+  },
+  {
+    "id": "mtwjhxol0ag3p",
+    "companyName": "DAVIERWALLAS IMPEX PVT LTD",
+    "companyId": "U51900MH1991PTC060664",
+    "address": "1A-15 TATA MILLS HOUSE SOCELPHISTONE ROAD , MUMBAI, Maharashtra, India - 400012 MUMBAI Maharashtra 400012 India"
+  },
+  {
+    "id": "mtwjhxoq1fynx",
+    "companyName": "SEKA IMPEX PVT LTD",
+    "companyId": "U51900MH1991PTC062041",
+    "address": "311 VENKATESH CHAMBERSPRESCOT RD FORT , MUMBAI, Maharashtra, India - 400001 MUMBAI Maharashtra 400001 India"
+  },
+  {
+    "id": "mtwjhxoun202u",
+    "companyName": "PISCEAN IMPEX PVT LTD",
+    "companyId": "U51900MH1991PTC062206",
+    "address": "A/18, DEEPANJALI, SHAJI RAJE MARG, VILE PARLE EAST MUMBAI 5 7. , W.E.F.01/12/2001., Maharashtra, India - 000000 W.E.F.01/12/2001. Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjhxoyp1tk3",
+    "companyName": "TOA IMPEX PVT LTD",
+    "companyId": "U51900MH1991PTC062370",
+    "address": "2ND FLOOR,GENERAL ASSURANCEBUILDING,232, DR.D.N.ROAD,FORT, , MUMBAI-1., Maharashtra, India - 000000 MUMBAI-1. Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjhxp2yrzsm",
+    "companyName": "SUNIL IMPEX PVT LTD",
+    "companyId": "U51900MH1991PTC062667",
+    "address": "MODY ESTATE, LBS MARG,GHATKOPAR WEST, BOMBAY 86 , MUMBAI 86, Maharashtra, India - 000000 MUMBAI 86 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjhxp6tcb96",
+    "companyName": "ENSEMBLE IMPEX PVT LTD",
+    "companyId": "U51900MH1991PTC062800",
+    "address": "F/2, FLUSHEL APTS, 6TH FLR21ST RD, BANDRA WEST BOMBAY , MUMBAI-400050, Maharashtra, India - 000000 MUMBAI-400050 Maharashtra 400050 India"
+  },
+  {
+    "id": "mtwjhxpbhg6in",
+    "companyName": "DHANRATH IMPEX PVT LTD",
+    "companyId": "U51900MH1991PTC063092",
+    "address": "407, DALAMAL TOWER, 211NARIMAN PT, BOMBAY 21 , MUMBAI 21, Maharashtra, India - 000000 MUMBAI 21 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjhxpf0yfe9",
+    "companyName": "LUSTER IMPEX PVT LTD",
+    "companyId": "U51900MH1991PTC063311",
+    "address": "234, PANCHARATNA, OPERA HOUSEBOMBAY 4 , MUMBAI 4, Maharashtra, India - 000000 MUMBAI 4 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjhxpmjxj1w",
+    "companyName": "SARAL IMPEX PVT.LTD.",
+    "companyId": "U51900MH1991PTC063588",
+    "address": "253/B, GREEN ACRES, NORTHSOUTH ROAD NO.5, JVPD JUHU, BOMBAY 49. , MUMBAI-40049, Maharashtra, India - 000000 MUMBAI-40049 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjhxprvcte0",
+    "companyName": "CAPRIATI IMPEX PVT.LTD.",
+    "companyId": "U51900MH1991PTC063668",
+    "address": "701, GALACTICA SAMARTH NAGAR,CROSS ROAD NO.3 LOKHANDWALA COMPLEX,ANDHERI WEST, BOMBAY , 58., Maharashtra, India - 000000 58. Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjhxpsotxv0",
+    "companyName": "MADHU IMPEX PVT LTD",
+    "companyId": "U51900MH1989PTC051649",
+    "address": "202, KRIPA NIDHI, JVPD SCHEME, GULMOHAR X ROAD NO. 4, VILE PARLE (W) , MUMBAI, Maharashtra, India - 400049 MUMBAI Maharashtra 400049 India"
+  },
+  {
+    "id": "mtwjhxpuzyvr3",
+    "companyName": "PEERS IMPEX PVT LTD",
+    "companyId": "U51900MH1989PTC051670",
+    "address": "B-9 MEGHDOOT SOCIETYRAHEJA TOWNSHIP MALAD E , MUMBAI, Maharashtra, India - 400097 MUMBAI Maharashtra 400097 India"
+  },
+  {
+    "id": "mtwjhxpvqt98y",
+    "companyName": "TIRUPATI IMPEX PVT LTD",
+    "companyId": "U51900MH1989PTC052066",
+    "address": "MOHAN MILL COMPOUNDKOLSET RD , THANE, Maharashtra, India - 400607 THANE Maharashtra 400607 India"
+  },
+  {
+    "id": "mtwjhxpwj0ffk",
+    "companyName": "SUMAN IMPEX PVT LTD.",
+    "companyId": "U51900MH1989PTC052108",
+    "address": "1003,La Serena CHS Ltd,Jn. of Dadabhai Cross Rd & JPRd,Above Kotak Mahindra Bank&HDFC Ban, Andheri(W) , Mumbai, Maharashtra, India - 400058 Mumbai Maharashtra 400058 India"
+  },
+  {
+    "id": "mtwjhxpyos5hz",
+    "companyName": "VAKIS IMPEX PVT LTD",
+    "companyId": "U51900MH1989PTC052132",
+    "address": "27/74, VIJAY NAGARI ANNEX, OFF. G.B. ROAD, KAVESAR,THANE -W , THANE, Maharashtra, India - 400601 THANE Maharashtra 400601 India"
+  },
+  {
+    "id": "mtwjhxq0b9lib",
+    "companyName": "DEMAC IMPEX PVT LTD.",
+    "companyId": "U51900MH1989PTC052189",
+    "address": "A-1/1, RAJAT REKHA SOCIETY, 142/6, J. P. ROAD, ANDHERI (WEST), , MUMBAI, Maharashtra, India - 400053 MUMBAI Maharashtra 400053 India"
+  },
+  {
+    "id": "mtwjhxq1b4pfx",
+    "companyName": "SOMANI IMPEX PVT LTD",
+    "companyId": "U51900MH1989PTC052491",
+    "address": "310 MORYA ESTATE 03RD FLROSHIWARA LINK ROAD ANDHERI (WEST) , MUMBAI, Maharashtra, India - 400053 MUMBAI Maharashtra 400053 India"
+  },
+  {
+    "id": "mtwjhxq4c0c26",
+    "companyName": "ELIXIR IMPEX PVT LTD",
+    "companyId": "U51900MH1989PTC052558",
+    "address": "306 CTS 64 PART MHADA PROJECT LINK ROAD, KANDIVALI WEST , MUMBAI, Maharashtra, India - 400067 MUMBAI Maharashtra 400067 India"
+  },
+  {
+    "id": "mtwjhxq67gpb5",
+    "companyName": "JAGAT IMPEX PVT LTD",
+    "companyId": "U51900MH1989PTC052629",
+    "address": "501 LOHA BHAVANP D'MELLO ROAD , MUMBAI, Maharashtra, India - 400009 MUMBAI Maharashtra 400009 India"
+  },
+  {
+    "id": "mtwji8sy7q9vv",
+    "companyName": "SANDEEP IMPEX PVT LTD",
+    "companyId": "U51900MH1989PTC052635",
+    "address": "134/A, 13th Floor, Sea Lord, G. D. Somani Marg, Cuffe Parade, Colaba , Mumbai, Maharashtra, India - 400005 Mumbai Maharashtra 400005 India"
+  },
+  {
+    "id": "mtwji8t60uon6",
+    "companyName": "WAKO IMPEX PVT LTD",
+    "companyId": "U51900MH1991PTC062565",
+    "address": "C-35 RAJ IND COMPLEX1ST FLR MILITARY RD MAROL ANDHERI E , MUMBAI, Maharashtra, India - 400059 MUMBAI Maharashtra 400059 India"
+  },
+  {
+    "id": "mtwji8tewz8vh",
+    "companyName": "KESMA IMPEX PVT LTD",
+    "companyId": "U51900MH1992PTC064967",
+    "address": "E/9, M.R Housing Society, Relief Road, Opp. Raheja collage, Santacruz (W) , Mumbai, Maharashtra, India - 400054 Mumbai Maharashtra 400054 India"
+  },
+  {
+    "id": "mtwji8tk6vso4",
+    "companyName": "GOLDMAN IMPEX PVT LTD",
+    "companyId": "U51900MH1992PTC065096",
+    "address": "PLOT NO 4 SECTOR NO 3SHREE NAGAR , THANE, Maharashtra, India - 400604 THANE Maharashtra 400604 India"
+  },
+  {
+    "id": "mtwji8toi8gzi",
+    "companyName": "LAPORTE IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC065253",
+    "address": "CALCOT HOUSE, IST FLOOR,TAMRIND LANE, FORT BOMBAY-23. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwji8tsrmpnj",
+    "companyName": "VISA IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC065351",
+    "address": "17 KATHRADA MANSION, GOKHALEROAD NORTH,DADAR BOMBAY -28. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwji8tu4yec8",
+    "companyName": "LANSONS IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC065445",
+    "address": "51/54 DATTANI CHAMBERS, 5THFLOOR, S V ROAD MALAD WEST, ,BOMBAY -64. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwji8txoq5pp",
+    "companyName": "PACIFIC IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC065549",
+    "address": "19 DUMATA BLDG., 86/92 SITARAMPODAR MARG BOMBAY -2. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwji8u0gepve",
+    "companyName": "SUNSAR IMPEX PVT LTD",
+    "companyId": "U51900MH1992PTC065652",
+    "address": "106, 1ST FLOOR, FORT FOUNDATION BUILDING, 26/30 MAHARASHTRA CHAMBERS, COMMERCE LAN E, FORT, , MUMBAI, Maharashtra, India - 400023 MUMBAI Maharashtra 400023 India"
+  },
+  {
+    "id": "mtwji8u3h7scd",
+    "companyName": "JANSAGAR IMPEX PVT LTD",
+    "companyId": "U51900MH1992PTC066483",
+    "address": "343-A, KALBADEVI RD,3/29, BADAMWADI, BOMBAY 2 , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwji8u6mz8r4",
+    "companyName": "REGAL IMPEX PVT LTD",
+    "companyId": "U51900MH1992PTC066571",
+    "address": "DEXION BULD.,KILLICK INDL.ESTATE SAKI VIHAR RD, , MUMBAI-400072, Maharashtra, India - 000000 MUMBAI-400072 Maharashtra 400072 India"
+  },
+  {
+    "id": "mtwji8u9cybt1",
+    "companyName": "KHARA IMPEX PVT LTD",
+    "companyId": "U51900MH1992PTC066595",
+    "address": "51 BIBIJAN STREET1ST FLOOR , MUMBAI, Maharashtra, India - 400003 MUMBAI Maharashtra 400003 India"
+  },
+  {
+    "id": "mtwji8ucce55k",
+    "companyName": "CHASE IMPEX PVT LTD",
+    "companyId": "U51900MH1992PTC066812",
+    "address": "50-A SATYAM INDUSTRIAL ESTATESUBHASH ROAD JOGESHWARI EAST , MUMBAI, Maharashtra, India - 400060 MUMBAI Maharashtra 400060 India"
+  },
+  {
+    "id": "mtwji8uft5sb8",
+    "companyName": "BLANCO IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067005",
+    "address": "605,DALAMAL HOUSE,206 J.BAJAJ ROAD, NARIMAN POINT, , MUMBAI, Maharashtra, India - 400021 MUMBAI Maharashtra 400021 India"
+  },
+  {
+    "id": "mtwji8uikjuxa",
+    "companyName": "SUPERMAX IMPEX PVT LTD",
+    "companyId": "U51900MH1992PTC067112",
+    "address": "104 SAI SANGEET 368LINKING ROAD KHAR W , MUMBAI, Maharashtra, India - 400052 MUMBAI Maharashtra 400052 India"
+  },
+  {
+    "id": "mtwji8ulybc8i",
+    "companyName": "ZINNIA IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067271",
+    "address": "343-A KALBADEVI ROAD,3/29 BADAMWADI,BOMBAY -2. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwji8upavset",
+    "companyName": "VANDANA IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067274",
+    "address": "343-A KALBADEVI ROAD,3/29 BADAMWADI, BOMBAY -2. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwji8ute8hdg",
+    "companyName": "CACTUS IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067322",
+    "address": "343-A KALBADEVI ROAD,3/29 BADAMWADI, BOMBAY -2 . , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwji8uwpiv9f",
+    "companyName": "PENINSULA IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067331",
+    "address": "343-A KALBADEVI ROAD,3/29 BADAMWADI, BOMBAY-2. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwji8v037tq8",
+    "companyName": "SARYU IMPEX PVT LTD",
+    "companyId": "U51900MH1992PTC067359",
+    "address": "T2 / T6 Grd Floor Vishali Shopping Center, S V Road, Malad West , Mumbai, Maharashtra, India - 400064 Mumbai Maharashtra 400064 India"
+  },
+  {
+    "id": "mtwjimfwsc0h6",
+    "companyName": "MEGHANA IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067437",
+    "address": "343-A KALBADEVI,3/29 BADAMWADI, BOMBAY -2. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimg6so0be",
+    "companyName": "KALPESH IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067438",
+    "address": "343-A, KALBADEVI ROAD,3/29 BADAMWADI, BOMBAY -2. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimgdy6blp",
+    "companyName": "SANDESHA IMPEX PVT. TLD.",
+    "companyId": "U51900MH1992PTC067475",
+    "address": "343-A, KALBADEVI ROAD, 3/29, BADAMWADI, , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimgjlrfgb",
+    "companyName": "RUPALI IMPEX PVT. TLD.",
+    "companyId": "U51900MH1992PTC067476",
+    "address": "343-A, KALBADEVI ROAD,3/29, BADAMWADI, , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimgq562wb",
+    "companyName": "PROBODHINI IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067571",
+    "address": "343-A, KALBADEVI ROAD,3/29 BADAMWADI, BOMBAY -2. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimgwvrogj",
+    "companyName": "MINAKASHI IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067572",
+    "address": "343-A, KALBADEVI ROAD,13/29 BADAMWADI, BOMBAY -2. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimh0fi0e9",
+    "companyName": "ANURAG IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067573",
+    "address": "343-A, KALBADEVI ROAD,3/29 BADAMWADI,BOMBAY -2. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimh4m2klp",
+    "companyName": "SANTOSH IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067574",
+    "address": "343-A, KALBADEVI ROAD,3/29 BADAMWADI, BOMBAY -2. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimh80azla",
+    "companyName": "GAURI IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067575",
+    "address": "343-A, KALBADEVI ROAD,329 BADAMWADI, BOMBAY -2. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimhf5ukj9",
+    "companyName": "WANG IMPEX PVT LTD",
+    "companyId": "U51900MH1992PTC067684",
+    "address": "21 OMCHAMBERS123 A K MARG KEMPS CORNER , MUMBAI, Maharashtra, India - 400058 MUMBAI Maharashtra 400058 India"
+  },
+  {
+    "id": "mtwjimhk3b832",
+    "companyName": "PRATIKASHA IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC067739",
+    "address": "343-A KALBADEVI ROAD,3/29 BADAMWADI, BOMBAY -2. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimho3dj4e",
+    "companyName": "BABA IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC068059",
+    "address": "8 RAM DARSHAN, ARYA VIDYAMANDIR ROAD, JVPD SCHEME, BOMBAY -49. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimhtzfii9",
+    "companyName": "ALIF IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC068478",
+    "address": "168, SUNRISE SHOPPING CENTER, 2ND FLOOR, NEAR APNA BAZAR, CHARKOP, SECTOR-5, KANDIVALI WEST, , MUMBAI, Maharashtra, India - 400067 MUMBAI Maharashtra 400067 India"
+  },
+  {
+    "id": "mtwjimhy5fac6",
+    "companyName": "SUNSHINE IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC068511",
+    "address": "FOUNTAIN CHAMBERS, 1-CNANABHAI LANE, FORT BOMBAY-1. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimi3ypou4",
+    "companyName": "INTERCRAFT IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC068639",
+    "address": "117 PREMSONS IND.ESTATE,CAVES ROAD JOGESHWARI EAST, BOMBAY -60. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimi85mfxp",
+    "companyName": "COASTAL IMPEX PVT LTD",
+    "companyId": "U51900MH1992PTC069157",
+    "address": "M-31 LAXMI IND.ESTATEVEERA DESAI ROAD ANDHERI WEST , MUMBAI, Maharashtra, India - 400058 MUMBAI Maharashtra 400058 India"
+  },
+  {
+    "id": "mtwjimiejlrwu",
+    "companyName": "RUIA IMPEX PVT LTD",
+    "companyId": "U51900MH1992PTC069401",
+    "address": "2 GODAVARI KRIPA, 169 PANDURANG NAIK MARG, SHIVAJI PARK, MUMBAI , MUMBAI, Maharashtra, India - 400016 MUMBAI Maharashtra 400016 India"
+  },
+  {
+    "id": "mtwjimijbjtqi",
+    "companyName": "TASO IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC069647",
+    "address": "36, VAISHALI INDUSTRIAL ESTATE, MHATREWADI ROAD OPP RAILWAY STATION, DAHISAR (w) , MUMBAI, Maharashtra, India - 400068 MUMBAI Maharashtra 400068 India"
+  },
+  {
+    "id": "mtwjimiprzhmd",
+    "companyName": "LOCHAN IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC069753",
+    "address": "SAI MANGAL RAHIWASI SOCIETY,NEAR SENAPATI BLDG. 7 BUNGLOW J P.ROAD,ANDHERI WEST, , MUMBAI 61, Maharashtra, India - 000000 MUMBAI 61 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjimiv0e7e7",
+    "companyName": "ROHINI IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC069862",
+    "address": "158 160 NARAYAN DHURUSTREET,IIND FLOOR, BOMBAY-400003. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 400003 India"
+  },
+  {
+    "id": "mtwjjv2oq6i52",
+    "companyName": "SABIRA IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC069864",
+    "address": "343-A KALBADEVI ROAD,3/29 BADAMWADI, BOMBAY -2. W.E.F. 03-08-2001. , MUMBAI 2., Maharashtra, India - 000000 MUMBAI 2. Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjjv2sz6dnx",
+    "companyName": "SHASHIN IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC069879",
+    "address": "C/2, SUYOG INDUSTRIAL ESTATE OPP.VITRUM GLASS FACTORY LBS MARG,VIKHRO LI(W) KHAR WEST, BOMBAY 52. , W.E.F. 05.07.99, Maharashtra, India - 000000 W.E.F. 05.07.99 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjjv2v7xmmx",
+    "companyName": "MANGESH IMPEX PVT.LTD.",
+    "companyId": "U51900MH1992PTC069881",
+    "address": "C/2, SUYOG INDUSTRIAL ESTATE OPP.VITRUM GLASS FACTORY,LBS MARG,VIKHRO LI (W), KHAR WEST,MUMBAI 52 , MUMBAI 05.07.99, Maharashtra, India - 000000 MUMBAI 05.07.99 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjjv2wklu61",
+    "companyName": "NOOPUR IMPEX PVT.LTD.",
+    "companyId": "U51900MH1993PTC070497",
+    "address": "1-B AMAN CHAMBERS,113 QUEENS ROAD,BOMBAY -4. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjjv2y6bw9z",
+    "companyName": "VIVA IMPEX PVT LTD",
+    "companyId": "U51900MH1993PTC070955",
+    "address": "SHOP NO10 DATTANI APARTMENTSL T ROAD BORIVALI WEST BOMBAY , MUMBAI, Maharashtra, India - 400092 MUMBAI Maharashtra 400092 India"
+  },
+  {
+    "id": "mtwjjv30zjzcf",
+    "companyName": "PUNIT IMPEX PVT LTD",
+    "companyId": "U51900MH1993PTC071123",
+    "address": "301 CAMY HOUSE DHASWADICOMPLEXHORMUSJEE STREET MARIN LINES , MUMBAI, Maharashtra, India - 400002 MUMBAI Maharashtra 400002 India"
+  },
+  {
+    "id": "mtwjjv32k6k2v",
+    "companyName": "SUKANTO IMPEX PVT LTD",
+    "companyId": "U51900MH1993PTC071519",
+    "address": "KAKAD MARKET 4TH FLOOR306 KALBADEVI ROAD , MUMBAI, Maharashtra, India - 400002 MUMBAI Maharashtra 400002 India"
+  },
+  {
+    "id": "mtwjjv34xvgos",
+    "companyName": "GODRAS IMPEX PVT LTD",
+    "companyId": "U51900MH1993PTC071548",
+    "address": "203/204, SHREE KRISHNA CLOTH MARKET 65, VITHALWADI, KALBADEVI , MUMBAI, Maharashtra, India - 400002 MUMBAI Maharashtra 400002 India"
+  },
+  {
+    "id": "mtwjjv362jngd",
+    "companyName": "WHITEFISH IMPEX PVT LTD",
+    "companyId": "U51900MH1993PTC071579",
+    "address": "A/H05 BHAVESHWAR ARCADEL A B RD OPP SHREYAS THEATRE GHATKOPAR (W) , MUMBAI, Maharashtra, India - 400086 MUMBAI Maharashtra 400086 India"
+  },
+  {
+    "id": "mtwjjv39tujdv",
+    "companyName": "CHANDRAN IMPEX PVT.LTD.",
+    "companyId": "U51900MH1993PTC072273",
+    "address": "E/26 GANGA APARTMENT,EVERSHINE NAGAR,LINKING ROAD, MALAD WEST,BOMBAY -64. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjjv3bpk2hv",
+    "companyName": "HARBELL IMPEX PVT LTD",
+    "companyId": "U51900MH1993PTC072789",
+    "address": "B/306, Marble Arch, Swami Samarth Nagar circle, off Lokhandwala Complex, Andheri (w), , MUMBAI, Maharashtra, India - 400053 MUMBAI Maharashtra 400053 India"
+  },
+  {
+    "id": "mtwjjv3dwxijt",
+    "companyName": "FABALA IMPEX PVT.LTD.",
+    "companyId": "U51900MH1993PTC072790",
+    "address": "B-32 VIMANIKA.PT.DINDAYAL RD.,THAKURWADI DOMBIVLI WEST, , DOMBIVLI, Maharashtra, India - 000000 DOMBIVLI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjjv3g5cdsf",
+    "companyName": "DEORA IMPEX PVT.LTD.",
+    "companyId": "U51900MH1993PTC072902",
+    "address": "503 E GIRIRAJ SANT TUKARAMROAD,CARNAC BUNDER BOMBAY-9. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjjv3ildfbc",
+    "companyName": "BHADRA IMPEX PVT.LTD.",
+    "companyId": "U51900MH1993PTC073163",
+    "address": "23-A/11 TAKSHILA APARTMENT,MAHAKALI CAVES ROAD ANDHERI BOMBAY -93. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjjv3lktalt",
+    "companyName": "APEX IMPEX PVT LTD",
+    "companyId": "U51900MH1993PTC073950",
+    "address": "401, DURGA CO-OP HOUSING SOCIETY LTD NEAR MAJESTIC HOTEL, B. P. ROAD, DAHISAR (WEST) , MUMBAI, Maharashtra, India - 400068 MUMBAI Maharashtra 400103 India"
+  },
+  {
+    "id": "mtwjjv3omztrn",
+    "companyName": "DANIAL IMPEX PVT.LTD.",
+    "companyId": "U51900MH1993PTC074075",
+    "address": "AMBICA,N S 10TH ROAD,JVPD,BOMBAY -49. , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjjv3sbkjnn",
+    "companyName": "VERVE IMPEX PVT LTD",
+    "companyId": "U51900MH1994PTC079308",
+    "address": "OFF NO 1 2ND FLOORFIVE MANSION 103 D N ROAD FORT , MUMBAI, Maharashtra, India - 400001 MUMBAI Maharashtra 400001 India"
+  },
+  {
+    "id": "mtwjjv3wq1shh",
+    "companyName": "INDPRO IMPEX PVT LTD",
+    "companyId": "U51900MH1996PTC102008",
+    "address": "105,KESHAVJI NAIK ROAD,IST FLOOR,MASJID BUNDER, , MUMBAI 400 009, Maharashtra, India - 000000 MUMBAI 400 009 Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjjv3zjrd9l",
+    "companyName": "TOBULAR IMPEX PVT LTD",
+    "companyId": "U52909WB1991PTC052787",
+    "address": "36A BENTINCK STREETHARE STREET , KOLKATA, West Bengal, India - 700069 KOLKATA West Bengal 700002 India"
+  },
+  {
+    "id": "mtwjjv43d9wcc",
+    "companyName": "INDUS IMPEX PVT LTD",
+    "companyId": "U56100MH1987PTC044728",
+    "address": "MANINDER NIWAS CHETNYA NAGARI.I.T. MARKET POWAI BOMBAY , MUMBAI, Maharashtra, India - 000000 MUMBAI Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjk7kedwgw0",
+    "companyName": "BRIJ IMPEX PVT.LTD.",
+    "companyId": "U51109WB1995PTC069637",
+    "address": "EA-31/A DESHBANDHU NAGARGROUND FLOOR P.S. RAJARHAT , KOL, West Bengal, India - 700059 KOL West Bengal 700059 India"
+  },
+  {
+    "id": "mtwjk7kj3r0p1",
+    "companyName": "RUNGTA IMPEX PVT LTD",
+    "companyId": "U51109WB1995PTC071087",
+    "address": "NOT AVAILABLE , NOT AVAILABLE, West Bengal, India - 000000 NOT AVAILABLE West Bengal 000000 India"
+  },
+  {
+    "id": "mtwjk7kn72yyt",
+    "companyName": "NISITH IMPEX PVT.LTD.",
+    "companyId": "U51109WB1995PTC071350",
+    "address": "27 WESTON STREET 5TH FLOORROOM 522 BOW BAZER , KOLKATA, West Bengal, India - 700012 KOLKATA West Bengal 700012 India"
+  },
+  {
+    "id": "mtwjk7ksdgsjr",
+    "companyName": "ADH IMPEX PVT.LTD.",
+    "companyId": "U51109WB1995PTC071565",
+    "address": "P16 GARIAHAT RD3RD FLOOR , KOLKATA, West Bengal, India - 700029 KOLKATA West Bengal 700029 India"
+  },
+  {
+    "id": "mtwjk7kwbncn9",
+    "companyName": "ASU IMPEX PVT LTD",
+    "companyId": "U51109WB1995PTC075360",
+    "address": "3 GOKHALE ROAD, 3RD FLOOR BHOWANIPUR , KOLKATA, West Bengal, India - 700020 KOLKATA West Bengal 700020 India"
+  },
+  {
+    "id": "mtwjk7l0539iu",
+    "companyName": "SPRINT IMPEX PVT.LTD.",
+    "companyId": "U51109WB1995PTC072165",
+    "address": "25A CAMAC ST1ST FLOOR , KOLKATA, West Bengal, India - 700016 KOLKATA West Bengal 700016 India"
+  },
+  {
+    "id": "mtwjk7l470i9l",
+    "companyName": "SARMIT IMPEX PVT LTD",
+    "companyId": "U51109WB1995PTC075271",
+    "address": "56 ARABINDA RDNEW BARRACK PUR , 24 PARGANAS, West Bengal, India - 000000 24 PARGANAS West Bengal 000000 India"
+  },
+  {
+    "id": "mtwjk7l8v0xp9",
+    "companyName": "PRISM IMPEX PVT LTD",
+    "companyId": "U51109WB1995PTC075551",
+    "address": "ROOM NO. 8 1ST FLOOR 23 A NETAJI SUBHAS ROAD , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtwjk7lcvebw9",
+    "companyName": "SUBHAS IMPEX PVT LTD",
+    "companyId": "U51109WB1995PTC076241",
+    "address": "5A N.C.DUTTA STREET, 4TH FLOOR , KOLKATA, West Bengal, India - 700001 KOLKATA West Bengal 700001 India"
+  },
+  {
+    "id": "mtwjk7lgp28s1",
+    "companyName": "CORE IMPEX PVT LTD",
+    "companyId": "U51109WB1996PTC076905",
+    "address": "6, TURF ROAD , KOLKATA, West Bengal, India - 700025 KOLKATA West Bengal 700025 India"
+  },
+  {
+    "id": "mtwjk7lkwi298",
+    "companyName": "SRISTI IMPEX PVT LTD",
+    "companyId": "U51109WB1996PTC077846",
+    "address": "25A CAMAC STREET1ST FLOOR , KOLKATA, West Bengal, India - 700016 KOLKATA West Bengal 700016 India"
+  },
+  {
+    "id": "mtwjk7lo9weii",
+    "companyName": "SAKAMBARI IMPEX PVT LTD",
+    "companyId": "U51109WB1996PTC080617",
+    "address": "4 MANIKTOLLA LANE , KOLKATA, West Bengal, India - 700006 KOLKATA West Bengal 700006 India"
+  },
+  {
+    "id": "mtwjk7lsridta",
+    "companyName": "CHANDAK IMPEX PVT LTD",
+    "companyId": "U51109WB2006PTC109956",
+    "address": "10 TARA CHAND DUTTA ST3RD FLOOR R NO 63 , KOLKATA, West Bengal, India - 700073 KOLKATA West Bengal 700073 India"
+  },
+  {
+    "id": "mtwjk7lw8dxai",
+    "companyName": "TARGET IMPEX PVT LIMITED",
+    "companyId": "U51909MP2006PTC018715",
+    "address": "C-251,PREM TRADE CENTRE OPP. - GUJRATI GIRLS COLLEGE , INDORE, Madhya Pradesh, India - 452001 INDORE Madhya Pradesh 452001 India"
+  },
+  {
+    "id": "mtwjk7m0w98hx",
+    "companyName": "SUNSHINE IMPEX PVT LTD",
+    "companyId": "U51909OR1992PTC003211",
+    "address": "485/2 SAHID NAGAR. , BHUBANESWAR, Orissa, India - 000000 BHUBANESWAR Orissa 000000 India"
+  },
+  {
+    "id": "mtwjk7m4ojs5k",
+    "companyName": "WHITEHAWKS IMPEX PVT LTD",
+    "companyId": "U51909PB1974PTC003410",
+    "address": "# 278NEW JAWAHAR NAGAR JULLUNDUR CITY , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjk7m9er7sg",
+    "companyName": "ADDI IMPEX PVT LTD",
+    "companyId": "U51909PB1981PTC004636",
+    "address": "P 3TEXTILE COLONY LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjk7mdaedq0",
+    "companyName": "KRISHNA IMPEX PVT LTD",
+    "companyId": "U51909PB1986PTC006953",
+    "address": "63,LAJPATRAI NAGAR JALANDHAR , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjk7miyluvv",
+    "companyName": "SKYWAY IMPEX PVT LTD",
+    "companyId": "U51909PB1992PTC012061",
+    "address": "130NEW LAJPAT NAGAR LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjk7mmulbvo",
+    "companyName": "JETLEY IMPEX PVT. LTD.",
+    "companyId": "U51909PB1992PTC012283",
+    "address": "NA V.P.O. IBBAN KALAN , NA, Punjab, India - 143009 NA Punjab 143009 India"
+  },
+  {
+    "id": "mtwjkhufqjd4d",
+    "companyName": "RAGHU IMPEX PVT LTD",
+    "companyId": "U51909PB1993PTC013276",
+    "address": "4 VIRDI COLONYHARBANS NAGAR JALANDHAR , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhul8awa3",
+    "companyName": "PROLIFIC IMPEX PVT LTD",
+    "companyId": "U51909PB1994PTC014196",
+    "address": "RAM NAGAR NEAR RAILWAYCROSSING JALANDHAR , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhuqzdwx6",
+    "companyName": "HARBINGER IMPEX PVT LTD",
+    "companyId": "U51909PB1994PTC014408",
+    "address": "PB PATIALA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhuuthmnm",
+    "companyName": "SAYAL IMPEX PVT LTD",
+    "companyId": "U51909PB1994PTC014564",
+    "address": "C 13FOCAL POINT LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhuymggyv",
+    "companyName": "MOHINDER IMPEX PVT LTD",
+    "companyId": "U51909PB1994PTC014658",
+    "address": "5/15 , PREET NAGARTRIPURI ROAD PATIALA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhv3pnoyp",
+    "companyName": "SWADESHI IMPEX PVT LTD",
+    "companyId": "U51909PB1994PTC014827",
+    "address": "SWADESH BAHWANOPP. INDUSTRIAL ESTATE LINK ROAD , LUDHIANA, Punjab, India - 000000 LUDHIANA Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhv7kgyis",
+    "companyName": "NATH IMPEX PVT LTD",
+    "companyId": "U51909PB1994PTC015048",
+    "address": "625- B , Aggar Nagar LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhvcd7rlo",
+    "companyName": "TRUN IMPEX PVT LTD",
+    "companyId": "U51909PB1994PTC015103",
+    "address": "BIRLA BHAWANKRISHANA COLONY MALOUT , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhvig10h9",
+    "companyName": "PINKY IMPEX PVT LTD",
+    "companyId": "U51909PB1994PTC015213",
+    "address": "V P O KANGANWALDISTT LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhvnxw3bw",
+    "companyName": "RATTAN IMPEX PVT LTD",
+    "companyId": "U51909PB1994PTC015215",
+    "address": "V P O KANGANWALDISTT LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhvsigdfs",
+    "companyName": "USTAAD IMPEX PVT LTD",
+    "companyId": "U51909PB1994PTC015218",
+    "address": "VILL&PO- KANGANWAL DISTT LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhvuc7i04",
+    "companyName": "TURBO IMPEX PVT LTD",
+    "companyId": "U51909PB1995PTC016005",
+    "address": "THAPAR HOUSE 12 AGGARNAGAR ENCLAVE LUDHIANA , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhvwiymqc",
+    "companyName": "GARY IMPEX PVT LTD",
+    "companyId": "U51909PB2006PTC030284",
+    "address": "JALANDHAR , PUNJAB, Punjab, India - 000000 PUNJAB Punjab 000000 India"
+  },
+  {
+    "id": "mtwjkhvyomp2g",
+    "companyName": "GANGA IMPEX PVT LTD",
+    "companyId": "U51909PN1992PTC067094",
+    "address": "SAN MAHU COMMERCIAL COMPLEX,BUND GARDEN ROAD , PUNE, Maharashtra, India - 410001 PUNE Maharashtra 410001 India"
+  },
+  {
+    "id": "mtwjkhw0fyre8",
+    "companyName": "RUDROKSH IMPEX PVT. LTD.",
+    "companyId": "U51909RJ1994PTC009185",
+    "address": "C-21, LAL KOTHI SHOPPING CEN-TRE, JAIPUR , NA, Rajasthan, India - 000000 NA Rajasthan 000000 India"
+  },
+  {
+    "id": "mtwjkhw3xgm0k",
+    "companyName": "LALJI IMPEX PVT LTD",
+    "companyId": "U51909HP1984PTC005774",
+    "address": "HP DIST SOLAN , H P, Himachal Pradesh, India - 000000 H P Himachal Pradesh 000000 India"
+  },
+  {
+    "id": "mtwjkhw5yre4d",
+    "companyName": "MALPANI IMPEX PVT. LTD.",
+    "companyId": "U51909KA1989PTC044266",
+    "address": "22/2,A.M.Road, Kalasipalyam Extn, , Bangalore, Karnataka, India - 560002 Bangalore Karnataka 560002 India"
+  },
+  {
+    "id": "mtwjkhw73x36y",
+    "companyName": "FLEXO IMPEX PVT LTD",
+    "companyId": "U51909KA1994PTC047160",
+    "address": "No. 224 & 225, Raheja Arcade, Koramangala, Bangalore , Bangalore, Karnataka, India - 560095 Bangalore Karnataka 560095 India"
+  },
+  {
+    "id": "mtwjkhw927lfx",
+    "companyName": "SOVTORG IMPEX PVT LTD",
+    "companyId": "U51909KL1988PTC005193",
+    "address": "MALABAR TOURIST HOME BUILDING,OPP.CIVIL STATION KOZHIKODE. PIN-673020 , NA, Kerala, India - 000000 NA Kerala 673020 India"
+  },
+  {
+    "id": "mtwjkhwcni5df",
+    "companyName": "NAKODA IMPEX PVT LTD",
+    "companyId": "U51909TG1988PTC009344",
+    "address": "1-10-09, ASHOKNAGAR,HYDERABAD-20. , NA, Telangana, India - 000000 NA Telangana 000000 India"
+  },
+  {
+    "id": "mtwjl166j51zo",
+    "companyName": "AZCO IMPEX PVT LTD.",
+    "companyId": "U51909TG1989PTC010032",
+    "address": "3/3RT, 1ST FLOOR, PRAKASAM-NAGAR, BEGUMPET HYDERABAD. , NA, Telangana, India - 000000 NA Telangana 000000 India"
+  },
+  {
+    "id": "mtwjl169s3pf2",
+    "companyName": "RAVEN IMPEX PVT. LTD.",
+    "companyId": "U51909TG1989PTC010622",
+    "address": "12-13-414/8, TARNAKA,SECUNDERABAD , NA, Telangana, India - 000000 NA Telangana 000000 India"
+  },
+  {
+    "id": "mtwjl16cjqwel",
+    "companyName": "SARANYA IMPEX PVT LTD",
+    "companyId": "U51909TG1990PTC010940",
+    "address": "202 KALAMANSION S D ROADSECUNDERABD , NA, Telangana, India - 000000 NA Telangana 000000 India"
+  },
+  {
+    "id": "mtwjl16fs9ktj",
+    "companyName": "BSR IMPEX PVT.LTD.",
+    "companyId": "U51909TG1991PTC012166",
+    "address": "3/2RT OLD VIJAYANAGAR EXTEN.,HYDERABAD.A.P. HYDERABAD.A.P. , HYDERABAD.A.P., Telangana, India - 000000 HYDERABAD.A.P. Telangana 000000 India"
+  },
+  {
+    "id": "mtwjl16idkt7s",
+    "companyName": "JASWAL IMPEX PVT. LTD.",
+    "companyId": "U51909TG1993PTC016000",
+    "address": "134, CHANDRALOK BUILDING,S.D. ROAD, SECUNDERABAD A. P. , NA, Telangana, India - 000000 NA Telangana 000000 India"
+  },
+  {
+    "id": "mtwjl16lyctpv",
+    "companyName": "KAZA IMPEX PVT LTD",
+    "companyId": "U51909TG1993PTC016501",
+    "address": "PLOT NO.60,AVANTI NAGR,BASHEERBAGH,HYDERABAD , NA, Telangana, India - 000000 NA Telangana 000000 India"
+  },
+  {
+    "id": "mtwjl16o6a5b7",
+    "companyName": "SURAKSHA IMPEX PVT LTD",
+    "companyId": "U51909TG1993PTC016815",
+    "address": "3-4-348/2,LINGAMPALLY,HYDERABAD , NA, Telangana, India - 000000 NA Telangana 000000 India"
+  },
+  {
+    "id": "mtwjl16rzehxd",
+    "companyName": "TEAMWORK IMPEX PVT LTD,",
+    "companyId": "U51909TG1994PTC018017",
+    "address": "27 ROAD NO.3, TRIMORTINAGAR,MEHINDER HILLS, EAST MARREDPALLY,SECUNDERABAD. , NA, Telangana, India - 000000 NA Telangana 000000 India"
+  },
+  {
+    "id": "mtwjl16unr8zl",
+    "companyName": "SRIMA IMPEX PVT LTD",
+    "companyId": "U51909TG1984PTC004672",
+    "address": "11-4-656/1, NILOFAR HOSPITALLANE HYDERABD , NA, Telangana, India - 000000 NA Telangana 000000 India"
+  },
+  {
+    "id": "mtwjl16yoq7mp",
+    "companyName": "SUNNY IMPEX PVT. LTD.",
+    "companyId": "U51909TG1993PTC016022",
+    "address": "1-2-597/24/3, 2ND FLOOR, LOWRTANK BUND, DOMALGUDA HYDERAB D. , D., Telangana, India - 000000 D. Telangana 000000 India"
+  },
+  {
+    "id": "mtwjl17132a3c",
+    "companyName": "TANDY IMPEX PVT LTD,",
+    "companyId": "U51909TG1994PTC017520",
+    "address": "ROOM NO.105,1ST FLOOR,HAIGANGA COMPLEX, RANIGUNJ, , SECUNDERABAD, Telangana, India - 000000 SECUNDERABAD Telangana 000000 India"
+  },
+  {
+    "id": "mtwjl174oucv1",
+    "companyName": "MARUTI IMPEX PVT LTD,",
+    "companyId": "U51909TG1994PTC017988",
+    "address": "15-1-50349/AASHOK MARKET, HYDERABAD. A.P. , A.P., Telangana, India - 500012 A.P. Telangana 500012 India"
+  },
+  {
+    "id": "mtwjl177d1cbz",
+    "companyName": "CHILUKOTI IMPEX PVT LIMITED",
+    "companyId": "U51909TG2004PTC043262",
+    "address": "PLOT NO.1, H.NO.10-132/2,INDIRA NAGAR COLONY, HYDERABAD-52. , HYDERABAD-52., Telangana, India - 500052 HYDERABAD-52. Telangana 500052 India"
+  },
+  {
+    "id": "mtwjl17a9kft2",
+    "companyName": "BARAT IMPEX PVT. LTD.",
+    "companyId": "U51909TN1989PTC017316",
+    "address": "113,VEPERY HIGH ROAD,PERIAMET, MADRAS-3. , PERIAMET, MADRAS-3., Tamil Nadu, India - 000000 PERIAMET, MADRAS-3. Tamil Nadu 000000 India"
+  },
+  {
+    "id": "mtwjl17dq8lxs",
+    "companyName": "ALIA IMPEX PVT. LTD.",
+    "companyId": "U51909TN1989PTC018367",
+    "address": "72, MEDAVAKKAM TANK ROAD,KILPAUK, MADRAS 10 , KILPAUK, MADRAS 10, Tamil Nadu, India - 000000 KILPAUK, MADRAS 10 Tamil Nadu 000000 India"
+  },
+  {
+    "id": "mtwjl17gibk3o",
+    "companyName": "JAIPARUTHI IMPEX PVT.LTD.",
+    "companyId": "U51909TZ2013PTC019297",
+    "address": "5/26, KUMILANGKADU NORTH STREET,PUTHUR POST SIRKALI TK, NAGAPATTINAM DISTRICT , SIRKALI TK, Tamil Nadu, India - 609108 SIRKALI TK Tamil Nadu 609108 India"
+  },
+  {
+    "id": "mtwjl17lldk7e",
+    "companyName": "STARWEB IMPEX PVT LTD",
+    "companyId": "U51909UP2006PTC122502",
+    "address": "C-13/124 Block Sector- 36 Noida-201301 , Noida, Uttar Pradesh, India - 201301 Noida Uttar Pradesh 201301 India"
+  },
+  {
+    "id": "mtwjl17oyqqh4",
+    "companyName": "GREATLINX IMPEX PVT LTD",
+    "companyId": "U51909KL1991PTC006270",
+    "address": "104VANCHINAD RESIDENCY KALOOR , ERNAKULAM, Kerala, India - 682017 ERNAKULAM Kerala 682017 India"
+  },
+  {
+    "id": "mtwjl17ssgbgh",
+    "companyName": "UNICOS IMPEX PVT LTD",
+    "companyId": "U51909KL1994PTC008515",
+    "address": "TC 3/2749FATHIMA COLONY PATTOM , TRIVANDRUM, Kerala, India - 000000 TRIVANDRUM Kerala 000000 India"
+  },
+  {
+    "id": "mtwjl17vaat70",
+    "companyName": "MAFEL IMPEX PVT. LTD.",
+    "companyId": "U51909MH1983PTC030155",
+    "address": "H/216, ANSA INDUSTRIAL ESTATE,SAKI VIHAR ROAD BOMBAY-72. , NA, Maharashtra, India - 000000 NA Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjlck7i6os2",
+    "companyName": "BUTTERFLY IMPEX PVT LTD",
+    "companyId": "U51909MH1992PTC069827",
+    "address": "OFFICE NO. 5, 3RD FLOOR , AMAR AVINASH CORPORATE CITY , 11 BUND GARDEN ROAD, , PUNE, Maharashtra, India - 411001 PUNE Maharashtra 411001 India"
+  },
+  {
+    "id": "mtwjlckg7kk8d",
+    "companyName": "SHAHNOOR IMPEX PVT LTD",
+    "companyId": "U51909MH1989PTC052711",
+    "address": "GREEN DAWN 12/A VICTORIA ROADGHORPURI , PUNE, Maharashtra, India - 000000 PUNE Maharashtra 000000 India"
+  },
+  {
+    "id": "mtwjlckod3n6j",
+    "companyName": "HURTADO IMPEX PVT. LTD.",
+    "companyId": "U51909MH2006PTC164584",
+    "address": "D BLOCK SHIV SAGAR ESTATE DR A B ROAD WORLI , MUMBAI, Maharashtra, India - 400018 MUMBAI Maharashtra 400018 India"
+  },
+  {
+    "id": "mtwjlckvvsccr",
+    "companyName": "KOTSONS IMPEX PVT LTD",
+    "companyId": "U51909MH2006PTC165028",
+    "address": "23, SHRIRIN MANSION 14 KOLSA CROSS LANE PYDHONIE , MUMBAI, Maharashtra, India - 400003 MUMBAI Maharashtra 400003 India"
+  },
+  {
+    "id": "mtwjlcl25btgp",
+    "companyName": "HATHA IMPEX PVT LTD",
+    "companyId": "U51909GJ1981PTC004724",
+    "address": "13/5B-JADAV CHAMBERS ASHRAMROAD AHMEDABAD-380009. , NA, Gujarat, India - 000000 NA Gujarat 380009 India"
+  },
+  {
+    "id": "mtwjlcl93fylj",
+    "companyName": "FRIENDS IMPEX PVT LTD.",
+    "companyId": "U51909GJ1987PTC010090",
+    "address": "KANDLA CEMENT BLOCK PREMISESPLOT NO.25,26,27 SECTOR 10-B, GANDHIDHAM , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtwjlclgbr4s4",
+    "companyName": "BARON IMPEX PVT LTD.",
+    "companyId": "U51909GJ1989PTC012526",
+    "address": "302,ANAND CHAMBERS NR.HIGHCOURT CROSSING NAVRANGPURA, AHMED ABAD. , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtwjlclmzbb28",
+    "companyName": "JANU IMPEX PVT.LTD.",
+    "companyId": "U51909GJ1990PTC013927",
+    "address": "359, SARVODAYA COMM. CENTRE,NR. G.P.O. AHMEDABAD. , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtwjlclsmmxns",
+    "companyName": "ORIENT IMPEX PVT LTD",
+    "companyId": "U51909GJ1984PTC007150",
+    "address": "92/A,SAMPARTRAO COLONY B/HHOTEL KAVIRA R.C.DUTT ROAD, ,BARODA. , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtwjlclxfwmxp",
+    "companyName": "NEHA IMPEX PVT LTD",
+    "companyId": "U51909GJ1990PTC013385",
+    "address": "421 4TH FLOOR VANIJYA BHAVANKANKARIA ROAD , AHMEDABAD, Gujarat, India - 000000 AHMEDABAD Gujarat 000000 India"
+  },
+  {
+    "id": "mtwjlcm1p1an4",
+    "companyName": "TULSI IMPEX PVT LTD",
+    "companyId": "U51909GJ1991PTC015047",
+    "address": "Office 304, T.F., Addor Ambition, Navrang Circle to stadium Road, B/s. Vimal House, Navra ngpura, , Ahmedabad, Gujarat, India - 380009 Ahmedabad Gujarat 380009 India"
+  },
+  {
+    "id": "mtwjlcm5nr78y",
+    "companyName": "TRIVEDI IMPEX PVT LTD",
+    "companyId": "U51909GJ1991PTC016390",
+    "address": "68 PREMAMJALI SOCIETYBODAKDEV , AHMEDABAD, Gujarat, India - 380054 AHMEDABAD Gujarat 380054 India"
+  },
+  {
+    "id": "mtwjlcm9b2bfs",
+    "companyName": "AMPLE IMPEX PVT LTD",
+    "companyId": "U51909GJ1993PTC020008",
+    "address": "3,JYOTI CHAMBERS,1ST FLOOR,NEWSTATION ROAD,BHUJ KATCH. , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtwjlcme2x09t",
+    "companyName": "GLITZ IMPEX PVT LTD",
+    "companyId": "U51909GJ1993PTC020504",
+    "address": "49,PROFENOR SOCIETY,VALLABHVIDHYANAGAR. , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtwjlcmkjotqi",
+    "companyName": "PARIJAT IMPEX PVT LTD",
+    "companyId": "U51909GJ1994PTC021092",
+    "address": "620,CENTRE POINT R.C.DUTT ROADBARODA. , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtwjlcmpqftwp",
+    "companyName": "SAURABH IMPEX PVT LTD",
+    "companyId": "U51909GJ1994PTC022197",
+    "address": "MARUTI HOUSE,OPP.AIR INDIA,ASHRAM ROAD, AHMEDABAD. , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtwjlcmv4qw4f",
+    "companyName": "PRIME IMPEX PVT. LTD",
+    "companyId": "U51909GJ1994PTC023917",
+    "address": "NA 304 Daffodils Flats Near Ganga Jamuna Soc , NA, Gujarat, India - 390007 NA Gujarat 390007 India"
+  },
+  {
+    "id": "mtwjlcn0e76vx",
+    "companyName": "SHETHWALA IMPEX PVT LTD",
+    "companyId": "U51909GJ1995PTC028020",
+    "address": "7,PATIDAR SOCIETY,PANCHVATIELLISBRIDGE, AHMEDBAD. , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtwjlcn5v1ir8",
+    "companyName": "KRAZY IMPEX PVT LTD",
+    "companyId": "U51909GJ1992PTC017939",
+    "address": "9-A, SAMIR, OPP. MUNICIPALMARKET, NAVRANGPURA AHMEDABAD , NA, Gujarat, India - 000000 NA Gujarat 000000 India"
+  },
+  {
+    "id": "mtwjlcnanu0fr",
+    "companyName": "DHAVAL IMPEX PVT LTD",
+    "companyId": "U51909GJ1992PTC018619",
+    "address": "RAMKUTIR 12 PARADISE PARK'VADAJ ASHRAM ROAD , AHMEDABAD, Gujarat, India - 380013 AHMEDABAD Gujarat 380013 India"
+  }
+]

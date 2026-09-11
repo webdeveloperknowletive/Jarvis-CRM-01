@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from app.core.config import settings
 from app.models.base import generate_uuid, utc_now
 
 

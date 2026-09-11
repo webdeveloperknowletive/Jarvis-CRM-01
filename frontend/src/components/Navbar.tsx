@@ -179,6 +179,15 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 <Globe2 style={{ width: "15px", height: "15px", color: "var(--cyan)" }} />
                 Global Registry
               </button>
+
+              <button
+                onClick={() => handleTabClick("team")}
+                className={`nav-tab-btn ${activeTab === "team" ? "active" : ""}`}
+                id="nav-tab-team"
+              >
+                <UserCheck style={{ width: "15px", height: "15px", color: "var(--emerald)" }} />
+                Team & Telecallers
+              </button>
             </>
           )}
 
@@ -425,6 +434,16 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               >
                 <Globe2 style={{ width: "16px", height: "16px", color: "var(--cyan)" }} />
                 Global Registry
+              </button>
+
+              <button
+                onClick={() => handleTabClick("team")}
+                className={`nav-tab-btn ${activeTab === "team" ? "active" : ""}`}
+                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
+                id="mobile-nav-tab-team"
+              >
+                <UserCheck style={{ width: "16px", height: "16px", color: "var(--emerald)" }} />
+                Team & Telecallers
               </button>
             </>
           )}

@@ -13,6 +13,7 @@ class Organization(Base, TimestampMixin):
     status = Column(String(30), nullable=False, default="ACTIVE")  # ACTIVE, SUSPENDED, CANCELLED
     timezone = Column(String(100), nullable=False, default="Asia/Kolkata")
     currency = Column(String(10), nullable=False, default="INR")
+    schema_name = Column(String(100), nullable=True, index=True)
     settings = Column(JSON, nullable=False, default=dict)
 
     # Relationships

@@ -8,6 +8,7 @@ from app.models.activity import Activity
 from app.models.lead import Lead
 from app.models.user import User
 from app.models.audit import AuditLog, RadarEvent
+from app.models.base import utc_now, generate_uuid
 from app.schemas.activity import ActivityCreate, ActivityOut
 
 
@@ -16,7 +17,7 @@ def create_activity(
     organization_id: str,
     user: User,
     data: ActivityCreate
-) -> Activity:
+) -> ActivityOut:
     lead = None
     if data.lead_id:
         lead = db.query(Lead).filter(
@@ -26,38 +27,67 @@ def create_activity(
         if not lead:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
 
+    now = utc_now()
+    act_id = generate_uuid()
+    company_id = data.company_id or (lead.company_id if lead else None)
+    contact_id = data.contact_id or (lead.contact_id if lead else None)
+    act_type = data.activity_type.upper()
+    direction = data.direction or "OUTBOUND"
+    act_status = data.status or "COMPLETED"
+    duration = data.duration_seconds or 0
+    meta = data.metadata_json or {}
+
     activity = Activity(
+        id=act_id,
         organization_id=organization_id,
         lead_id=data.lead_id,
-        company_id=data.company_id or (lead.company_id if lead else None),
-        contact_id=data.contact_id or (lead.contact_id if lead else None),
+        company_id=company_id,
+        contact_id=contact_id,
         user_id=user.id,
-        activity_type=data.activity_type.upper(),
+        activity_type=act_type,
         subject=data.subject,
         description=data.description,
-        direction=data.direction or "OUTBOUND",
-        status=data.status or "COMPLETED",
-        duration_seconds=data.duration_seconds or 0,
-        metadata_json=data.metadata_json or {},
-        occurred_at=datetime.now(timezone.utc)
+        direction=direction,
+        status=act_status,
+        duration_seconds=duration,
+        metadata_json=meta,
+        occurred_at=now,
+        created_at=now
     )
     db.add(activity)
 
     # Record Radar event if communication action (Call / WhatsApp / Email)
-    if activity.activity_type in ("CALL", "WHATSAPP", "EMAIL"):
+    if act_type in ("CALL", "WHATSAPP", "EMAIL"):
         radar_event = RadarEvent(
             organization_id=organization_id,
             actor_user_id=user.id,
-            action=f"OUTBOUND_{activity.activity_type}",
+            action=f"OUTBOUND_{act_type}",
             entity_type="LEAD",
             entity_id=lead.id if lead else organization_id,
-            metadata_json={"activity_type": activity.activity_type, "duration": activity.duration_seconds}
+            metadata_json={"activity_type": act_type, "duration": duration}
         )
         db.add(radar_event)
 
     db.commit()
-    db.refresh(activity)
-    return activity
+
+    return ActivityOut(
+        id=act_id,
+        organization_id=organization_id,
+        lead_id=data.lead_id,
+        company_id=company_id,
+        contact_id=contact_id,
+        user_id=user.id,
+        user_name=user.full_name,
+        activity_type=act_type,
+        subject=data.subject,
+        description=data.description,
+        direction=direction,
+        status=act_status,
+        duration_seconds=duration,
+        metadata_json=meta,
+        occurred_at=now,
+        created_at=now
+    )
 
 
 def get_lead_timeline(db: Session, lead_id: str, organization_id: str) -> List[ActivityOut]:

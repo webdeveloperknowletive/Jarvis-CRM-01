@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Lead, PipelineStage, Activity, api } from "../services/api";
 import { openGmail, openWhatsApp } from "../utils/mailHelper";
+import { EmailComposeModal } from "./EmailComposeModal";
+import { format10DigitPhone, getCallUrl } from "../utils/phoneHelper";
 import { 
   X, 
   Phone, 
@@ -31,6 +33,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   const [timeline, setTimeline] = useState<Activity[]>([]);
   const [stageHistories, setStageHistories] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"timeline" | "ai" | "history">("timeline");
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   // Activity log state
   const [activityType, setActivityType] = useState("CALL");
@@ -214,12 +217,13 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <button
               onClick={() => {
-                if (currentLead.contact_phone) {
-                  window.open(`tel:${currentLead.contact_phone}`);
+                if (currentLead.contact_phone && !currentLead.is_phone_masked) {
+                  window.open(getCallUrl(currentLead.contact_phone));
                 }
               }}
               className="btn-secondary"
               style={{ fontSize: "0.75rem", padding: "5px 10px" }}
+              title={currentLead.is_phone_masked ? "Phone is protected" : `Call (+91 ${format10DigitPhone(currentLead.contact_phone)})`}
             >
               <Phone style={{ width: "13px", height: "13px", color: "var(--emerald)" }} />
               Call
@@ -247,24 +251,13 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
             </button>
 
             <button
-              onClick={async () => {
-                try {
-                  const res = await api.triggerLeadAction(currentLead.id, "email");
-                  if (res.gmail_url) {
-                    window.open(res.gmail_url, "_blank", "noopener,noreferrer");
-                  } else {
-                    openGmail(currentLead.contact_email, `Regarding ${currentLead.title}`, `Hello ${currentLead.contact_name || "there"},\n\n`);
-                  }
-                } catch {
-                  openGmail(currentLead.contact_email, `Regarding ${currentLead.title}`, `Hello ${currentLead.contact_name || "there"},\n\n`);
-                }
-              }}
+              onClick={() => setShowEmailModal(true)}
               className="btn-secondary"
               style={{ fontSize: "0.75rem", padding: "5px 10px", color: "#dc2626", borderColor: "#fecaca" }}
-              title="Compose email in Gmail"
+              title="Compose email with From & To configuration"
             >
               <Mail style={{ width: "13px", height: "13px", color: "#dc2626" }} />
-              Gmail
+              Send Email
             </button>
           </div>
         </div>
@@ -296,7 +289,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
               <div>
                 <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "block" }}>Phone Number</span>
                 <p style={{ fontWeight: 700, color: "var(--text-primary)", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}>
-                  {currentLead.contact_phone || "—"}
+                  {format10DigitPhone(currentLead.contact_phone) || "—"}
                   {currentLead.is_phone_masked && (
                     <span style={{ fontSize: "0.625rem", color: "var(--purple-dark)", fontStyle: "italic" }}>(Protected)</span>
                   )}
@@ -311,19 +304,8 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                   </p>
                   {currentLead.contact_email && (
                     <button
-                      onClick={async () => {
-                        try {
-                          const res = await api.triggerLeadAction(currentLead.id, "email");
-                          if (res.gmail_url) {
-                            window.open(res.gmail_url, "_blank", "noopener,noreferrer");
-                          } else {
-                            openGmail(currentLead.contact_email, `Regarding ${currentLead.title}`);
-                          }
-                        } catch {
-                          openGmail(currentLead.contact_email, `Regarding ${currentLead.title}`);
-                        }
-                      }}
-                      title="Open in Gmail"
+                      onClick={() => setShowEmailModal(true)}
+                      title="Compose email with From & To verification"
                       style={{
                         background: "var(--bg-surface-subtle)",
                         border: "1px solid var(--border-medium)",
@@ -338,7 +320,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                       }}
                     >
                       <Mail style={{ width: "11px", height: "11px", color: "#dc2626" }} />
-                      Gmail
+                      Compose
                     </button>
                   )}
                 </div>
@@ -639,6 +621,18 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
           )}
         </div>
       </div>
+
+      {showEmailModal && (
+        <EmailComposeModal
+          isOpen={showEmailModal}
+          onClose={() => setShowEmailModal(false)}
+          lead={currentLead}
+          onSent={() => {
+            loadTimelineAndHistory();
+            onRefresh();
+          }}
+        />
+      )}
     </div>
   );
 };

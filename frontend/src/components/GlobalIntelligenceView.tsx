@@ -6,6 +6,7 @@ import {
   GlobalIntelligenceResponse,
 } from "../services/api";
 import { openGmail } from "../utils/mailHelper";
+import { format10DigitPhone, getCallUrl } from "../utils/phoneHelper";
 import { EditCompanyModal } from "./EditCompanyModal";
 import { EditPersonModal } from "./EditPersonModal";
 import {
@@ -1011,7 +1012,7 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                           >
                             {company.phone && (
                               <a
-                                href={`tel:${company.phone}`}
+                                href={getCallUrl(company.phone)}
                                 style={{
                                   display: "inline-flex",
                                   alignItems: "center",
@@ -1020,10 +1021,10 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                                   textDecoration: "none",
                                   fontWeight: 600,
                                 }}
-                                title="Call enterprise contact"
+                                title={`Call enterprise (+91 ${format10DigitPhone(company.phone)})`}
                               >
                                 <Phone style={{ width: "11px", height: "11px" }} />
-                                <span>{company.phone}</span>
+                                <span>{format10DigitPhone(company.phone)}</span>
                               </a>
                             )}
 
@@ -1343,7 +1344,7 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                                       {person.phone && (
                                         <a
-                                          href={`tel:${person.phone}`}
+                                          href={getCallUrl(person.phone)}
                                           className="btn-secondary"
                                           style={{
                                             padding: "3px 6px",
@@ -1355,10 +1356,10 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                                             borderColor: "rgba(16, 185, 129, 0.3)",
                                             textDecoration: "none",
                                           }}
-                                          title={`Call ${person.full_name} (${person.phone})`}
+                                          title={`Call ${person.full_name} (+91 ${format10DigitPhone(person.phone)})`}
                                         >
                                           <Phone style={{ width: "10px", height: "10px" }} />
-                                          Call
+                                          {format10DigitPhone(person.phone)}
                                         </a>
                                       )}
 
@@ -1711,7 +1712,7 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                           {person.phone && (
                             <a
-                              href={`tel:${person.phone}`}
+                              href={getCallUrl(person.phone)}
                               className="btn-secondary"
                               style={{
                                 padding: "3px 8px",
@@ -1723,10 +1724,10 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                                 borderColor: "rgba(16, 185, 129, 0.3)",
                                 textDecoration: "none",
                               }}
-                              title={`Call ${person.full_name} (${person.phone})`}
+                              title={`Call ${person.full_name} (+91 ${format10DigitPhone(person.phone)})`}
                             >
                               <Phone style={{ width: "10px", height: "10px" }} />
-                              Call
+                              {format10DigitPhone(person.phone)}
                             </a>
                           )}
 

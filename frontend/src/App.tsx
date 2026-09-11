@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, User, Lead, PipelineStage } from "./services/api";
 import { Navbar } from "./components/Navbar";
 import { LoginScreen } from "./components/LoginScreen";
@@ -12,10 +13,47 @@ import { RadarView } from "./components/RadarView";
 import { SuperAdminView } from "./components/SuperAdminView";
 import { PeopleIntelligenceView } from "./components/PeopleIntelligenceView";
 import { GlobalIntelligenceView } from "./components/GlobalIntelligenceView";
+import { TeamManagementView } from "./components/TeamManagementView";
 import { NewLeadModal } from "./components/NewLeadModal";
 import { UploadCloud, FileSpreadsheet, Plus, Check } from "lucide-react";
 
+export const TAB_TO_ROUTE: Record<string, string> = {
+  radar: "/radar_insights",
+  pipeline: "/pipeline",
+  leads: "/leads",
+  import: "/imports",
+  global_intelligence: "/global_intelligence",
+  global: "/global_intelligence",
+  team: "/team",
+  telecaller: "/telecaller_desk",
+  people: "/people",
+  organizations: "/super_admin",
+  audit: "/audit",
+};
+
+export const ROUTE_TO_TAB: Record<string, string> = {
+  "/radar_insights": "radar",
+  "/radar": "radar",
+  "/pipeline": "pipeline",
+  "/leads": "leads",
+  "/imports": "import",
+  "/import": "import",
+  "/global_intelligence": "global_intelligence",
+  "/global": "global_intelligence",
+  "/global_registry": "global_intelligence",
+  "/team": "team",
+  "/telecaller_desk": "telecaller",
+  "/telecaller": "telecaller",
+  "/people": "people",
+  "/super_admin": "organizations",
+  "/organizations": "organizations",
+  "/audit": "audit",
+};
+
 export const App: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("pipeline");
@@ -27,31 +65,67 @@ export const App: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
 
+  const getDefaultTabAndRoute = (user: User) => {
+    if (user.is_super_admin) return { tab: "organizations", route: "/super_admin" };
+    if (user.is_data_entry || user.platform_role === "DATA_ENTRY") return { tab: "global_intelligence", route: "/global_intelligence" };
+    if (user.tenant_role === "TELECALLER") return { tab: "telecaller", route: "/telecaller_desk" };
+    return { tab: "radar", route: "/radar_insights" };
+  };
+
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    const targetRoute = TAB_TO_ROUTE[newTab] || `/${newTab}`;
+    if (location.pathname !== targetRoute) {
+      navigate(targetRoute);
+    }
+  };
+
   useEffect(() => {
     checkCurrentUser();
   }, []);
+
+  // Listen to browser URL changes (back/forward navigation & deep linking)
+  useEffect(() => {
+    if (!currentUser) return;
+    const currentPath = location.pathname;
+    const matchedTab = ROUTE_TO_TAB[currentPath];
+    if (matchedTab) {
+      if (activeTab !== matchedTab) {
+        setActiveTab(matchedTab);
+      }
+    } else if (currentPath === "/" || currentPath === "/login") {
+      const def = getDefaultTabAndRoute(currentUser);
+      setActiveTab(def.tab);
+      navigate(def.route, { replace: true });
+    }
+  }, [location.pathname, currentUser]);
 
   const checkCurrentUser = async () => {
     const token = api.getToken();
     if (!token) {
       setLoadingUser(false);
+      if (location.pathname !== "/login") {
+        navigate("/login", { replace: true });
+      }
       return;
     }
     try {
       const user = await api.getMe();
       setCurrentUser(user);
       localStorage.setItem("jarvis_user", JSON.stringify(user));
-      if (user.is_super_admin) {
-        setActiveTab("organizations");
-      } else if (user.is_data_entry || user.platform_role === "DATA_ENTRY") {
-        setActiveTab("global_intelligence");
-      } else if (user.tenant_role === "TELECALLER") {
-        setActiveTab("telecaller");
+
+      const currentPath = window.location.pathname;
+      const matchedTab = ROUTE_TO_TAB[currentPath];
+      if (matchedTab) {
+        setActiveTab(matchedTab);
       } else {
-        setActiveTab("radar");
+        const def = getDefaultTabAndRoute(user);
+        setActiveTab(def.tab);
+        navigate(def.route, { replace: true });
       }
     } catch (e) {
       api.clearToken();
+      navigate("/login", { replace: true });
     } finally {
       setLoadingUser(false);
     }
@@ -89,6 +163,7 @@ export const App: React.FC = () => {
     api.clearToken();
     localStorage.removeItem("jarvis_user");
     setCurrentUser(null);
+    navigate("/login");
   };
 
   if (loadingUser) {
@@ -115,15 +190,9 @@ export const App: React.FC = () => {
         onSuccess={(u) => {
           setCurrentUser(u);
           localStorage.setItem("jarvis_user", JSON.stringify(u));
-          if (u.is_super_admin) {
-            setActiveTab("organizations");
-          } else if (u.is_data_entry || u.platform_role === "DATA_ENTRY") {
-            setActiveTab("global_intelligence");
-          } else if (u.tenant_role === "TELECALLER") {
-            setActiveTab("telecaller");
-          } else {
-            setActiveTab("radar");
-          }
+          const def = getDefaultTabAndRoute(u);
+          setActiveTab(def.tab);
+          navigate(def.route, { replace: true });
         }}
       />
     );
@@ -134,7 +203,7 @@ export const App: React.FC = () => {
       <Navbar
         user={currentUser}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         onLogout={handleLogout}
         onNewLeadClick={() => setShowNewLeadModal(true)}
       />
@@ -168,7 +237,13 @@ export const App: React.FC = () => {
             onSelectLead={(l) => setSelectedLead(l)}
             onMoveStage={handleMoveStage}
             onNewLeadClick={() => setShowNewLeadModal(true)}
+            onRefresh={loadCRMData}
           />
+        )}
+
+        {/* Team & Telecaller Management */}
+        {activeTab === "team" && (
+          <TeamManagementView onNavigateToLeads={() => handleTabChange("leads")} />
         )}
 
         {/* Import Leads Landing */}
@@ -249,10 +324,10 @@ export const App: React.FC = () => {
           onClose={() => setShowImportModal(false)}
           onSuccess={() => {
             if (currentUser.is_data_entry || currentUser.platform_role === "DATA_ENTRY") {
-              setActiveTab("global_intelligence");
+              handleTabChange("global_intelligence");
             } else {
               loadCRMData();
-              setActiveTab("pipeline");
+              handleTabChange("pipeline");
             }
           }}
         />

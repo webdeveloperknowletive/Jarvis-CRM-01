@@ -3,6 +3,7 @@ import { api, GlobalPerson } from "../services/api";
 import { ImportModal } from "./ImportModal";
 import { EditPersonModal } from "./EditPersonModal";
 import { openGmail } from "../utils/mailHelper";
+import { format10DigitPhone, getCallUrl, cleanPhoneInput } from "../utils/phoneHelper";
 import {
   UserCheck,
   Search,
@@ -636,11 +637,11 @@ export const PeopleIntelligenceView: React.FC<PeopleIntelligenceViewProps> = ({ 
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.75rem" }}>
                           {person.phone && (
                             <a
-                              href={`tel:${person.phone}`}
+                              href={getCallUrl(person.phone)}
                               style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "var(--emerald)", textDecoration: "none", fontWeight: 600 }}
                             >
                               <Phone style={{ width: "12px", height: "12px" }} />
-                              {person.phone}
+                              {format10DigitPhone(person.phone)}
                             </a>
                           )}
                           {person.email && (
@@ -706,7 +707,7 @@ export const PeopleIntelligenceView: React.FC<PeopleIntelligenceViewProps> = ({ 
                                 color: "var(--emerald)",
                                 border: "1px solid rgba(16, 185, 129, 0.25)",
                               }}
-                              title={`Direct Phone: ${person.phone}`}
+                              title={`Direct Phone: ${format10DigitPhone(person.phone)}`}
                             >
                               Phone
                             </span>
@@ -906,13 +907,14 @@ export const PeopleIntelligenceView: React.FC<PeopleIntelligenceViewProps> = ({ 
                 </div>
                 <div>
                   <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
-                    Mobile Number
+                    Mobile Number (10 Digits)
                   </label>
                   <input
                     type="text"
-                    placeholder="+91 98765 43210"
+                    placeholder="9876543210"
+                    maxLength={10}
                     value={formPhone}
-                    onChange={(e) => setFormPhone(e.target.value)}
+                    onChange={(e) => setFormPhone(cleanPhoneInput(e.target.value))}
                     className="input-text"
                     id="person-lead-mobile"
                   />

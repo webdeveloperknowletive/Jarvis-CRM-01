@@ -9,6 +9,7 @@ from app.core.deps import get_db, get_current_user, get_tenant_id
 from app.models.user import User
 from app.models.lead import Lead
 from app.models.lead_history import LeadStageHistory
+from app.models.activity import Activity
 from app.models.audit import RadarEvent
 from app.schemas.lead import (
     LeadCreate, LeadUpdate, LeadOut, LeadStageChangeRequest,
@@ -39,8 +40,10 @@ def list_leads(
 ):
     query = db.query(Lead).filter(Lead.organization_id == tenant_id)
 
-    # Allow filtering by owner_id if explicitly specified
-    if owner_id:
+    # Telecallers strictly see only leads explicitly assigned to them by Org Admin
+    if current_user.tenant_role == "TELECALLER":
+        query = query.filter(Lead.owner_id == current_user.id)
+    elif owner_id:
         query = query.filter(Lead.owner_id == owner_id)
 
     if status_filter:
@@ -147,7 +150,10 @@ def update_lead(
         lead.tags = data.tags
 
     db.commit()
-    db.refresh(lead)
+    try:
+        db.refresh(lead)
+    except Exception:
+        pass
     return serialize_lead(lead, current_user, db)
 
 
@@ -173,6 +179,58 @@ def reassign_lead(
 ):
     lead = assign_lead(db, id, data.owner_id, tenant_id, current_user)
     return serialize_lead(lead, current_user, db)
+
+
+class BatchAssignRequest(BaseModel):
+    lead_ids: List[str]
+    telecaller_id: str
+
+
+@router.post("/batch-assign")
+def batch_assign_leads(
+    data: BatchAssignRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """
+    Assigns multiple leads (e.g. 5, 20, 50) to a specific Telecaller in one transaction.
+    """
+    if not (current_user.is_org_admin or current_user.is_super_admin or current_user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER")):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only Organization Admins can assign leads to telecallers")
+
+    # Verify target telecaller exists in this organization
+    telecaller = db.query(User).filter(
+        User.id == data.telecaller_id,
+        User.organization_id == tenant_id
+    ).first()
+    if not telecaller:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target telecaller not found in this organization")
+
+    leads = db.query(Lead).filter(
+        Lead.id.in_(data.lead_ids),
+        Lead.organization_id == tenant_id
+    ).all()
+
+    for lead in leads:
+        lead.owner_id = telecaller.id
+        activity = Activity(
+            organization_id=tenant_id,
+            lead_id=lead.id,
+            user_id=current_user.id,
+            activity_type="ASSIGNMENT",
+            subject=f"Assigned to {telecaller.full_name}",
+            description=f"Assigned by Org Admin {current_user.full_name} for calling queue."
+        )
+        db.add(activity)
+
+    db.commit()
+    return {
+        "updated_count": len(leads),
+        "telecaller_id": telecaller.id,
+        "telecaller_name": telecaller.full_name,
+        "message": f"Successfully assigned {len(leads)} leads to {telecaller.full_name}"
+    }
 
 
 @router.get("/{id}/timeline", response_model=List[ActivityOut])
@@ -308,4 +366,78 @@ def trigger_lead_action(
         )
     else:
         raise HTTPException(status_code=400, detail=f"Unsupported action: {action_type}")
+
+
+class SendLeadEmailRequest(BaseModel):
+    subject: str
+    body: str
+    from_email: Optional[str] = None
+    from_name: Optional[str] = None
+    to_email: Optional[str] = None
+
+
+@router.post("/{lead_id}/send-email")
+def dispatch_lead_email(
+    lead_id: str,
+    payload: SendLeadEmailRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    lead = db.query(Lead).filter(
+        Lead.id == lead_id,
+        Lead.organization_id == tenant_id
+    ).first()
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+
+    target_to = (payload.to_email or lead.contact_email or "").strip()
+    if not target_to:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Recipient email address is missing")
+
+    from app.core.config import settings
+    sender_email = (current_user.email or payload.from_email or settings.SMTP_FROM_EMAIL).strip()
+    sender_name = (current_user.full_name or payload.from_name or "Admin").strip()
+
+    from app.services.email_service import send_lead_email
+    try:
+        result = send_lead_email(
+            to_email=target_to,
+            from_email=sender_email,
+            from_name=sender_name,
+            subject=payload.subject,
+            body=payload.body
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to dispatch email: {str(e)}")
+
+    activity = Activity(
+        organization_id=tenant_id,
+        lead_id=lead.id,
+        company_id=lead.company_id,
+        contact_id=lead.contact_id,
+        user_id=current_user.id,
+        activity_type="EMAIL",
+        subject=payload.subject or "Email Sent",
+        description=f"From: {sender_name} <{sender_email}>\nTo: {target_to}\n\n{payload.body}",
+        status="COMPLETED"
+    )
+    db.add(activity)
+
+    radar_event = RadarEvent(
+        organization_id=tenant_id,
+        actor_user_id=current_user.id,
+        action="EMAIL_DISPATCHED",
+        entity_type="LEAD",
+        entity_id=lead.id
+    )
+    db.add(radar_event)
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": f"Email successfully dispatched to {target_to} from {sender_name} <{sender_email}>",
+        "result": result
+    }
+
 

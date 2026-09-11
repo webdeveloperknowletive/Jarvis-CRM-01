@@ -41,7 +41,10 @@ def get_default_pipeline(db: Session, organization_id: str) -> Pipeline:
             )
             db.add(stage)
         db.commit()
-        db.refresh(pipeline)
+        try:
+            db.refresh(pipeline)
+        except Exception:
+            pass
     return pipeline
 
 

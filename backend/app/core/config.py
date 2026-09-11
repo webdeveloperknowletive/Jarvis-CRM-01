@@ -39,17 +39,27 @@ class Settings(BaseSettings):
         "http://localhost:5174",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:3000",
-        "*"
+        "*",
+        "http://192.168.0.158:5173",
     ]
     
     # File Storage
     STORAGE_PROVIDER: str = Field(default="LOCAL", env="STORAGE_PROVIDER")  # LOCAL, S3, MINIO
     STORAGE_LOCAL_DIR: str = Field(default="./storage_uploads", env="STORAGE_LOCAL_DIR")
     MAX_UPLOAD_SIZE_MB: int = 50
+
+    # SMTP / Email Service
+    SMTP_HOST: Optional[str] = Field(default=None, env="SMTP_HOST")
+    SMTP_PORT: int = Field(default=587, env="SMTP_PORT")
+    SMTP_USER: Optional[str] = Field(default=None, env="SMTP_USER")
+    SMTP_PASSWORD: Optional[str] = Field(default=None, env="SMTP_PASSWORD")
+    SMTP_TLS: bool = Field(default=True, env="SMTP_TLS")
+    SMTP_FROM_EMAIL: str = Field(default="admin@apex.com", env="SMTP_FROM_EMAIL")
+    SMTP_FROM_NAME: str = Field(default="Apex CRM Admin", env="SMTP_FROM_NAME")
     
     class Config:
         case_sensitive = True
-        env_file = ".env"
+        env_file = str(Path(__file__).resolve().parent.parent.parent / ".env")
         extra = "ignore"
 
 

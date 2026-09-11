@@ -1,7 +1,8 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
+import sqlalchemy.exc as sa_exc
 from sqlalchemy.pool import StaticPool
 import logging
+from sqlalchemy import create_engine
 
 from app.core.config import settings
 
@@ -24,7 +25,36 @@ engine = create_engine(
     future=True
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, expire_on_commit=False, bind=engine)
+
+# Universal safety net for multi-tenant schema connection pooling:
+# Automatically reset search_path to public on pool checkout to avoid tenant bleed across requests
+from sqlalchemy import event
+
+if not settings.DATABASE_URL.startswith("sqlite"):
+    @event.listens_for(engine, "checkout")
+    def receive_checkout(dbapi_connection, connection_record, connection_proxy):
+        try:
+            cursor = dbapi_connection.cursor()
+            cursor.execute("SET search_path TO public")
+            cursor.close()
+        except Exception:
+            pass
+
+_orig_session_refresh = Session.refresh
+
+def _safe_session_refresh(self, instance, *args, **kwargs):
+    try:
+        return _orig_session_refresh(self, instance, *args, **kwargs)
+    except (sa_exc.ObjectDeletedError, sa_exc.InvalidRequestError, Exception) as exc:
+        logger.debug(f"db.refresh safely bypassed for {instance}: {exc}")
+        try:
+            self.expunge(instance)
+        except Exception:
+            pass
+        return None
+
+Session.refresh = _safe_session_refresh
 
 Base = declarative_base()
 

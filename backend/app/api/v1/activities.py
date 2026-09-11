@@ -16,25 +16,7 @@ def log_activity(
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
 ):
-    act = create_activity(db, tenant_id, current_user, data)
-    return ActivityOut(
-        id=act.id,
-        organization_id=act.organization_id,
-        lead_id=act.lead_id,
-        company_id=act.company_id,
-        contact_id=act.contact_id,
-        user_id=act.user_id,
-        user_name=current_user.full_name,
-        activity_type=act.activity_type,
-        subject=act.subject,
-        description=act.description,
-        direction=act.direction,
-        status=act.status,
-        duration_seconds=act.duration_seconds,
-        metadata_json=act.metadata_json,
-        occurred_at=act.occurred_at,
-        created_at=act.created_at
-    )
+    return create_activity(db, tenant_id, current_user, data)
 
 
 @router.get("/", response_model=List[ActivityOut])

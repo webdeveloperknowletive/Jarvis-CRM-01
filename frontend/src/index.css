@@ -451,8 +451,8 @@ body.light-theme {
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   box-shadow: var(--shadow-xl);
-  width: 100%;
-  max-width: 600px;
+  width: min(95vw, 640px) !important;
+  max-width: 640px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -630,5 +630,66 @@ body.light-theme {
   50% {
     opacity: 1;
     transform: scale(1.01);
+  }
+}
+
+/* ==========================================================================
+   Comprehensive Mobile & Tablet Responsiveness
+   ========================================================================== */
+.table-responsive,
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 900px) {
+  .kanban-partitions-container {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+  .kanban-partition-leads {
+    width: 100% !important;
+    max-height: 380px !important;
+  }
+  .kanban-stages-scroll-container {
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+  }
+  .kanban-column {
+    width: min(85vw, 300px) !important;
+    scroll-snap-align: start;
+  }
+  .data-table th,
+  .data-table td {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .main-content {
+    padding: 12px 10px !important;
+  }
+  .modal-overlay {
+    padding: 8px !important;
+    align-items: flex-end !important;
+  }
+  .modal-dialog {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92vh !important;
+    border-radius: 18px 18px 0 0 !important;
+    margin: 0 !important;
+  }
+  .drawer-content {
+    max-width: 100% !important;
+  }
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  select,
+  textarea {
+    font-size: 16px !important;
   }
 }

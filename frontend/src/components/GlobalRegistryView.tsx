@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { api, GlobalCompany, GlobalCompanyCreatePayload } from "../services/api";
 import { ImportModal } from "./ImportModal";
 import { EditCompanyModal } from "./EditCompanyModal";
+import { format10DigitPhone, getCallUrl, cleanPhoneInput } from "../utils/phoneHelper";
 import {
   Globe2,
   Search,
@@ -445,10 +446,14 @@ export const GlobalRegistryView: React.FC<GlobalRegistryViewProps> = ({ currentU
                           </span>
                         )}
                         {comp.phone && (
-                          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                            <Phone style={{ width: "11px", height: "11px" }} />
-                            {comp.phone}
-                          </span>
+                          <a
+                            href={getCallUrl(comp.phone)}
+                            title={`Call (+91 ${format10DigitPhone(comp.phone)})`}
+                            style={{ display: "flex", alignItems: "center", gap: "4px", color: "inherit", textDecoration: "none" }}
+                          >
+                            <Phone style={{ width: "11px", height: "11px", color: "var(--emerald)" }} />
+                            <span>{format10DigitPhone(comp.phone)}</span>
+                          </a>
                         )}
                         {comp.email && (
                           <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -735,9 +740,10 @@ export const GlobalRegistryView: React.FC<GlobalRegistryViewProps> = ({ currentU
                   </label>
                   <input
                     type="tel"
+                    maxLength={10}
                     value={formData.phone || ""}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+91 20 12345678"
+                    onChange={(e) => setFormData({ ...formData, phone: cleanPhoneInput(e.target.value) })}
+                    placeholder="e.g. 9876543210 (10 digits)"
                     className="input-text"
                     style={{ width: "100%" }}
                     id="company-contact-number"

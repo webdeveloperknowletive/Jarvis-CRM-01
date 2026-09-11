@@ -19,6 +19,16 @@ export interface User {
   } | null;
 }
 
+export interface TelecallerUser {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string | null;
+  status: string;
+  assigned_leads_count: number;
+  created_at?: string | null;
+}
+
 export interface PipelineStage {
   id: string;
   pipeline_id: string;
@@ -372,6 +382,15 @@ export const api = {
     }>(`/leads/${id}/action/${action_type}`, {
       method: "POST",
     }),
+  sendLeadEmail: (id: string, data: { subject: string; body: string; to_email?: string }) =>
+    api.request<{
+      status: string;
+      message: string;
+      result?: any;
+    }>(`/leads/${id}/send-email`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   // Activities
   logActivity: (data: any) =>
@@ -512,6 +531,19 @@ export const api = {
   scoreLeadAI: (id: string) => api.request<any>(`/ai/leads/${id}/score`, { method: "POST" }),
   summarizeLeadAI: (id: string) => api.request<any>(`/ai/leads/${id}/summary`),
   recommendNextActionAI: (id: string) => api.request<any>(`/ai/leads/${id}/recommendation`),
+
+  // Telecaller & Batch Assignment
+  getTelecallers: () => api.request<TelecallerUser[]>("/users/telecallers"),
+  batchAssignLeads: (lead_ids: string[], telecaller_id: string) =>
+    api.request<{
+      updated_count: number;
+      telecaller_id: string;
+      telecaller_name: string;
+      message: string;
+    }>("/leads/batch-assign", {
+      method: "POST",
+      body: JSON.stringify({ lead_ids, telecaller_id }),
+    }),
 
   // Users
   getUsers: () => api.request<any[]>("/users/"),

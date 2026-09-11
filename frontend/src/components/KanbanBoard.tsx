@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Lead, PipelineStage, api } from "../services/api";
 import { openGmail } from "../utils/mailHelper";
+import { EmailComposeModal } from "./EmailComposeModal";
+import { format10DigitPhone, getCallUrl } from "../utils/phoneHelper";
 import {
   Plus,
   Flame,
@@ -59,6 +61,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [newStageType, setNewStageType] = useState<"STANDARD" | "WON" | "LOST">("STANDARD");
   const [creatingStage, setCreatingStage] = useState(false);
   const [stageError, setStageError] = useState<string | null>(null);
+  const [composeLead, setComposeLead] = useState<Lead | null>(null);
 
   // Edit Existing Stage Form State
   const [editingStage, setEditingStage] = useState<PipelineStage | null>(null);
@@ -591,12 +594,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       {/* =========================================================================
           THE TWO-PARTITION BOARD (1. LEADS BOARD & 2. STAGES BOARD)
          ========================================================================= */}
-      <div style={{ display: "flex", gap: "20px", alignItems: "flex-start", width: "100%" }}>
+      <div className="kanban-partitions-container" style={{ display: "flex", gap: "20px", alignItems: "flex-start", width: "100%" }}>
         {/* =====================================================================
             PARTITION 1: LEADS BOARD (Incoming / Pickable Leads Queue)
            ===================================================================== */}
         <div
-          className="card"
+          className="card kanban-partition-leads"
           style={{
             width: "330px",
             flexShrink: 0,
@@ -810,6 +813,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
           {/* Horizontal Columns Container */}
           <div
+            className="kanban-stages-scroll-container"
             style={{
               display: "flex",
               gap: "16px",
@@ -1111,30 +1115,29 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                   }}
                                 >
                                   {lead.contact_phone && (
-                                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                    <a
+                                      href={lead.is_phone_masked ? undefined : getCallUrl(lead.contact_phone)}
+                                      onClick={(e) => {
+                                        if (lead.is_phone_masked) e.preventDefault();
+                                        else e.stopPropagation();
+                                      }}
+                                      title={lead.is_phone_masked ? "Masked Phone" : `Click to call (+91 ${format10DigitPhone(lead.contact_phone)})`}
+                                      style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: "inherit", textDecoration: "none" }}
+                                    >
                                       <Phone style={{ width: "12px", height: "12px", color: "var(--emerald)" }} />
-                                      <span>{lead.contact_phone}</span>
-                                    </div>
+                                      <span>{format10DigitPhone(lead.contact_phone)}</span>
+                                    </a>
                                   )}
 
                                   {lead.contact_email && (
                                     <button
                                       type="button"
                                       draggable={false}
-                                      onClick={async (e) => {
+                                      onClick={(e) => {
                                         e.stopPropagation();
-                                        try {
-                                          const res = await api.triggerLeadAction(lead.id, "email");
-                                          if (res.gmail_url) {
-                                            window.open(res.gmail_url, "_blank", "noopener,noreferrer");
-                                          } else {
-                                            openGmail(lead.contact_email, `Regarding ${lead.title}`);
-                                          }
-                                        } catch {
-                                          openGmail(lead.contact_email, `Regarding ${lead.title}`);
-                                        }
+                                        setComposeLead(lead);
                                       }}
-                                      title="Open in Gmail"
+                                      title="Compose Email with From & To"
                                       style={{
                                         background: "var(--bg-surface-subtle)",
                                         border: "1px solid var(--border-subtle)",
@@ -1149,7 +1152,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                       }}
                                     >
                                       <Mail style={{ width: "10px", height: "10px", color: "#dc2626" }} />
-                                      <span>Gmail</span>
+                                      <span>Email</span>
                                     </button>
                                   )}
                                 </div>
@@ -1662,6 +1665,17 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {composeLead && (
+        <EmailComposeModal
+          isOpen={Boolean(composeLead)}
+          onClose={() => setComposeLead(null)}
+          lead={composeLead}
+          onSent={() => {
+            if (onRefreshPipeline) onRefreshPipeline();
+          }}
+        />
       )}
     </div>
   );

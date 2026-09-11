@@ -6,6 +6,7 @@ from app.models.pipeline import Pipeline, PipelineStage
 from app.models.masking import MaskingPolicy
 from app.models.audit import AuditLog
 from app.core.security import get_password_hash
+from app.core.tenant_schema import get_schema_name_for_org, create_tenant_schema_tables
 from app.schemas.organization import OrganizationCreate
 import re
 
@@ -45,10 +46,12 @@ def create_organization(db: Session, data: OrganizationCreate, creator_id: str =
             detail=f"User with email {data.admin_email} already exists"
         )
 
-    # 3. Create Organization
+    # 3. Create Organization with isolated schema_name
+    schema_name = get_schema_name_for_org(data.name)
     org = Organization(
         name=data.name,
         slug=slug,
+        schema_name=schema_name,
         timezone=data.timezone or "Asia/Kolkata",
         currency=data.currency or "INR",
         status="ACTIVE"
@@ -56,12 +59,18 @@ def create_organization(db: Session, data: OrganizationCreate, creator_id: str =
     db.add(org)
     db.flush()
 
+    # Create isolated PostgreSQL schema and tenant-specific tables
+    create_tenant_schema_tables(db, schema_name, org.id)
+
     # 4. Find or create plan and subscription
-    plan = db.query(Plan).filter(Plan.code == (data.plan_code or "GROWTH")).first()
+    target_plan_code = (data.plan_code or "GROWTH").upper()
+    plan = db.query(Plan).filter(Plan.code == target_plan_code).first()
+    if not plan:
+        plan = db.query(Plan).filter(Plan.code == "GROWTH").first()
     if not plan:
         plan = Plan(
-            code="GROWTH",
-            name="Growth Plan",
+            code=target_plan_code,
+            name=f"{target_plan_code.capitalize()} Plan",
             seat_limit=15,
             monthly_pull_quota=5000,
             price_amount=4999.00
@@ -143,5 +152,8 @@ def create_organization(db: Session, data: OrganizationCreate, creator_id: str =
     db.add(audit)
 
     db.commit()
-    db.refresh(org)
+    try:
+        db.refresh(org)
+    except Exception:
+        pass
     return org

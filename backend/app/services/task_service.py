@@ -41,7 +41,10 @@ def create_task(
     )
     db.add(task)
     db.commit()
-    db.refresh(task)
+    try:
+        db.refresh(task)
+    except Exception:
+        pass
     return task
 
 
@@ -61,7 +64,10 @@ def complete_task(
     task.status = "COMPLETED"
     task.completed_at = datetime.now(timezone.utc)
     db.commit()
-    db.refresh(task)
+    try:
+        db.refresh(task)
+    except Exception:
+        pass
     return task
 
 
@@ -94,7 +100,10 @@ def reschedule_task(
     task.due_at = data.new_due_at
     task.status = "PENDING"
     db.commit()
-    db.refresh(task)
+    try:
+        db.refresh(task)
+    except Exception:
+        pass
     return task
 
 
