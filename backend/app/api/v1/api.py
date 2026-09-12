@@ -15,6 +15,7 @@ from app.api.v1 import (
     radar,
     ai,
     health,
+    gmail,
 )
 
 api_router = APIRouter()
@@ -34,3 +35,4 @@ api_router.include_router(global_registry.router)
 api_router.include_router(global_people.router)
 api_router.include_router(radar.router)
 api_router.include_router(ai.router)
+api_router.include_router(gmail.router)

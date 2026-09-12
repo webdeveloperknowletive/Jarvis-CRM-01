@@ -48,14 +48,22 @@ class Settings(BaseSettings):
     STORAGE_LOCAL_DIR: str = Field(default="./storage_uploads", env="STORAGE_LOCAL_DIR")
     MAX_UPLOAD_SIZE_MB: int = 50
 
-    # SMTP / Email Service
+    # SMTP / Email Service Configuration
     SMTP_HOST: Optional[str] = Field(default=None, env="SMTP_HOST")
     SMTP_PORT: int = Field(default=587, env="SMTP_PORT")
     SMTP_USER: Optional[str] = Field(default=None, env="SMTP_USER")
     SMTP_PASSWORD: Optional[str] = Field(default=None, env="SMTP_PASSWORD")
     SMTP_TLS: bool = Field(default=True, env="SMTP_TLS")
-    SMTP_FROM_EMAIL: str = Field(default="admin@apex.com", env="SMTP_FROM_EMAIL")
-    SMTP_FROM_NAME: str = Field(default="Apex CRM Admin", env="SMTP_FROM_NAME")
+    SMTP_SSL: bool = Field(default=False, env="SMTP_SSL")
+    SMTP_TIMEOUT: int = Field(default=10, env="SMTP_TIMEOUT")
+    SMTP_FROM_EMAIL: str = Field(default="notifications@jarviscrm.com", env="SMTP_FROM_EMAIL")
+    SMTP_FROM_NAME: str = Field(default="JARVIS CRM", env="SMTP_FROM_NAME")
+    EMAIL_PROVIDER: str = Field(default="SMTP", env="EMAIL_PROVIDER")
+
+    # Google OAuth2 / Gmail API Configuration
+    GOOGLE_CLIENT_ID: Optional[str] = Field(default=None, env="GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET: Optional[str] = Field(default=None, env="GOOGLE_CLIENT_SECRET")
+    GOOGLE_REDIRECT_URI: str = Field(default="http://localhost:8000/api/v1/gmail/oauth/callback", env="GOOGLE_REDIRECT_URI")
     
     class Config:
         case_sensitive = True

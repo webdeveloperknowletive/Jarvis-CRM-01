@@ -29,7 +29,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, expire_on_commit=
 
 # Universal safety net for multi-tenant schema connection pooling:
 # Automatically reset search_path to public on pool checkout to avoid tenant bleed across requests
-from sqlalchemy import event
+from sqlalchemy import event, text
 
 if not settings.DATABASE_URL.startswith("sqlite"):
     @event.listens_for(engine, "checkout")
@@ -41,12 +41,20 @@ if not settings.DATABASE_URL.startswith("sqlite"):
         except Exception:
             pass
 
+    @event.listens_for(Session, "after_begin")
+    def receive_after_begin(session, transaction, connection):
+        tenant_schema = getattr(session, "tenant_schema", None)
+        if tenant_schema:
+            connection.execute(text(f'SET search_path TO "{tenant_schema}", public'))
+
+import sqlalchemy.orm.exc as orm_exc
+
 _orig_session_refresh = Session.refresh
 
 def _safe_session_refresh(self, instance, *args, **kwargs):
     try:
         return _orig_session_refresh(self, instance, *args, **kwargs)
-    except (sa_exc.ObjectDeletedError, sa_exc.InvalidRequestError, Exception) as exc:
+    except (orm_exc.ObjectDeletedError, sa_exc.InvalidRequestError, Exception) as exc:
         logger.debug(f"db.refresh safely bypassed for {instance}: {exc}")
         try:
             self.expunge(instance)

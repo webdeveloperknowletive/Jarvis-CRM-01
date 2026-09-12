@@ -43,6 +43,14 @@ export const PeopleIntelligenceView: React.FC<PeopleIntelligenceViewProps> = ({ 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [pulling, setPulling] = useState(false);
+  const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
+
+  const handleCopyEmail = (email: string, id: string) => {
+    if (!email) return;
+    navigator.clipboard.writeText(email);
+    setCopiedEmailId(id);
+    setTimeout(() => setCopiedEmailId(null), 2000);
+  };
 
   // Modals state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -648,23 +656,23 @@ export const PeopleIntelligenceView: React.FC<PeopleIntelligenceViewProps> = ({ 
                             <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                               <button
                                 type="button"
-                                onClick={() => openGmail(person.email!, `Opportunity Discussion - ${person.full_name}`)}
+                                onClick={() => handleCopyEmail(person.email!, person.id)}
                                 style={{
                                   background: "none",
                                   border: "none",
                                   padding: 0,
                                   cursor: "pointer",
-                                  display: "inline-flex",
+                                  color: "var(--text-secondary)",
+                                  fontSize: "0.6875rem",
+                                  display: "flex",
                                   alignItems: "center",
-                                  gap: "4px",
-                                  fontSize: "0.75rem",
-                                  color: "#dc2626",
+                                  gap: "3px",
                                   textDecoration: "underline"
                                 }}
-                                title="Open in Gmail"
+                                title="Copy email to clipboard"
                               >
                                 <Mail style={{ width: "12px", height: "12px" }} />
-                                {person.email}
+                                {copiedEmailId === person.id ? "Copied!" : person.email}
                               </button>
                             </div>
                           )}

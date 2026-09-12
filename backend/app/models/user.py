@@ -18,6 +18,7 @@ class User(Base, TimestampMixin):
     status = Column(String(30), nullable=False, default="ACTIVE")  # INVITED, ACTIVE, SUSPENDED, DEACTIVATED
     permission_overrides = Column(JSON, nullable=False, default=dict)
     last_login_at = Column(DateTime, nullable=True)
+    gmail_tokens = Column(JSON, nullable=True)  # {"access_token": "...", "refresh_token": "...", "expires_at": ..., "email": "..."}
 
     # Relationships
     organization = relationship("Organization", back_populates="users")

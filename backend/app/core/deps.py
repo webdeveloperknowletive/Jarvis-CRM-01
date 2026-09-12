@@ -98,6 +98,7 @@ def get_tenant_id(
         try:
             org = db.query(Organization).filter(Organization.id == tenant_id).first()
             if org and org.schema_name:
+                db.tenant_schema = org.schema_name
                 db.execute(text(f'SET search_path TO "{org.schema_name}", public'))
         except Exception:
             pass
@@ -121,6 +122,7 @@ def get_optional_tenant_id(
         try:
             org = db.query(Organization).filter(Organization.id == tenant_id).first()
             if org and org.schema_name:
+                db.tenant_schema = org.schema_name
                 db.execute(text(f'SET search_path TO "{org.schema_name}", public'))
         except Exception:
             pass

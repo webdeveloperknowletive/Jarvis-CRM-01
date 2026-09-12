@@ -58,6 +58,15 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
   
   // View mode switcher: DUAL (side-by-side), COMPANIES (company column only), PEOPLE (people column only)
   const [activeColumnView, setActiveColumnView] = useState<"DUAL" | "COMPANIES" | "PEOPLE">("DUAL");
+  
+  const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
+
+  const handleCopyEmail = (email: string, id: string) => {
+    if (!email) return;
+    navigator.clipboard.writeText(email);
+    setCopiedEmailId(id);
+    setTimeout(() => setCopiedEmailId(null), 2000);
+  };
 
   // Selection states
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
@@ -1030,7 +1039,7 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
 
                             {company.email && (
                               <button
-                                onClick={() => openGmail(company.email, `Partnership Inquiry with ${company.legal_name}`)}
+                                onClick={() => handleCopyEmail(company.email!, company.id)}
                                 style={{
                                   display: "inline-flex",
                                   alignItems: "center",
@@ -1043,10 +1052,10 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                                   fontSize: "0.6875rem",
                                   fontWeight: 600,
                                 }}
-                                title="Compose Gmail to enterprise email"
+                                title="Copy email to clipboard"
                               >
                                 <Mail style={{ width: "11px", height: "11px" }} />
-                                <span>{company.email}</span>
+                                <span>{copiedEmailId === company.id ? "Copied!" : company.email}</span>
                               </button>
                             )}
 
@@ -1365,13 +1374,7 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
 
                                       {person.email && (
                                         <button
-                                          onClick={() =>
-                                            openGmail(
-                                              person.email,
-                                              `Introduction: Connecting with ${person.full_name}`,
-                                              `Hello ${person.full_name},\n\nI am reaching out regarding opportunities with ${company.legal_name}.`
-                                            )
-                                          }
+                                          onClick={() => handleCopyEmail(person.email!, person.id)}
                                           className="btn-secondary"
                                           style={{
                                             padding: "3px 6px",
@@ -1382,10 +1385,10 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                                             color: "var(--primary)",
                                             borderColor: "rgba(99, 102, 241, 0.3)",
                                           }}
-                                          title={`Email ${person.full_name} (${person.email})`}
+                                          title={`Copy Email ${person.email} to clipboard`}
                                         >
                                           <Mail style={{ width: "10px", height: "10px" }} />
-                                          Email
+                                          {copiedEmailId === person.id ? "Copied!" : "Email"}
                                         </button>
                                       )}
 
@@ -1733,13 +1736,7 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
 
                           {person.email && (
                             <button
-                              onClick={() =>
-                                openGmail(
-                                  person.email,
-                                  `Connecting with ${person.full_name}`,
-                                  `Hello ${person.full_name},\n\nI am reaching out regarding sales opportunities.`
-                                )
-                              }
+                              onClick={() => handleCopyEmail(person.email!, person.id)}
                               className="btn-secondary"
                               style={{
                                 padding: "3px 8px",
@@ -1750,10 +1747,10 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                                 color: "var(--primary)",
                                 borderColor: "rgba(99, 102, 241, 0.3)",
                               }}
-                              title={`Email ${person.full_name} (${person.email})`}
+                              title={`Copy Email ${person.email} to clipboard`}
                             >
                               <Mail style={{ width: "10px", height: "10px" }} />
-                              Email
+                              {copiedEmailId === person.id ? "Copied!" : "Email"}
                             </button>
                           )}
 

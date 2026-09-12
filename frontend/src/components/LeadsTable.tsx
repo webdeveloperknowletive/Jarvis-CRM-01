@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Lead, PipelineStage, TelecallerUser, api } from "../services/api";
 import { openGmail } from "../utils/mailHelper";
-import { EmailComposeModal } from "./EmailComposeModal";
+// import { EmailComposeModal } from "./EmailComposeModal";
 import { format10DigitPhone, getCallUrl } from "../utils/phoneHelper";
 import {
   Search,
@@ -13,7 +13,10 @@ import {
   UserCheck,
   CheckCircle2,
   X,
-  Users
+  Users,
+  Building2,
+  Briefcase,
+  Target
 } from "lucide-react";
 
 interface LeadsTableProps {
@@ -43,8 +46,14 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
   const [targetTelecallerId, setTargetTelecallerId] = useState<string>("");
   const [assigning, setAssigning] = useState(false);
   const [assignMessage, setAssignMessage] = useState<string | null>(null);
-  const [composeLead, setComposeLead] = useState<Lead | null>(null);
+  const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
 
+  const handleCopyEmail = (email: string, id: string) => {
+    if (!email) return;
+    navigator.clipboard.writeText(email);
+    setCopiedEmailId(id);
+    setTimeout(() => setCopiedEmailId(null), 2000);
+  };
   useEffect(() => {
     loadTelecallers();
   }, []);
@@ -123,8 +132,56 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
     }
   };
 
+  const totalLeads = leads.length;
+  const totalCompanies = new Set(leads.map(l => l.company_name).filter(Boolean)).size;
+  const totalPipelineValue = leads.reduce((sum, lead) => sum + (Number(lead.value) || 0), 0);
+  const activeLeads = leads.filter(l => l.status === "OPEN" || (!l.status.includes("WON") && !l.status.includes("LOST"))).length;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px", position: "relative" }}>
+      {/* Metrics Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+        <div className="card" style={{ padding: "16px", display: "flex", alignItems: "center", gap: "12px", background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
+          <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "var(--primary-light)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Users style={{ width: "20px", height: "20px" }} />
+          </div>
+          <div>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Total Leads</p>
+            <h3 style={{ fontSize: "1.25rem", color: "var(--text-primary)", margin: "2px 0 0 0" }}>{totalLeads}</h3>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "16px", display: "flex", alignItems: "center", gap: "12px", background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
+          <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(16, 185, 129, 0.1)", color: "var(--emerald)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Building2 style={{ width: "20px", height: "20px" }} />
+          </div>
+          <div>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Total Companies</p>
+            <h3 style={{ fontSize: "1.25rem", color: "var(--text-primary)", margin: "2px 0 0 0" }}>{totalCompanies}</h3>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "16px", display: "flex", alignItems: "center", gap: "12px", background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
+          <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(245, 158, 11, 0.1)", color: "#f59e0b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Briefcase style={{ width: "20px", height: "20px" }} />
+          </div>
+          <div>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Total Deal Value</p>
+            <h3 style={{ fontSize: "1.25rem", color: "var(--text-primary)", margin: "2px 0 0 0" }}>₹{totalPipelineValue.toLocaleString("en-IN")}</h3>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "16px", display: "flex", alignItems: "center", gap: "12px", background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>
+          <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(99, 102, 241, 0.1)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Target style={{ width: "20px", height: "20px" }} />
+          </div>
+          <div>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Active Leads</p>
+            <h3 style={{ fontSize: "1.25rem", color: "var(--text-primary)", margin: "2px 0 0 0" }}>{activeLeads}</h3>
+          </div>
+        </div>
+      </div>
+
       {/* Toast Notification Banner */}
       {assignMessage && (
         <div
@@ -381,9 +438,9 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setComposeLead(lead);
+                              handleCopyEmail(lead.contact_email!, lead.id);
                             }}
-                            title="Compose Email (From & To)"
+                            title="Copy email to clipboard"
                             style={{
                               display: "inline-flex",
                               alignItems: "center",
@@ -400,7 +457,9 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
                             }}
                           >
                             <Mail style={{ width: "11px", height: "11px", color: "#dc2626" }} />
-                            <span style={{ textDecoration: "underline", textDecorationStyle: "dotted" }}>{lead.contact_email}</span>
+                            <span style={{ textDecoration: "underline", textDecorationStyle: "dotted" }}>
+                              {copiedEmailId === lead.id ? "Copied!" : lead.contact_email}
+                            </span>
                           </button>
                         )}
                       </div>
@@ -476,16 +535,7 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
         </table>
       </div>
 
-      {composeLead && (
-        <EmailComposeModal
-          isOpen={Boolean(composeLead)}
-          onClose={() => setComposeLead(null)}
-          lead={composeLead}
-          onSent={() => {
-            if (onRefresh) onRefresh();
-          }}
-        />
-      )}
+
     </div>
   );
 };

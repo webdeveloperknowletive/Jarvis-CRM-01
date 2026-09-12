@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Lead, PipelineStage, Activity, api } from "../services/api";
 import { openGmail, openWhatsApp } from "../utils/mailHelper";
-import { EmailComposeModal } from "./EmailComposeModal";
+// import { EmailComposeModal } from "./EmailComposeModal";
 import { format10DigitPhone, getCallUrl } from "../utils/phoneHelper";
 import { 
   X, 
@@ -33,8 +33,14 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   const [timeline, setTimeline] = useState<Activity[]>([]);
   const [stageHistories, setStageHistories] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"timeline" | "ai" | "history">("timeline");
-  const [showEmailModal, setShowEmailModal] = useState(false);
-
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+  
+  const handleCopyEmail = (email: string) => {
+    if (!email) return;
+    navigator.clipboard.writeText(email);
+    setCopiedEmail(email);
+    setTimeout(() => setCopiedEmail(null), 2000);
+  };
   // Activity log state
   const [activityType, setActivityType] = useState("CALL");
   const [activitySubject, setActivitySubject] = useState("");
@@ -251,13 +257,17 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
             </button>
 
             <button
-              onClick={() => setShowEmailModal(true)}
+              onClick={() => {
+                if (currentLead.contact_email) {
+                  handleCopyEmail(currentLead.contact_email);
+                }
+              }}
               className="btn-secondary"
               style={{ fontSize: "0.75rem", padding: "5px 10px", color: "#dc2626", borderColor: "#fecaca" }}
-              title="Compose email with From & To configuration"
+              title="Copy email to clipboard"
             >
               <Mail style={{ width: "13px", height: "13px", color: "#dc2626" }} />
-              Send Email
+              {copiedEmail === currentLead.contact_email ? "Copied!" : "Copy Email"}
             </button>
           </div>
         </div>
@@ -304,8 +314,8 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                   </p>
                   {currentLead.contact_email && (
                     <button
-                      onClick={() => setShowEmailModal(true)}
-                      title="Compose email with From & To verification"
+                      onClick={() => handleCopyEmail(currentLead.contact_email!)}
+                      title="Copy email to clipboard"
                       style={{
                         background: "var(--bg-surface-subtle)",
                         border: "1px solid var(--border-medium)",
@@ -320,7 +330,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                       }}
                     >
                       <Mail style={{ width: "11px", height: "11px", color: "#dc2626" }} />
-                      Compose
+                      {copiedEmail === currentLead.contact_email ? "Copied!" : "Copy Email"}
                     </button>
                   )}
                 </div>
@@ -621,18 +631,6 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
           )}
         </div>
       </div>
-
-      {showEmailModal && (
-        <EmailComposeModal
-          isOpen={showEmailModal}
-          onClose={() => setShowEmailModal(false)}
-          lead={currentLead}
-          onSent={() => {
-            loadTimelineAndHistory();
-            onRefresh();
-          }}
-        />
-      )}
     </div>
   );
 };

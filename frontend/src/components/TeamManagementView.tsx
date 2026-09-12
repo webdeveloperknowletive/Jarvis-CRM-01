@@ -34,6 +34,15 @@ export const TeamManagementView: React.FC<TeamManagementViewProps> = ({ onNaviga
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
+
+  const handleCopyEmail = (email: string, id: string) => {
+    if (!email) return;
+    navigator.clipboard.writeText(email);
+    setCopiedEmailId(id);
+    setTimeout(() => setCopiedEmailId(null), 2000);
+  };
   const [phone, setPhone] = useState("");
   const [creating, setCreating] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -371,9 +380,15 @@ export const TeamManagementView: React.FC<TeamManagementViewProps> = ({ onNaviga
 
                     <td>
                       <div style={{ fontSize: "0.75rem", display: "flex", flexDirection: "column", gap: "2px" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: "5px", color: "var(--text-secondary)" }}>
+                        <span 
+                          onClick={() => handleCopyEmail(tc.email, tc.id)}
+                          style={{ display: "flex", alignItems: "center", gap: "5px", color: "var(--text-secondary)", cursor: "pointer" }}
+                          title="Copy email to clipboard"
+                        >
                           <Mail style={{ width: "12px", height: "12px", color: "var(--text-muted)" }} />
-                          {tc.email}
+                          <span style={{ textDecoration: "underline", textDecorationStyle: "dotted" }}>
+                            {copiedEmailId === tc.id ? "Copied!" : tc.email}
+                          </span>
                         </span>
                         {tc.phone && (
                           <span style={{ display: "flex", alignItems: "center", gap: "5px", color: "var(--text-secondary)" }}>

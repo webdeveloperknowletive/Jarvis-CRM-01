@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Lead, api } from "../services/api";
 import { openGmail, openWhatsApp } from "../utils/mailHelper";
 import { format10DigitPhone, getCallUrl } from "../utils/phoneHelper";
-import { EmailComposeModal } from "./EmailComposeModal";
+// import { EmailComposeModal } from "./EmailComposeModal";
 import { 
   PhoneCall, 
   MessageCircle, 
@@ -22,8 +22,7 @@ export const TelecallerDesk: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPriority, setFilterPriority] = useState("ALL");
-  const [showEmailModal, setShowEmailModal] = useState(false);
-
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   // Outcome logger state
   const [outcome, setOutcome] = useState<string>("CONNECTED");
   const [notes, setNotes] = useState("");
@@ -113,9 +112,11 @@ export const TelecallerDesk: React.FC = () => {
     }
   };
 
-  const handleGmail = () => {
-    if (!selectedLead) return;
-    setShowEmailModal(true);
+  const handleCopyEmail = (email: string) => {
+    if (!email) return;
+    navigator.clipboard.writeText(email);
+    setCopiedEmail(email);
+    setTimeout(() => setCopiedEmail(null), 2000);
   };
 
   const handleRecordOutcome = async () => {
@@ -446,8 +447,8 @@ export const TelecallerDesk: React.FC = () => {
                 </p>
                 {selectedLead.contact_email && (
                   <span
-                    onClick={handleGmail}
-                    title="Click to compose in Gmail"
+                    onClick={() => handleCopyEmail(selectedLead.contact_email!)}
+                    title="Copy email to clipboard"
                     style={{
                       fontSize: "0.75rem",
                       color: "var(--primary)",
@@ -497,13 +498,13 @@ export const TelecallerDesk: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={handleGmail}
+                    onClick={() => handleCopyEmail(selectedLead.contact_email!)}
                     className="btn-secondary"
                     style={{ fontSize: "0.75rem", padding: "7px 14px", color: "#dc2626", borderColor: "#fecaca", display: "flex", alignItems: "center", gap: "6px" }}
-                    title="Open Gmail composer in new tab"
+                    title="Copy email to clipboard"
                   >
                     <Mail style={{ width: "14px", height: "14px", color: "#dc2626" }} />
-                    Email (Gmail)
+                    {copiedEmail === selectedLead.contact_email ? "Copied!" : "Copy Email"}
                   </button>
                 </div>
               </div>
@@ -633,14 +634,7 @@ export const TelecallerDesk: React.FC = () => {
         )}
       </div>
 
-      {showEmailModal && selectedLead && (
-        <EmailComposeModal
-          isOpen={showEmailModal}
-          onClose={() => setShowEmailModal(false)}
-          lead={selectedLead}
-          onSent={() => loadMyLeads()}
-        />
-      )}
+
     </div>
   );
 };

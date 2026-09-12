@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Lead, PipelineStage, api } from "../services/api";
 import { openGmail } from "../utils/mailHelper";
-import { EmailComposeModal } from "./EmailComposeModal";
+// import { EmailComposeModal } from "./EmailComposeModal";
 import { format10DigitPhone, getCallUrl } from "../utils/phoneHelper";
 import {
   Plus,
@@ -61,7 +61,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [newStageType, setNewStageType] = useState<"STANDARD" | "WON" | "LOST">("STANDARD");
   const [creatingStage, setCreatingStage] = useState(false);
   const [stageError, setStageError] = useState<string | null>(null);
-  const [composeLead, setComposeLead] = useState<Lead | null>(null);
+  const [copiedEmailId, setCopiedEmailId] = useState<string | null>(null);
+
+  const handleCopyEmail = (email: string, id: string) => {
+    if (!email) return;
+    navigator.clipboard.writeText(email);
+    setCopiedEmailId(id);
+    setTimeout(() => setCopiedEmailId(null), 2000);
+  };
 
   // Edit Existing Stage Form State
   const [editingStage, setEditingStage] = useState<PipelineStage | null>(null);
@@ -1135,9 +1142,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                       draggable={false}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setComposeLead(lead);
+                                        handleCopyEmail(lead.contact_email!, lead.id);
                                       }}
-                                      title="Compose Email with From & To"
+                                      title="Copy email to clipboard"
                                       style={{
                                         background: "var(--bg-surface-subtle)",
                                         border: "1px solid var(--border-subtle)",
@@ -1152,7 +1159,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                       }}
                                     >
                                       <Mail style={{ width: "10px", height: "10px", color: "#dc2626" }} />
-                                      <span>Email</span>
+                                      <span>{copiedEmailId === lead.id ? "Copied!" : "Email"}</span>
                                     </button>
                                   )}
                                 </div>
@@ -1667,16 +1674,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         </div>
       )}
 
-      {composeLead && (
-        <EmailComposeModal
-          isOpen={Boolean(composeLead)}
-          onClose={() => setComposeLead(null)}
-          lead={composeLead}
-          onSent={() => {
-            if (onRefreshPipeline) onRefreshPipeline();
-          }}
-        />
-      )}
+
     </div>
   );
 };

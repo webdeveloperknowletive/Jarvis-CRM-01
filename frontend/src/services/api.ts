@@ -392,6 +392,48 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  // Gmail API Integration
+  gmailAuthorize: () =>
+    api.request<{ authorization_url: string }>("/gmail/oauth/authorize", {
+      method: "GET",
+    }),
+
+  gmailStatus: () =>
+    api.request<{
+      configured: boolean;
+      connected: boolean;
+      google_account?: string | null;
+      send_as_identities?: Array<{
+        email: string;
+        display_name: string;
+        is_primary: boolean;
+        is_default: boolean;
+        verification_status: string;
+      }>;
+      message?: string;
+      error?: string;
+    }>("/gmail/status", {
+      method: "GET",
+    }),
+
+  gmailSend: (data: {
+    to_email: string;
+    from_email: string;
+    from_name?: string;
+    subject: string;
+    body: string;
+    lead_id?: string;
+    reply_to?: string;
+  }) =>
+    api.request<{
+      status: string;
+      message: string;
+      result?: any;
+    }>("/gmail/send", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
   // Activities
   logActivity: (data: any) =>
     api.request<Activity>("/activities/", {

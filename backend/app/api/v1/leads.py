@@ -20,6 +20,7 @@ from app.services.lead_service import (
     create_lead, change_lead_stage, assign_lead, serialize_lead
 )
 from app.services.activity_service import get_lead_timeline
+from app.services.email_service import get_configured_sender
 
 router = APIRouter(prefix="/leads", tags=["Leads & Opportunities"])
 
@@ -316,25 +317,38 @@ def trigger_lead_action(
     db.commit()
 
     if action_clean in ("email", "mail"):
-        target_email = lead.contact_email or ""
+        target_email = (lead.contact_email or "").strip()
+        if not target_email:
+            raise HTTPException(status_code=400, detail="Lead does not have a recipient contact email address configured.")
+        
+        # Resolve configured authorized sender identity (supports Send-As / Workspace)
+        configured_name, default_configured_email = get_configured_sender()
+        authorized_sender = None
+        if current_user.organization and current_user.organization.settings:
+            authorized_sender = current_user.organization.settings.get("authorized_sender_email")
+        if not authorized_sender:
+            authorized_sender = default_configured_email or current_user.email
+
         subject = f"Regarding {lead.title} - {lead.company_name or 'Jarvis CRM'}"
         body = f"Hello {lead.contact_name or 'there'},\n\nI am reaching out regarding {lead.title}.\n\nBest regards,\n{current_user.full_name}"
+        
         params = urllib.parse.urlencode({
             "view": "cm",
             "fs": "1",
+            "tf": "cm",
             "to": target_email,
-            "authuser": current_user.email,
+            "authuser": authorized_sender,
             "su": subject,
             "body": body
         })
-        gmail_url = f"https://mail.google.com/mail/?{params}"
+        gmail_url = f"https://mail.google.com/mail/u/{urllib.parse.quote(authorized_sender)}/?{params}"
         return LeadActionResponse(
             status="success",
             action_type="email",
             lead_id=lead.id,
             gmail_url=gmail_url,
-            recipient_email=lead.contact_email,
-            message="Gmail composer link generated"
+            recipient_email=target_email,
+            message=f"Gmail composer link generated for authorized sender {authorized_sender}"
         )
 
     elif action_clean == "whatsapp":
@@ -374,6 +388,7 @@ class SendLeadEmailRequest(BaseModel):
     from_email: Optional[str] = None
     from_name: Optional[str] = None
     to_email: Optional[str] = None
+    reply_to: Optional[str] = None
 
 
 @router.post("/{lead_id}/send-email")
@@ -395,19 +410,34 @@ def dispatch_lead_email(
     if not target_to:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Recipient email address is missing")
 
-    from app.core.config import settings
-    sender_email = (current_user.email or payload.from_email or settings.SMTP_FROM_EMAIL).strip()
-    sender_name = (current_user.full_name or payload.from_name or "Admin").strip()
+    from app.services.email_service import send_lead_email, get_configured_sender
+    auth_name, auth_email = get_configured_sender()
 
-    from app.services.email_service import send_lead_email
+    # User/agent who is sending:
+    agent_name = (current_user.full_name or payload.from_name or auth_name).strip()
+    agent_email = (current_user.email or payload.from_email or auth_email).strip()
+    
+    # Reply-To routes replies directly to the agent/user
+    reply_to_email = (payload.reply_to or agent_email or auth_email).strip()
+
+    # Guard: Ensure To and From are distinct addresses
+    if target_to.lower() == auth_email.lower():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Recipient email ({target_to}) cannot be identical to the system sender email ({auth_email}). A lead must have a distinct recipient address."
+        )
+
     try:
         result = send_lead_email(
             to_email=target_to,
-            from_email=sender_email,
-            from_name=sender_name,
+            from_email=auth_email,
+            from_name=agent_name,
+            reply_to=reply_to_email,
             subject=payload.subject,
             body=payload.body
         )
+    except ValueError as val_err:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(val_err))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to dispatch email: {str(e)}")
 
@@ -419,7 +449,7 @@ def dispatch_lead_email(
         user_id=current_user.id,
         activity_type="EMAIL",
         subject=payload.subject or "Email Sent",
-        description=f"From: {sender_name} <{sender_email}>\nTo: {target_to}\n\n{payload.body}",
+        description=f"From: {result['from_name']} <{result['from_email']}>\nTo: {result['to_email']}\nReply-To: {result['reply_to']}\n\n{payload.body}",
         status="COMPLETED"
     )
     db.add(activity)
@@ -436,7 +466,7 @@ def dispatch_lead_email(
 
     return {
         "status": "success",
-        "message": f"Email successfully dispatched to {target_to} from {sender_name} <{sender_email}>",
+        "message": f"Email successfully dispatched to {target_to} from {result['from_name']} <{result['from_email']}>",
         "result": result
     }
 

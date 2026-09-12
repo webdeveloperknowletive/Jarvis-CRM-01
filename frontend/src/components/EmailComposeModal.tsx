@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Lead, api } from "../services/api";
-import { openGmail, openMailto } from "../utils/mailHelper";
+import { openMailto } from "../utils/mailHelper";
 import {
   X,
   Mail,
@@ -9,8 +9,21 @@ import {
   User,
   CheckCircle2,
   ExternalLink,
-  Laptop
+  Laptop,
+  ShieldCheck,
+  ChevronDown,
+  ChevronRight,
+  Link2,
+  Unlink
 } from "lucide-react";
+
+interface SendAsIdentity {
+  email: string;
+  display_name: string;
+  is_primary: boolean;
+  is_default: boolean;
+  verification_status: string;
+}
 
 interface EmailComposeModalProps {
   isOpen: boolean;
@@ -27,10 +40,18 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
 }) => {
   if (!isOpen || !lead) return null;
 
-  // Current logged in user info for "FROM" stage
+  // Sender configuration
   const [senderName, setSenderName] = useState("Apex Admin");
   const [senderEmail, setSenderEmail] = useState("admin@apex.com");
   const [orgName, setOrgName] = useState("Jarvis CRM");
+
+  // Gmail connection state
+  const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailConfigured, setGmailConfigured] = useState(false);
+  const [gmailAccount, setGmailAccount] = useState<string | null>(null);
+  const [sendAsIdentities, setSendAsIdentities] = useState<SendAsIdentity[]>([]);
+  const [gmailLoading, setGmailLoading] = useState(true);
+  const [gmailError, setGmailError] = useState<string | null>(null);
 
   // Recipient info for "TO" stage
   const [recipientEmail, setRecipientEmail] = useState(lead.contact_email || "");
@@ -39,20 +60,66 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
   const [logging, setLogging] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Check Gmail connection status on mount
+  const checkGmailStatus = async () => {
+    setGmailLoading(true);
+    setGmailError(null);
+    try {
+      const status = await api.gmailStatus();
+      setGmailConfigured(status.configured);
+      setGmailConnected(status.connected);
+      setGmailAccount(status.google_account || null);
+      setSendAsIdentities(status.send_as_identities || []);
+
+      // If connected and has Send-As identities, default to first verified one
+      if (status.connected && status.send_as_identities && status.send_as_identities.length > 0) {
+        const defaultIdentity = status.send_as_identities.find(i => i.is_default) || status.send_as_identities[0];
+        const persistedSender = localStorage.getItem("jarvis_configured_sender_email");
+        // Only auto-set if user hasn't explicitly chosen one, or chosen one is valid
+        if (persistedSender) {
+          const isValid = status.send_as_identities.some(i => i.email.toLowerCase() === persistedSender.toLowerCase());
+          if (isValid) {
+            setSenderEmail(persistedSender);
+            const persistedName = localStorage.getItem("jarvis_configured_sender_name");
+            if (persistedName) setSenderName(persistedName);
+          } else {
+            setSenderEmail(defaultIdentity.email);
+            if (defaultIdentity.display_name) setSenderName(defaultIdentity.display_name);
+          }
+        } else {
+          setSenderEmail(defaultIdentity.email);
+          if (defaultIdentity.display_name) setSenderName(defaultIdentity.display_name);
+        }
+      }
+    } catch (err: any) {
+      setGmailError(err.message || "Failed to check Gmail status");
+    } finally {
+      setGmailLoading(false);
+    }
+  };
+
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("jarvis_user");
-      if (stored) {
-        const u = JSON.parse(stored);
-        if (u.full_name) setSenderName(u.full_name);
-        if (u.email) setSenderEmail(u.email);
-        else setSenderEmail("admin@apex.com");
+      const storedUser = localStorage.getItem("jarvis_user");
+      let defaultName = "Apex Admin";
+      let defaultEmail = "admin@apex.com";
+
+      if (storedUser) {
+        const u = JSON.parse(storedUser);
+        if (u.full_name) defaultName = u.full_name;
+        if (u.email) defaultEmail = u.email;
       }
+
       const storedOrg = localStorage.getItem("jarvis_org");
       if (storedOrg) {
         const o = JSON.parse(storedOrg);
         if (o.name) setOrgName(o.name);
       }
+
+      const persistedSenderName = localStorage.getItem("jarvis_configured_sender_name");
+      const persistedSenderEmail = localStorage.getItem("jarvis_configured_sender_email");
+      setSenderName(persistedSenderName || defaultName);
+      setSenderEmail(persistedSenderEmail || defaultEmail);
     } catch {}
 
     const contactGreeting = lead.contact_name ? `Hello ${lead.contact_name},` : "Hello there,";
@@ -62,7 +129,36 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
       `${contactGreeting}\n\nI am reaching out regarding ${lead.title}.\nWe would love to discuss how we can partner with ${lead.company_name || "your team"}.\n\nBest regards,\n${senderName || "Apex Admin"}\n${orgName || "Jarvis CRM"}`
     );
     setSuccessMessage(null);
+    setGmailError(null);
+
+    // Check Gmail status
+    checkGmailStatus();
+
+    // Listen for OAuth callback completion
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data === "gmail_connected") {
+        checkGmailStatus();
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, [lead, isOpen]);
+
+  const handleSenderChange = (email: string) => {
+    setSenderEmail(email);
+    try { localStorage.setItem("jarvis_configured_sender_email", email.trim()); } catch {}
+    // Update display name from Send-As identity if available
+    const identity = sendAsIdentities.find(i => i.email.toLowerCase() === email.toLowerCase());
+    if (identity && identity.display_name) {
+      setSenderName(identity.display_name);
+      try { localStorage.setItem("jarvis_configured_sender_name", identity.display_name); } catch {}
+    }
+  };
+
+  const handleSenderNameChange = (name: string) => {
+    setSenderName(name);
+    try { localStorage.setItem("jarvis_configured_sender_name", name.trim()); } catch {}
+  };
 
   const isSelfSend =
     senderEmail.trim().toLowerCase() !== "" &&
@@ -111,19 +207,61 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
     }
   };
 
-  const handleOpenGmail = async () => {
+  const handleConnectGmail = async () => {
+    try {
+      const res = await api.gmailAuthorize();
+      if (res.authorization_url) {
+        window.open(res.authorization_url, "gmail_oauth", "width=600,height=700");
+      }
+    } catch (err: any) {
+      setGmailError(err.message || "Failed to start Gmail authorization");
+    }
+  };
+
+  const handleSendViaGmail = async () => {
     if (!recipientEmail.trim()) {
       alert("Please provide a recipient email address.");
       return;
     }
+    if (!gmailConnected) {
+      alert("Gmail is not connected. Please connect your Gmail account first.");
+      return;
+    }
+
+    // Validate sender is a verified Send-As identity
+    const isValidSender = sendAsIdentities.some(
+      i => i.email.toLowerCase() === senderEmail.trim().toLowerCase()
+    );
+    if (!isValidSender) {
+      setGmailError(
+        `"${senderEmail}" is not a verified Send-As identity on your connected Gmail account (${gmailAccount}). ` +
+        `Available verified senders: ${sendAsIdentities.map(i => i.email).join(", ")}. ` +
+        `Add and verify this address in Gmail Settings → Accounts → Send mail as.`
+      );
+      return;
+    }
+
     setLogging(true);
-    await logActivityInCrm("Google Workspace / Gmail");
-    setLogging(false);
-    openGmail(recipientEmail, subject, body, senderEmail);
-    setSuccessMessage("Launched in Gmail and logged in CRM Timeline!");
-    setTimeout(() => {
-      onClose();
-    }, 1200);
+    setGmailError(null);
+    try {
+      const res = await api.gmailSend({
+        to_email: recipientEmail.trim(),
+        from_email: senderEmail.trim(),
+        from_name: senderName.trim(),
+        subject: subject,
+        body: body,
+        lead_id: lead.id,
+      });
+      setSuccessMessage(res.message || `Email sent via Gmail API from ${senderName} <${senderEmail}> to ${recipientEmail}!`);
+      if (onSent) onSent();
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (err: any) {
+      setGmailError(err.message || "Failed to send email via Gmail API.");
+    } finally {
+      setLogging(false);
+    }
   };
 
   const handleOpenMailto = async () => {
@@ -319,36 +457,103 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-              <label style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                1. From (Sender Stage)
+              <label style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "6px" }}>
+                <ShieldCheck style={{ width: "13px", height: "13px", color: "var(--primary)" }} />
+                1. From (Authorized Sender / Send-As Stage)
               </label>
-              <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
-                Derives from your CRM Identity
-              </span>
+              
+              {/* Gmail Connection Status */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {gmailLoading ? (
+                  <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>Checking connection...</span>
+                ) : gmailConnected ? (
+                  <span style={{ fontSize: "0.6875rem", color: "#10b981", display: "flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
+                    <Link2 style={{ width: "11px", height: "11px" }} /> Connected: {gmailAccount}
+                  </span>
+                ) : gmailConfigured ? (
+                  <button
+                    type="button"
+                    onClick={handleConnectGmail}
+                    style={{
+                      fontSize: "0.6875rem",
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      background: "#fef2f2",
+                      color: "#dc2626",
+                      border: "1px solid #fecaca",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontWeight: 600
+                    }}
+                  >
+                    <Unlink style={{ width: "11px", height: "11px" }} /> Connect Gmail
+                  </button>
+                ) : (
+                  <span style={{ fontSize: "0.6875rem", color: "#f59e0b", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <AlertTriangle style={{ width: "11px", height: "11px" }} /> Gmail not configured by Admin
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* Error Message */}
+            {gmailError && (
+              <div style={{ marginBottom: "12px", padding: "8px 10px", borderRadius: "6px", background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b", fontSize: "0.75rem" }}>
+                {gmailError}
+              </div>
+            )}
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <div>
                 <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "block" }}>Sender Name</span>
                 <input
                   type="text"
                   value={senderName}
-                  onChange={(e) => setSenderName(e.target.value)}
+                  onChange={(e) => handleSenderNameChange(e.target.value)}
                   className="input-field"
                   style={{ fontSize: "0.8125rem", padding: "6px 10px", marginTop: "2px" }}
                   placeholder="Your Full Name"
                 />
               </div>
               <div>
-                <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "block" }}>Sender Email Address</span>
-                <input
-                  type="email"
-                  value={senderEmail}
-                  onChange={(e) => setSenderEmail(e.target.value)}
-                  className="input-field"
-                  style={{ fontSize: "0.8125rem", padding: "6px 10px", marginTop: "2px" }}
-                  placeholder="e.g. admin@apex.com or your gmail"
-                />
+                <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "block" }}>
+                  Sender Email Address (Send-As / From)
+                </span>
+                
+                {/* Send-As Dropdown if connected, otherwise normal input */}
+                {gmailConnected && sendAsIdentities.length > 0 ? (
+                  <select
+                    value={senderEmail}
+                    onChange={(e) => handleSenderChange(e.target.value)}
+                    className="input-field"
+                    style={{ fontSize: "0.8125rem", padding: "6px 10px", marginTop: "2px", width: "100%", appearance: "auto" }}
+                  >
+                    {sendAsIdentities.map(identity => (
+                      <option key={identity.email} value={identity.email}>
+                        {identity.email} {identity.is_primary ? "(Primary)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="email"
+                    value={senderEmail}
+                    onChange={(e) => handleSenderChange(e.target.value)}
+                    className="input-field"
+                    style={{ fontSize: "0.8125rem", padding: "6px 10px", marginTop: "2px" }}
+                    placeholder="e.g. admin@apex.com"
+                  />
+                )}
               </div>
+            </div>
+
+            {/* Explanatory note */}
+            <div style={{ marginTop: "10px", paddingTop: "8px", borderTop: "1px dashed var(--border-subtle)", fontSize: "0.6875rem" }}>
+              <span style={{ color: "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                ℹ️ The "From" address must be a verified Send-As alias or primary account when sending via Gmail API.
+              </span>
             </div>
           </div>
 
@@ -517,11 +722,11 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
               Desktop Mail
             </button>
 
-            {/* Option B: Google Workspace / Gmail */}
+            {/* Option B: Google Workspace / Gmail API */}
             <button
               type="button"
-              disabled={logging}
-              onClick={handleOpenGmail}
+              disabled={logging || (!gmailConnected && gmailConfigured)}
+              onClick={handleSendViaGmail}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -533,12 +738,13 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
                 color: "#dc2626",
                 fontSize: "0.75rem",
                 fontWeight: 700,
-                cursor: "pointer",
+                cursor: (logging || (!gmailConnected && gmailConfigured)) ? "not-allowed" : "pointer",
+                opacity: (logging || (!gmailConnected && gmailConfigured)) ? 0.6 : 1
               }}
-              title="Open Google Workspace / Gmail compose window"
+              title="Send email securely via Gmail API using your Send-As identity"
             >
               <Mail style={{ width: "13px", height: "13px" }} />
-              Launch Gmail
+              {logging ? "Sending..." : "Send via Gmail"}
             </button>
 
             {/* Primary Option: Send Directly from Admin with distinct sender */}
