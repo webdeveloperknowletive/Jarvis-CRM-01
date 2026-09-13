@@ -26,7 +26,22 @@ class OrganizationCreate(BaseModel):
     admin_name: str
     admin_email: str
     admin_password: str
+    admin_phone: Optional[str] = None
     plan_code: Optional[str] = "GROWTH"
+    # Detailed business fields
+    owner_name: Optional[str] = None
+    industry: Optional[str] = None
+    cin: Optional[str] = None
+    registration_number: Optional[str] = None
+    gst_number: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    pincode: Optional[str] = None
+    state: Optional[str] = None
+    contact_number: Optional[str] = None
+    contact_email: Optional[str] = None
+    website: Optional[str] = None
+    company_type: Optional[str] = None
 
 
 class OrganizationUpdate(BaseModel):

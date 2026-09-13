@@ -195,6 +195,14 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
           {isSuperAdmin && (
             <>
               <button
+                onClick={() => handleTabClick("dashboard")}
+                className={`nav-tab-btn ${activeTab === "dashboard" ? "active" : ""}`}
+              >
+                <ActivitySquare style={{ width: "15px", height: "15px" }} />
+                Dashboard
+              </button>
+
+              <button
                 onClick={() => handleTabClick("organizations")}
                 className={`nav-tab-btn ${activeTab === "organizations" ? "active" : ""}`}
               >
@@ -225,6 +233,14 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               >
                 <UserCheck style={{ width: "15px", height: "15px", color: "var(--emerald)" }} />
                 People Intelligence
+              </button>
+
+              <button
+                onClick={() => handleTabClick("users")}
+                className={`nav-tab-btn ${activeTab === "users" ? "active" : ""}`}
+              >
+                <Users style={{ width: "15px", height: "15px" }} />
+                Users
               </button>
 
               <button
@@ -451,6 +467,15 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
           {isSuperAdmin && (
             <>
               <button
+                onClick={() => handleTabClick("dashboard")}
+                className={`nav-tab-btn ${activeTab === "dashboard" ? "active" : ""}`}
+                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
+              >
+                <ActivitySquare style={{ width: "16px", height: "16px" }} />
+                Dashboard
+              </button>
+
+              <button
                 onClick={() => handleTabClick("organizations")}
                 className={`nav-tab-btn ${activeTab === "organizations" ? "active" : ""}`}
                 style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
@@ -484,6 +509,15 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               >
                 <UserCheck style={{ width: "16px", height: "16px", color: "var(--emerald)" }} />
                 People Intelligence
+              </button>
+
+              <button
+                onClick={() => handleTabClick("users")}
+                className={`nav-tab-btn ${activeTab === "users" ? "active" : ""}`}
+                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
+              >
+                <Users style={{ width: "16px", height: "16px" }} />
+                Users
               </button>
 
               <button

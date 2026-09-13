@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.api.v1.api import api_router
+from app.api.v1 import admin
 import app.models  # Ensure all models are registered
 
 # Configure logging
@@ -66,6 +67,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Include API Routers
 app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(admin.router, prefix=settings.API_V1_STR)
 
 
 @app.on_event("startup")

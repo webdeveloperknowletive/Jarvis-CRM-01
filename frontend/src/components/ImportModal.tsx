@@ -244,6 +244,13 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
       return;
     }
 
+    // SECURITY GUARDRAIL: Bulk Action Limits (Max ~5,000 rows / 5MB)
+    const MAX_SIZE_MB = 5;
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      setFormatWarning(`File is too large (${(file.size / (1024*1024)).toFixed(1)}MB). Maximum allowed size is ${MAX_SIZE_MB}MB to prevent database lockups (approx. 5,000 rows). Please split your file into smaller batches and try again.`);
+      return;
+    }
+
     setSelectedFile(file);
     setLoading(true);
     try {

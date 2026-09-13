@@ -77,6 +77,7 @@ class GlobalCompanyOut(BaseModel):
     pulled_by_org_id: Optional[str] = None
     pulled_by_org_name: Optional[str] = None
     pulled_at: Optional[datetime] = None
+    pull_history: Optional[List[Dict[str, Any]]] = []
     contacts_count: int = 0
     first_seen_at: datetime
     last_updated_at: datetime
@@ -145,6 +146,7 @@ class CompanyWithPeopleOut(BaseModel):
     pulled_by_org_id: Optional[str] = None
     pulled_by_org_name: Optional[str] = None
     pulled_at: Optional[datetime] = None
+    pull_history: Optional[List[Dict[str, Any]]] = []
     contacts_count: int = 0
     associated_people: List[LinkedPersonOut] = []
     people_count: int = 0

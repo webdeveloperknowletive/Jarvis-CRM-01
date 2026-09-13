@@ -25,6 +25,7 @@ class GlobalPerson(Base):
     pulled_by_org_id = Column(String(36), ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True, index=True)
     pulled_by_org_name = Column(String(255), nullable=True)
     pulled_at = Column(DateTime, nullable=True)
+    pull_history = Column(JSON, nullable=False, default=list)  # [{"org_id": "...", "org_name": "...", "pulled_by": "...", "pulled_at": "..."}]
     source = Column(String(50), nullable=False, default="MANUAL")  # MANUAL, IMPORT, DIRECTORY
     notes = Column(Text, nullable=True)
     associated_companies = Column(JSON, nullable=False, default=list)  # [{"company_name": "...", "designation": "..."}]

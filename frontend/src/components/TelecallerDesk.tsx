@@ -17,6 +17,22 @@ import {
 } from "lucide-react";
 
 export const TelecallerDesk: React.FC = () => {
+  const maskPhone = (phone: string | undefined) => {
+    if (!phone) return "No phone";
+    const p = phone.replace(/\D/g, "");
+    if (p.length >= 10) {
+      return `+91 ${p.substring(p.length - 10, p.length - 8)}****${p.substring(p.length - 4)}`;
+    }
+    return "Masked";
+  };
+
+  const maskEmail = (email: string | undefined) => {
+    if (!email) return "No email";
+    const [name, domain] = email.split('@');
+    if (!domain) return "Masked";
+    return `${name.substring(0, 2)}***@${domain}`;
+  };
+
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
@@ -378,7 +394,7 @@ export const TelecallerDesk: React.FC = () => {
                     <div style={{ fontSize: "0.6875rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "4px" }}>
                       <span style={{ fontWeight: 600 }}>{lead.company_name || "Account"}</span>
                       <span style={{ color: "var(--purple-dark)", fontWeight: 600, fontFamily: "monospace" }}>
-                        {format10DigitPhone(lead.contact_phone) || "No phone"}
+                        {maskPhone(lead.contact_phone)}
                       </span>
                     </div>
 
@@ -443,7 +459,7 @@ export const TelecallerDesk: React.FC = () => {
                   Masked Mobile Contact
                 </span>
                 <p style={{ fontSize: "1.25rem", fontFamily: "monospace", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "0.05em" }}>
-                  {format10DigitPhone(selectedLead.contact_phone) || "Not available"}
+                  {maskPhone(selectedLead.contact_phone)}
                 </p>
                 {selectedLead.contact_email && (
                   <span
@@ -462,7 +478,7 @@ export const TelecallerDesk: React.FC = () => {
                     }}
                   >
                     <Mail style={{ width: "12px", height: "12px" }} />
-                    {selectedLead.contact_email}
+                    {maskEmail(selectedLead.contact_email)}
                   </span>
                 )}
 

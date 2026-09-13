@@ -25,8 +25,6 @@ def search_global_people(
     current_user: Optional[User] = None
 ) -> List[GlobalPersonOut]:
     query = db.query(GlobalPerson)
-    if not (current_user and (current_user.is_super_admin or current_user.is_data_entry)):
-        query = query.filter(GlobalPerson.pull_status != "PULLED")
 
     if search:
         s = f"%{search.strip()}%"
@@ -45,7 +43,13 @@ def search_global_people(
         query = query.filter(GlobalPerson.city.ilike(f"%{city.strip()}%"))
 
     people = query.order_by(GlobalPerson.last_updated_at.desc()).offset(skip).limit(limit).all()
-    return [GlobalPersonOut.from_orm(p) for p in people]
+    results = []
+    for p in people:
+        p_dict = {k: v for k, v in p.__dict__.items() if not k.startswith("_")}
+        if not (current_user and current_user.is_super_admin):
+            p_dict["pull_history"] = []
+        results.append(GlobalPersonOut(**p_dict))
+    return results
 
 
 def create_global_person(db: Session, data: GlobalPersonCreate) -> GlobalPersonOut:
@@ -181,11 +185,16 @@ def pull_global_people_to_crm(
             continue
 
         pulled_people += 1
-        # Mark person as PULLED in DB
-        person.pull_status = "PULLED"
-        person.pulled_by_org_id = organization_id
-        person.pulled_by_org_name = org_name
-        person.pulled_at = now_utc
+        # Append to pull_history instead of marking as PULLED for everyone
+        current_history = list(person.pull_history) if person.pull_history else []
+        current_history.append({
+            "org_id": organization_id,
+            "org_name": org_name,
+            "pulled_by": user.id,
+            "pulled_at": now_utc.isoformat()
+        })
+        person.pull_history = current_history
+        person.pull_status = "AVAILABLE"
 
         # 3. Company resolution & creation
         company = None

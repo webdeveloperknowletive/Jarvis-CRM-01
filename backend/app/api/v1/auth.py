@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from app.core.deps import get_db, get_current_user
 from app.core.security import verify_password, create_access_token, get_password_hash
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/login", response_model=Token)
-def login(request: LoginRequest, db: Session = Depends(get_db)):
+def login(request: LoginRequest, http_request: Request, db: Session = Depends(get_db)):
     email_clean = request.email.lower().strip()
     user = db.query(User).filter(User.email == email_clean).first()
 
@@ -35,13 +35,18 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     from datetime import datetime, timezone
     user.last_login_at = datetime.now(timezone.utc)
 
-    # Audit log
+    # Audit log (SECURITY GUARDRAIL: Login Tracking)
+    client_ip = http_request.client.host if http_request.client else "Unknown"
+    user_agent = http_request.headers.get("user-agent", "Unknown")
+
     audit = AuditLog(
         organization_id=user.organization_id,
         user_id=user.id,
         action="USER_LOGIN",
         entity_type="USER",
-        entity_id=user.id
+        entity_id=user.id,
+        ip_address=client_ip,
+        user_agent=user_agent
     )
     db.add(audit)
     db.commit()

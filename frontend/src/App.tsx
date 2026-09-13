@@ -15,7 +15,7 @@ import { PeopleIntelligenceView } from "./components/PeopleIntelligenceView";
 import { GlobalIntelligenceView } from "./components/GlobalIntelligenceView";
 import { TeamManagementView } from "./components/TeamManagementView";
 import { NewLeadModal } from "./components/NewLeadModal";
-import { UploadCloud, FileSpreadsheet, Plus, Check } from "lucide-react";
+import { UploadCloud, FileSpreadsheet, Plus, Check, ActivitySquare, Building2, Users, BrainCircuit, Globe2, UserCheck, LogOut } from "lucide-react";
 
 export const TAB_TO_ROUTE: Record<string, string> = {
   radar: "/radar_insights",
@@ -27,8 +27,10 @@ export const TAB_TO_ROUTE: Record<string, string> = {
   team: "/team",
   telecaller: "/telecaller_desk",
   people: "/people",
-  organizations: "/super_admin",
+  organizations: "/organizations",
   audit: "/audit",
+  dashboard: "/super_admin_dashboard",
+  users: "/super_admin_users",
 };
 
 export const ROUTE_TO_TAB: Record<string, string> = {
@@ -45,7 +47,9 @@ export const ROUTE_TO_TAB: Record<string, string> = {
   "/telecaller_desk": "telecaller",
   "/telecaller": "telecaller",
   "/people": "people",
-  "/super_admin": "organizations",
+  "/super_admin": "dashboard",
+  "/super_admin_dashboard": "dashboard",
+  "/super_admin_users": "users",
   "/organizations": "organizations",
   "/audit": "audit",
 };
@@ -66,7 +70,7 @@ export const App: React.FC = () => {
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
 
   const getDefaultTabAndRoute = (user: User) => {
-    if (user.is_super_admin) return { tab: "organizations", route: "/super_admin" };
+    if (user.is_super_admin) return { tab: "dashboard", route: "/super_admin_dashboard" };
     if (user.is_data_entry || user.platform_role === "DATA_ENTRY") return { tab: "global_intelligence", route: "/global_intelligence" };
     if (user.tenant_role === "TELECALLER") return { tab: "telecaller", route: "/telecaller_desk" };
     return { tab: "radar", route: "/radar_insights" };
@@ -88,12 +92,26 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (!currentUser) return;
     const currentPath = location.pathname;
-    const matchedTab = ROUTE_TO_TAB[currentPath];
+    let matchedTab = ROUTE_TO_TAB[currentPath] || null;
+    
+    // --- SECURITY ROUTE GUARD ---
+    if (matchedTab) {
+      const superAdminTabs = ['dashboard', 'organizations', 'users', 'audit'];
+      if (!currentUser.is_super_admin && superAdminTabs.includes(matchedTab)) {
+        matchedTab = null;
+      } else if ((currentUser.is_data_entry || currentUser.platform_role === 'DATA_ENTRY') && matchedTab !== 'global_intelligence') {
+        matchedTab = null;
+      } else if (currentUser.tenant_role === 'TELECALLER' && matchedTab !== 'telecaller') {
+        matchedTab = null;
+      }
+    }
+    // -----------------------------
+
     if (matchedTab) {
       if (activeTab !== matchedTab) {
         setActiveTab(matchedTab);
       }
-    } else if (currentPath === "/" || currentPath === "/login") {
+    } else if (currentPath === "/" || currentPath === "/login" || !matchedTab) {
       const def = getDefaultTabAndRoute(currentUser);
       setActiveTab(def.tab);
       navigate(def.route, { replace: true });
@@ -115,7 +133,21 @@ export const App: React.FC = () => {
       localStorage.setItem("jarvis_user", JSON.stringify(user));
 
       const currentPath = window.location.pathname;
-      const matchedTab = ROUTE_TO_TAB[currentPath];
+      let matchedTab = ROUTE_TO_TAB[currentPath] || null;
+      
+      // --- SECURITY ROUTE GUARD ---
+      if (matchedTab) {
+        const superAdminTabs = ['dashboard', 'organizations', 'users', 'audit'];
+        if (!user.is_super_admin && superAdminTabs.includes(matchedTab)) {
+          matchedTab = null;
+        } else if ((user.is_data_entry || user.platform_role === 'DATA_ENTRY') && matchedTab !== 'global_intelligence') {
+          matchedTab = null;
+        } else if (user.tenant_role === 'TELECALLER' && matchedTab !== 'telecaller') {
+          matchedTab = null;
+        }
+      }
+      // -----------------------------
+
       if (matchedTab) {
         setActiveTab(matchedTab);
       } else {
@@ -136,6 +168,39 @@ export const App: React.FC = () => {
       loadCRMData();
     }
   }, [currentUser]);
+
+  // --- SECURITY GUARDRAIL: IDLE SESSION TIMEOUT ---
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    let timeoutId: number | undefined;
+    const resetTimer = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        api.clearToken();
+        localStorage.removeItem("jarvis_user");
+        setCurrentUser(null);
+        navigate("/login", { replace: true });
+        alert("🔒 Security Guardrail: You have been automatically logged out due to 15 minutes of inactivity.");
+      }, 15 * 60 * 1000);
+    };
+
+    window.addEventListener("mousemove", resetTimer);
+    window.addEventListener("keydown", resetTimer);
+    window.addEventListener("click", resetTimer);
+    window.addEventListener("scroll", resetTimer);
+
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("mousemove", resetTimer);
+      window.removeEventListener("keydown", resetTimer);
+      window.removeEventListener("click", resetTimer);
+      window.removeEventListener("scroll", resetTimer);
+    };
+  }, [currentUser]);
+  // ------------------------------------------------
 
   const loadCRMData = async () => {
     try {
@@ -199,16 +264,75 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="app-wrapper">
-      <Navbar
-        user={currentUser}
-        activeTab={activeTab}
-        setActiveTab={handleTabChange}
-        onLogout={handleLogout}
-        onNewLeadClick={() => setShowNewLeadModal(true)}
-      />
+    <div className="app-wrapper" style={currentUser.is_super_admin ? { display: "flex", flexDirection: "row", height: "100vh", overflow: "hidden", background: "var(--bg-canvas)" } : undefined}>
+      {currentUser.is_super_admin && (
+        <aside style={{ width: '260px', background: '#0f172a', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', flexShrink: 0, height: '100%' }}>
+           <div style={{ padding: '24px 24px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid #1e293b' }}>
+             <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '1.25rem', boxShadow: '0 4px 10px rgba(79, 70, 229, 0.25)' }}>J</div>
+             <div>
+                <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#f8fafc', letterSpacing: '-0.02em', display: 'block' }}>JARVIS</span>
+                <span style={{ fontSize: '0.625rem', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', background: 'rgba(79,70,229,0.2)', color: '#818cf8', border: '1px solid rgba(79,70,229,0.3)', display: 'inline-block', marginTop: '2px' }}>SUPER ADMIN</span>
+             </div>
+           </div>
+           
+           <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', paddingLeft: '12px' }}>Platform</span>
+              <button onClick={() => handleTabChange('dashboard')} className={`nav-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'dashboard' ? '#fff' : '#94a3b8', background: activeTab === 'dashboard' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
+                 <ActivitySquare style={{ width: '16px', height: '16px' }} /> Dashboard
+              </button>
+              <button onClick={() => handleTabChange('organizations')} className={`nav-tab-btn ${activeTab === 'organizations' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'organizations' ? '#fff' : '#94a3b8', background: activeTab === 'organizations' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
+                 <Building2 style={{ width: '16px', height: '16px' }} /> Organizations
+              </button>
+              <button onClick={() => handleTabChange('users')} className={`nav-tab-btn ${activeTab === 'users' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'users' ? '#fff' : '#94a3b8', background: activeTab === 'users' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
+                 <Users style={{ width: '16px', height: '16px' }} /> Users
+              </button>
+              
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '20px', marginBottom: '8px', paddingLeft: '12px' }}>Global Data</span>
+              <button onClick={() => handleTabChange('global_intelligence')} className={`nav-tab-btn ${activeTab === 'global_intelligence' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'global_intelligence' ? '#fff' : '#94a3b8', background: activeTab === 'global_intelligence' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
+                 <BrainCircuit style={{ width: '16px', height: '16px', color: activeTab === 'global_intelligence' ? '#818cf8' : '#6366f1' }} /> Intelligence Graph
+              </button>
+              <button onClick={() => handleTabChange('global')} className={`nav-tab-btn ${activeTab === 'global' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'global' ? '#fff' : '#94a3b8', background: activeTab === 'global' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
+                 <Globe2 style={{ width: '16px', height: '16px', color: activeTab === 'global' ? '#22d3ee' : '#06b6d4' }} /> Company Registry
+              </button>
+              <button onClick={() => handleTabChange('people')} className={`nav-tab-btn ${activeTab === 'people' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'people' ? '#fff' : '#94a3b8', background: activeTab === 'people' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
+                 <UserCheck style={{ width: '16px', height: '16px', color: activeTab === 'people' ? '#34d399' : '#10b981' }} /> People Directory
+              </button>
 
-      <main className="main-content">
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '20px', marginBottom: '8px', paddingLeft: '12px' }}>System</span>
+              <button onClick={() => handleTabChange('audit')} className={`nav-tab-btn ${activeTab === 'audit' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'audit' ? '#fff' : '#94a3b8', background: activeTab === 'audit' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
+                 <ActivitySquare style={{ width: '16px', height: '16px' }} /> Audit Logs
+              </button>
+           </div>
+           
+           <div style={{ padding: '20px', borderTop: '1px solid #1e293b', background: '#0f172a' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#1e293b', border: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8125rem', color: '#f8fafc' }}>
+                  {currentUser.full_name.charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                  <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentUser.full_name}</p>
+                  <p style={{ fontSize: '0.6875rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentUser.email}</p>
+                </div>
+              </div>
+              <button onClick={handleLogout} className="btn-secondary" style={{ width: '100%', justifyContent: 'center', background: '#1e293b', color: '#f8fafc', border: '1px solid #334155' }}>
+                 <LogOut style={{ width: '14px', height: '14px' }} /> Sign Out
+              </button>
+           </div>
+        </aside>
+      )}
+
+      <div style={currentUser.is_super_admin ? { flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', position: 'relative' } : {}}>
+        {!currentUser.is_super_admin && (
+          <Navbar
+            user={currentUser}
+            activeTab={activeTab}
+            setActiveTab={handleTabChange}
+            onLogout={handleLogout}
+            onNewLeadClick={() => setShowNewLeadModal(true)}
+          />
+        )}
+
+        <main className="main-content" style={currentUser.is_super_admin ? { padding: '24px 32px', overflowY: 'auto', flex: 1 } : {}}>
         {/* Telecaller Desk */}
         {activeTab === "telecaller" && <TelecallerDesk />}
 
@@ -304,9 +428,12 @@ export const App: React.FC = () => {
         {activeTab === "people" && <PeopleIntelligenceView currentUser={currentUser} />}
 
         {/* Super Admin Control */}
+        {activeTab === "dashboard" && <SuperAdminView viewMode="dashboard" />}
         {activeTab === "organizations" && <SuperAdminView viewMode="organizations" />}
+        {activeTab === "users" && <SuperAdminView viewMode="users" />}
         {activeTab === "audit" && <SuperAdminView viewMode="audit" />}
-      </main>
+        </main>
+      </div>
 
       {/* Modals */}
       {selectedLead && (

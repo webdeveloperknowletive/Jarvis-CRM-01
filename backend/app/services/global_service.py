@@ -26,8 +26,6 @@ def search_global_companies(
     current_user: Optional[User] = None
 ) -> List[GlobalCompanyOut]:
     query = db.query(GlobalCompany).filter(GlobalCompany.status == "ACTIVE")
-    if not (current_user and (current_user.is_super_admin or current_user.is_data_entry)):
-        query = query.filter(GlobalCompany.pull_status != "PULLED")
 
     if search:
         s = f"%{search}%"
@@ -72,6 +70,7 @@ def search_global_companies(
             pulled_by_org_id=c.pulled_by_org_id,
             pulled_by_org_name=c.pulled_by_org_name,
             pulled_at=c.pulled_at,
+            pull_history=c.pull_history if current_user and current_user.is_super_admin else [],
             contacts_count=cnt,
             first_seen_at=c.first_seen_at,
             last_updated_at=c.last_updated_at
@@ -144,6 +143,7 @@ def create_global_company(db: Session, data: GlobalCompanyCreate) -> GlobalCompa
         country=company.country,
         status=company.status,
         contacts_count=0,
+        pull_history=[],
         first_seen_at=company.first_seen_at,
         last_updated_at=company.last_updated_at
     )
@@ -217,6 +217,7 @@ def update_global_company(db: Session, company_id: str, data: GlobalCompanyUpdat
         pulled_by_org_id=getattr(company, "pulled_by_org_id", None),
         pulled_by_org_name=getattr(company, "pulled_by_org_name", None),
         pulled_at=getattr(company, "pulled_at", None),
+        pull_history=getattr(company, "pull_history", []),
         contacts_count=db.query(GlobalContact).join(GlobalCompanyContactMap).filter(GlobalCompanyContactMap.company_id == company.id).count(),
         first_seen_at=company.first_seen_at,
         last_updated_at=company.last_updated_at
@@ -269,22 +270,33 @@ def pull_global_companies_to_crm(
         if not g_comp:
             continue
 
-        # Mark global company as PULLED by this organization in DB
-        g_comp.pull_status = "PULLED"
-        g_comp.pulled_by_org_id = organization_id
-        g_comp.pulled_by_org_name = org_name
-        g_comp.pulled_at = now_utc
+        # Append to pull_history instead of marking as PULLED for everyone
+        current_history = list(g_comp.pull_history) if g_comp.pull_history else []
+        current_history.append({
+            "org_id": organization_id,
+            "org_name": org_name,
+            "pulled_by": user.id,
+            "pulled_at": now_utc.isoformat()
+        })
+        g_comp.pull_history = current_history
+        # Keep pull_status as AVAILABLE to not hide it from others
+        g_comp.pull_status = "AVAILABLE"
 
-        # Also mark any corresponding GlobalPerson records as PULLED
+        # Also append to pull_history for corresponding GlobalPerson records
         matched_people = db.query(GlobalPerson).filter(
             (GlobalPerson.company_name == g_comp.legal_name) |
             (GlobalPerson.company_name == g_comp.display_name)
         ).all()
         for mp in matched_people:
-            mp.pull_status = "PULLED"
-            mp.pulled_by_org_id = organization_id
-            mp.pulled_by_org_name = org_name
-            mp.pulled_at = now_utc
+            mp_history = list(mp.pull_history) if mp.pull_history else []
+            mp_history.append({
+                "org_id": organization_id,
+                "org_name": org_name,
+                "pulled_by": user.id,
+                "pulled_at": now_utc.isoformat()
+            })
+            mp.pull_history = mp_history
+            mp.pull_status = "AVAILABLE"
 
         # Check if already pulled or existing in tenant CRM
         crm_comp = db.query(Company).filter(
@@ -468,6 +480,7 @@ def update_global_company(db: Session, company_id: str, data: GlobalCompanyUpdat
         pulled_by_org_id=company.pulled_by_org_id,
         pulled_by_org_name=company.pulled_by_org_name,
         pulled_at=company.pulled_at,
+        pull_history=getattr(company, "pull_history", []),
         contacts_count=cnt,
         first_seen_at=company.first_seen_at,
         last_updated_at=company.last_updated_at

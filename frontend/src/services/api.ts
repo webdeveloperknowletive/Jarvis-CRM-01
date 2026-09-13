@@ -307,9 +307,34 @@ export const api = {
 
   // Organizations (Super Admin)
   getOrganizations: () => api.request<any[]>("/organizations/"),
-  createOrganization: (data: any) =>
+  createOrganization: (data: {
+    name: string;
+    admin_name: string;
+    admin_email: string;
+    admin_password: string;
+    admin_phone?: string;
+    plan_code?: string;
+    owner_name?: string;
+    industry?: string;
+    cin?: string;
+    registration_number?: string;
+    gst_number?: string;
+    address?: string;
+    city?: string;
+    pincode?: string;
+    state?: string;
+    contact_number?: string;
+    contact_email?: string;
+    website?: string;
+    company_type?: string;
+  }) =>
     api.request<any>("/organizations/", {
       method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateOrganization: (id: string, data: any) =>
+    api.request<any>(`/organizations/${id}`, {
+      method: "PATCH",
       body: JSON.stringify(data),
     }),
 
@@ -593,5 +618,24 @@ export const api = {
     api.request<any>("/users/", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+    
+  // Super Admin
+  getAdminKPIs: () => api.request<any>("/admin/kpis"),
+  getAdminUsers: () => api.request<any[]>("/admin/users"),
+  createAdminUser: (data: any) =>
+    api.request<any>("/admin/users", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateAdminUser: (id: string, data: any) =>
+    api.request<any>(`/admin/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  updateUserStatus: (id: string, status: string) =>
+    api.request<any>(`/admin/users/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
     }),
 };

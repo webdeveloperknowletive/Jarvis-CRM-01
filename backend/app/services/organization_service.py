@@ -54,7 +54,22 @@ def create_organization(db: Session, data: OrganizationCreate, creator_id: str =
         schema_name=schema_name,
         timezone=data.timezone or "Asia/Kolkata",
         currency=data.currency or "INR",
-        status="ACTIVE"
+        status="ACTIVE",
+        settings={
+            "owner_name": data.owner_name,
+            "industry": data.industry,
+            "cin": data.cin,
+            "registration_number": data.registration_number,
+            "gst_number": data.gst_number,
+            "address": data.address,
+            "city": data.city,
+            "pincode": data.pincode,
+            "state": data.state,
+            "contact_number": data.contact_number,
+            "contact_email": data.contact_email,
+            "website": data.website,
+            "company_type": data.company_type,
+        }
     )
     db.add(org)
     db.flush()
@@ -94,6 +109,7 @@ def create_organization(db: Session, data: OrganizationCreate, creator_id: str =
         tenant_role="ORG_ADMIN",
         full_name=data.admin_name,
         email=data.admin_email.lower().strip(),
+        phone=data.admin_phone,
         password_hash=get_password_hash(data.admin_password),
         status="ACTIVE"
     )
