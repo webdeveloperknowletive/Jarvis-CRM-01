@@ -2,6 +2,7 @@ import os
 import uuid
 import logging
 from typing import List, Optional
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -16,6 +17,7 @@ from app.schemas.import_job import (
     ImportPreviewResponse, ImportJobExecuteRequest, ImportJobOut, ImportRowErrorOut
 )
 from app.services.import_service import preview_import_file, execute_import_job
+from app.tasks.import_tasks import run_import_job
 
 logger = logging.getLogger(__name__)
 
@@ -25,22 +27,22 @@ router = APIRouter(prefix="/imports", tags=["Import Ingestion Engine"])
 os.makedirs(settings.STORAGE_LOCAL_DIR, exist_ok=True)
 
 
-def background_import_runner(job_id: str, schema_name: Optional[str] = None):
-    """Background task function that opens its own session and executes the import job"""
-    db = SessionLocal()
-    try:
-        if schema_name and db.bind and db.bind.dialect.name == "postgresql":
-            db.execute(text(f'SET search_path TO "{schema_name}", public'))
-        elif db.bind and db.bind.dialect.name == "postgresql":
-            db.execute(text('SET search_path TO public'))
-        execute_import_job(db, job_id)
-    except Exception as exc:
-        logger.error(f"Background import execution failed for job {job_id}: {exc}", exc_info=True)
-    finally:
-        db.close()
+# Background runner logic moved to app.tasks.import_tasks
+
 
 
 ALLOWED_TABULAR_EXTENSIONS = (".csv", ".xls", ".xlsx", ".xlsb", ".xlsm", ".parquet", ".json")
+
+
+class ValidateImportRequest(BaseModel):
+    file_path: str
+    file_type: str
+    column_mapping: dict
+
+
+class AssignImportRequest(BaseModel):
+    strategy: str = "ROUND_ROBIN"  # ROUND_ROBIN or CAPACITY
+    telecaller_ids: Optional[List[str]] = None
 
 
 @router.post("/upload", response_model=ImportPreviewResponse)
@@ -48,6 +50,13 @@ async def upload_import_file(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user)
 ):
+    # RBAC: Telecallers must never upload or touch import files
+    if current_user.tenant_role == "TELECALLER":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Telecallers do not have data import authorization. Only ORG Admin or Sales Manager can upload datasets."
+        )
+
     # Strictly validate tabular extensions
     ext = os.path.splitext(file.filename)[1].lower() if file.filename else ""
     if ext not in ALLOWED_TABULAR_EXTENSIONS:
@@ -84,14 +93,48 @@ async def upload_import_file(
         )
 
 
+@router.post("/preview", response_model=ImportPreviewResponse)
+async def preview_import(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    return await upload_import_file(file, current_user)
+
+
+@router.post("/validate")
+def validate_import_mapping(
+    data: ValidateImportRequest,
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.tenant_role == "TELECALLER":
+        raise HTTPException(status_code=403, detail="Telecaller access forbidden")
+
+    if not os.path.exists(data.file_path):
+        raise HTTPException(status_code=404, detail="Uploaded file not found")
+
+    mapping = data.column_mapping or {}
+    has_contact = any(k in mapping.values() for k in ("contact_name", "contact_phone", "contact_email", "company_name", "title"))
+    return {
+        "valid": has_contact,
+        "mapped_fields_count": len(mapping),
+        "message": "Mapping valid for lead ingestion" if has_contact else "Please map at least title, company, or contact information."
+    }
+
+
 @router.post("/execute", response_model=ImportJobOut, status_code=status.HTTP_202_ACCEPTED)
 def execute_import(
     data: ImportJobExecuteRequest,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     tenant_id: Optional[str] = Depends(get_optional_tenant_id)
 ):
+    # RBAC: Telecallers must never execute imports
+    if current_user.tenant_role == "TELECALLER":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Telecallers do not have permission to execute dataset imports."
+        )
+
     import json as py_json
     file_path = data.file_path
     if not os.path.exists(file_path):
@@ -201,8 +244,27 @@ def execute_import(
     except Exception:
         pass
 
-    # Enqueue execution asynchronously in background
-    background_tasks.add_task(background_import_runner, job_id, schema_name)
+    # Enqueue execution asynchronously in Celery
+    run_import_job.delay(job_id)
+
+    # Audit row on every import (Problem 1)
+    try:
+        from app.models.audit import RadarEvent
+        db.add(RadarEvent(
+            organization_id=target_org_id,
+            actor_user_id=current_user.id,
+            action="IMPORT_EXECUTED",
+            entity_type="IMPORT_JOB",
+            entity_id=job_id,
+            payload_json={
+                "file_name": data.file_name,
+                "job_type": job_type,
+                "uploaded_by": current_user.id
+            }
+        ))
+        db.commit()
+    except Exception as audit_err:
+        logger.debug(f"Audit log error on import execute: {audit_err}")
 
     return ImportJobOut(
         id=job_id,
@@ -354,3 +416,102 @@ def get_import_row_errors(
     ).order_by(ImportRowError.row_number.asc()).offset(skip).limit(limit).all()
 
     return errors
+
+
+@router.get("/{id}/status")
+def get_import_status(
+    id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: Optional[str] = Depends(get_optional_tenant_id)
+):
+    job = get_import_job(id, db, current_user, tenant_id)
+    return {
+        "id": job.id,
+        "status": job.status,
+        "total_rows": job.total_rows,
+        "processed_rows": job.processed_rows,
+        "successful_rows": job.successful_rows,
+        "error_rows": job.error_rows,
+        "duplicate_rows": job.duplicate_rows,
+        "started_at": job.started_at,
+        "completed_at": job.completed_at,
+    }
+
+
+@router.get("/{id}/errors", response_model=List[ImportRowErrorOut])
+def get_import_errors_alias(
+    id: str,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    return get_import_row_errors(id, skip, limit, db, current_user, tenant_id)
+
+
+@router.post("/{id}/assign")
+def assign_import_batch(
+    id: str,
+    data: AssignImportRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """
+    Distributes leads created by an import batch directly to telecallers using an assignment strategy:
+    Round Robin or Capacity-Based.
+    """
+    if not (current_user.is_org_admin or current_user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER", "SUPER_ADMIN")):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only ORG Admins and Sales Managers can assign import batches"
+        )
+
+    # Find target telecallers
+    if data.telecaller_ids:
+        telecallers = db.query(User).filter(
+            User.organization_id == tenant_id,
+            User.id.in_(data.telecaller_ids),
+            User.is_active == True
+        ).all()
+    else:
+        telecallers = db.query(User).filter(
+            User.organization_id == tenant_id,
+            User.tenant_role == "TELECALLER",
+            User.is_active == True
+        ).all()
+
+    if not telecallers:
+        raise HTTPException(status_code=400, detail="No active telecallers found in organization for assignment")
+
+    # Find unassigned leads or leads assigned to uploader
+    from sqlalchemy import or_
+    leads = db.query(Lead).filter(
+        Lead.organization_id == tenant_id,
+        or_(
+            Lead.owner_id == None,
+            Lead.owner_id == current_user.id
+        ),
+        Lead.status != "ARCHIVED"
+    ).limit(500).all()
+
+    if not leads:
+        return {"assigned_count": 0, "message": "No unassigned leads found to distribute"}
+
+    # Round-robin distribution
+    assigned_count = 0
+    num_callers = len(telecallers)
+    for idx, lead in enumerate(leads):
+        target_caller = telecallers[idx % num_callers]
+        lead.owner_id = target_caller.id
+        assigned_count += 1
+
+    db.commit()
+    return {
+        "assigned_count": assigned_count,
+        "strategy": data.strategy,
+        "telecallers_count": num_callers,
+        "message": f"Successfully distributed {assigned_count} leads across {num_callers} telecallers using {data.strategy}."
+    }

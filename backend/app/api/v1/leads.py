@@ -32,7 +32,10 @@ def list_leads(
     owner_id: Optional[str] = None,
     search: Optional[str] = None,
     priority: Optional[str] = None,
+    segment: Optional[str] = None,
+    lead_type: Optional[str] = None,
     min_score: Optional[int] = None,
+    for_queue: bool = False,
     skip: int = 0,
     limit: int = 250,
     db: Session = Depends(get_db),
@@ -41,9 +44,25 @@ def list_leads(
 ):
     query = db.query(Lead).filter(Lead.organization_id == tenant_id)
 
-    # Telecallers strictly see only leads explicitly assigned to them by Org Admin
+    # Telecallers strictly see only leads explicitly assigned to them by Org Admin, plus active delegations
     if current_user.tenant_role == "TELECALLER":
-        query = query.filter(Lead.owner_id == current_user.id)
+        from datetime import datetime, timezone
+        from app.models.delegation import AbsenceDelegation
+        from sqlalchemy import or_
+
+        today_date = datetime.now(timezone.utc).date()
+        delegators = db.query(AbsenceDelegation.absent_user_id).filter(
+            AbsenceDelegation.organization_id == tenant_id,
+            AbsenceDelegation.cover_user_id == current_user.id,
+            AbsenceDelegation.start_date <= today_date,
+            AbsenceDelegation.end_date >= today_date
+        ).all()
+        delegator_ids = [d[0] for d in delegators]
+
+        if delegator_ids:
+            query = query.filter(or_(Lead.owner_id == current_user.id, Lead.owner_id.in_(delegator_ids)))
+        else:
+            query = query.filter(Lead.owner_id == current_user.id)
     elif owner_id:
         query = query.filter(Lead.owner_id == owner_id)
 
@@ -53,6 +72,10 @@ def list_leads(
         query = query.filter(Lead.pipeline_stage_id == stage_id)
     if priority:
         query = query.filter(Lead.priority == priority.upper())
+    if segment:
+        query = query.filter(Lead.segment == segment.upper())
+    if lead_type:
+        query = query.filter(Lead.lead_type == lead_type.upper())
     if min_score:
         query = query.filter(Lead.score >= min_score)
     if search:
@@ -65,7 +88,21 @@ def list_leads(
             (Lead.contact_phone.ilike(s))
         )
 
-    leads = query.order_by(desc(Lead.created_at)).offset(skip).limit(limit).all()
+    if for_queue:
+        # Priority for the calling queue:
+        # 1. Hot / Urgent priority
+        # 2. Leads with pending tasks
+        # 3. High Score
+        # 4. Oldest untouched leads
+        leads = query.order_by(
+            desc(Lead.priority == "URGENT"),
+            desc(Lead.priority == "HIGH"),
+            desc(Lead.score),
+            Lead.updated_at
+        ).offset(skip).limit(limit).all()
+    else:
+        leads = query.order_by(desc(Lead.created_at)).offset(skip).limit(limit).all()
+        
     return [serialize_lead(l, current_user, db) for l in leads]
 
 
@@ -232,6 +269,131 @@ def batch_assign_leads(
         "telecaller_name": telecaller.full_name,
         "message": f"Successfully assigned {len(leads)} leads to {telecaller.full_name}"
     }
+
+
+class BulkReassignRequest(BaseModel):
+    from_user_id: str
+    to_user_id: str
+    reason: Optional[str] = None
+
+
+@router.patch("/bulk-reassign")
+def bulk_reassign_leads(
+    data: BulkReassignRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """
+    Problem 8: Permanent handover fallback.
+    Reassigns all OPEN leads from an absent user to another user in one transaction,
+    writing an audit activity row per lead.
+    """
+    if not (current_user.is_org_admin or current_user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER") or current_user.is_super_admin):
+        raise HTTPException(status_code=403, detail="Only managers can perform bulk reassignment")
+
+    to_user = db.query(User).filter(
+        User.id == data.to_user_id,
+        User.organization_id == tenant_id
+    ).first()
+    if not to_user:
+        raise HTTPException(status_code=404, detail="Target user not found")
+
+    leads = db.query(Lead).filter(
+        Lead.organization_id == tenant_id,
+        Lead.owner_id == data.from_user_id,
+        Lead.status != "ARCHIVED"
+    ).all()
+
+    count = 0
+    for lead in leads:
+        lead.owner_id = to_user.id
+        act = Activity(
+            organization_id=tenant_id,
+            lead_id=lead.id,
+            user_id=current_user.id,
+            activity_type="ASSIGNMENT",
+            subject=f"Bulk Reassigned to {to_user.full_name}",
+            description=data.reason or f"Bulk permanent handover by {current_user.full_name}"
+        )
+        db.add(act)
+        count += 1
+
+    db.commit()
+    return {"status": "success", "reassigned_count": count, "to_user": to_user.full_name}
+
+
+class PreCallContextOut(BaseModel):
+    lead: LeadOut
+    timeline: List[ActivityOut]
+    stage_history: List[LeadStageHistoryOut]
+    ai_summary: Optional[dict] = None
+    ai_next_action: Optional[dict] = None
+
+
+@router.get("/{id}/pre-call-context", response_model=PreCallContextOut)
+def get_pre_call_context(
+    id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """
+    Eagerly load full context, timeline, stage history, and latest AI insights
+    for the telecaller to review before/during a call.
+    """
+    lead = db.query(Lead).filter(
+        Lead.id == id,
+        Lead.organization_id == tenant_id
+    ).first()
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+        
+    timeline = get_lead_timeline(db, id, tenant_id)
+    
+    sh_list = db.query(LeadStageHistory).filter(
+        LeadStageHistory.lead_id == id,
+        LeadStageHistory.organization_id == tenant_id
+    ).order_by(desc(LeadStageHistory.created_at)).all()
+    
+    stage_history = [
+        LeadStageHistoryOut(
+            id=h.id,
+            lead_id=h.lead_id,
+            from_stage_id=h.from_stage_id,
+            to_stage_id=h.to_stage_id,
+            from_stage_name=h.from_stage.name if h.from_stage else None,
+            to_stage_name=h.to_stage.name if h.to_stage else None,
+            changed_by=h.changed_by,
+            changed_by_name=h.user.full_name if h.user else None,
+            reason=h.reason,
+            duration_seconds=h.duration_seconds or 0,
+            created_at=h.created_at
+        )
+        for h in sh_list
+    ]
+
+    # Fetch latest AI Insights if available
+    from app.models.ai import AIInsight
+    ai_summary_insight = db.query(AIInsight).filter(
+        AIInsight.entity_type == "LEAD",
+        AIInsight.entity_id == id,
+        AIInsight.insight_type == "SUMMARY"
+    ).order_by(desc(AIInsight.created_at)).first()
+    
+    ai_action_insight = db.query(AIInsight).filter(
+        AIInsight.entity_type == "LEAD",
+        AIInsight.entity_id == id,
+        AIInsight.insight_type == "NEXT_ACTION"
+    ).order_by(desc(AIInsight.created_at)).first()
+    
+    return PreCallContextOut(
+        lead=serialize_lead(lead, current_user, db),
+        timeline=timeline,
+        stage_history=stage_history,
+        ai_summary=ai_summary_insight.output_data if hasattr(ai_summary_insight, "output_data") else (ai_summary_insight.metadata_json if ai_summary_insight else None),
+        ai_next_action=ai_action_insight.output_data if hasattr(ai_action_insight, "output_data") else (ai_action_insight.metadata_json if ai_action_insight else None)
+    )
 
 
 @router.get("/{id}/timeline", response_model=List[ActivityOut])

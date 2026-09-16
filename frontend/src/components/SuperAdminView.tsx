@@ -408,6 +408,36 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
                 <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--emerald)", marginTop: "6px" }}>↑ 24% <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>+24.3k this week</span></p>
               </div>
             </div>
+
+            <div className="card" style={{ padding: "16px", display: "flex", alignItems: "flex-start", gap: "16px" }}>
+              <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <PhoneCall style={{ width: "24px", height: "24px", color: "#d97706" }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>Telecaller Calls (Today)</span>
+                <p style={{ fontSize: "1.875rem", fontWeight: 900, color: "var(--text-primary)", marginTop: "2px", lineHeight: 1 }}>
+                  {kpis.total_calls_today?.toLocaleString() || 0}
+                </p>
+                <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--amber)", marginTop: "6px" }}>
+                  <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>{kpis.active_telecaller_sessions || 0} active sessions</span>
+                </p>
+              </div>
+            </div>
+            
+            <div className="card" style={{ padding: "16px", display: "flex", alignItems: "flex-start", gap: "16px" }}>
+              <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "#dbeafe", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <ActivitySquare style={{ width: "24px", height: "24px", color: "#2563eb" }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>Total Talk Time</span>
+                <p style={{ fontSize: "1.875rem", fontWeight: 900, color: "var(--text-primary)", marginTop: "2px", lineHeight: 1 }}>
+                  {kpis.total_talk_time_minutes || 0} <span style={{ fontSize: "1rem" }}>mins</span>
+                </p>
+                <p style={{ fontSize: "0.75rem", fontWeight: 600, color: "#2563eb", marginTop: "6px" }}>
+                  <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>Across platform today</span>
+                </p>
+              </div>
+            </div>
           </div>
           
           {/* Middle Section */}

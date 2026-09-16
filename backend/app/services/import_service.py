@@ -82,6 +82,25 @@ def normalize_email(email_raw: Any) -> Optional[str]:
     return None
 
 
+FREE_EMAIL_DOMAINS = {
+    "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
+    "rediffmail.com", "icloud.com", "live.com", "msn.com", "aol.com"
+}
+
+def is_free_email_domain(email: Optional[str]) -> bool:
+    if not email or "@" not in email:
+        return True
+    domain = email.split("@")[1].strip().lower()
+    return domain in FREE_EMAIL_DOMAINS
+
+def classify_segment(row: dict) -> Tuple[str, float]:
+    comp = row.get("company_name") or row.get("company")
+    email = row.get("email") or row.get("contact_email")
+    if comp and not is_free_email_domain(email):
+        return "B2B", 0.99
+    return "B2C", 0.97
+
+
 def detect_file_encoding(file_path: str) -> str:
     # Try utf-8, fallback to latin-1
     try:
@@ -600,7 +619,33 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                         duplicates += 1
                         continue
 
-                    # 4. Create Lead Record referencing target stage
+                    # 4. Classify Segment & Lead Type (Problem 6 & 20)
+                    detected_segment, _ = classify_segment({"company_name": comp_name, "email": email})
+                    inferred_lead_type = "B2B" if detected_segment == "B2B" else "COLD_OUTBOUND"
+
+                    # Ensure ContactPhone record is registered (Problem 4 & 15)
+                    if contact and phone:
+                        from app.models.contact_phone import ContactPhone
+                        from app.services.telephony_service import parse_and_format_phone
+                        e164_phone, phone_type, is_sms = parse_and_format_phone(phone)
+                        existing_cp = db.query(ContactPhone).filter(
+                            ContactPhone.contact_id == contact.id,
+                            ContactPhone.phone_number == (e164_phone or phone)
+                        ).first()
+                        if not existing_cp:
+                            cp = ContactPhone(
+                                contact_id=contact.id,
+                                phone_number=e164_phone or phone,
+                                phone_type=phone_type,
+                                label="Primary",
+                                is_primary=True,
+                                is_whatsapp=(phone_type == "MOBILE"),
+                                is_sms_capable=is_sms,
+                                is_callable=True
+                            )
+                            db.add(cp)
+
+                    # Create Lead Record referencing target stage
                     new_lead = Lead(
                         organization_id=organization_id,
                         company_id=company.id if company else None,
@@ -612,6 +657,8 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                         contact_name=cont_name or (contact.full_name if contact else None),
                         contact_email=email,
                         contact_phone=phone,
+                        segment=detected_segment,
+                        lead_type=inferred_lead_type,
                         source="IMPORT",
                         status="OPEN",
                         priority="MEDIUM",

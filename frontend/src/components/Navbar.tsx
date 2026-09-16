@@ -188,6 +188,15 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 <UserCheck style={{ width: "15px", height: "15px", color: "var(--emerald)" }} />
                 Team & Telecallers
               </button>
+
+              <button
+                onClick={() => handleTabClick("templates")}
+                className={`nav-tab-btn ${activeTab === "templates" ? "active" : ""}`}
+                id="nav-tab-templates"
+              >
+                <ActivitySquare style={{ width: "15px", height: "15px", color: "var(--primary)" }} />
+                Templates
+              </button>
             </>
           )}
 

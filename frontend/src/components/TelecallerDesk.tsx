@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Lead, api } from "../services/api";
+import { 
+  Lead, 
+  PipelineStage, 
+  TelecallerTargetToday, 
+  NextActionItem, 
+  DailyQueueItem, 
+  api 
+} from "../services/api";
 import { openGmail, openWhatsApp } from "../utils/mailHelper";
-import { format10DigitPhone, getCallUrl } from "../utils/phoneHelper";
-// import { EmailComposeModal } from "./EmailComposeModal";
+import { format10DigitPhone } from "../utils/phoneHelper";
+import { LeadDetailModal } from "./LeadDetailModal";
 import { 
   PhoneCall, 
   MessageCircle, 
@@ -13,7 +20,18 @@ import {
   ChevronRight,
   Lock,
   RefreshCw,
-  Search
+  Search,
+  ExternalLink,
+  Clock,
+  Calendar,
+  CreditCard,
+  AlertCircle,
+  Play,
+  Coffee,
+  CheckCircle2,
+  Sparkles,
+  ArrowRight,
+  X
 } from "lucide-react";
 
 export const TelecallerDesk: React.FC = () => {
@@ -33,31 +51,128 @@ export const TelecallerDesk: React.FC = () => {
     return `${name.substring(0, 2)}***@${domain}`;
   };
 
+  // Helper to detect Indian Landlines deterministically per DoT / TRAI
+  const isLandlineNumber = (phone: string | undefined | null): boolean => {
+    if (!phone) return false;
+    const digits = phone.replace(/\D/g, "");
+    const clean10 = digits.length >= 10 ? digits.slice(-10) : digits;
+    return /^[1-5]\d{7,9}$/.test(clean10);
+  };
+
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterPriority, setFilterPriority] = useState("ALL");
+  
+  // Segmented filters (Problems 6 & 20)
+  const [activeSegment, setActiveSegment] = useState<string>("ALL"); // ALL, B2B, B2C
+  const [activeStageFilter, setActiveStageFilter] = useState<string>("ALL"); // ALL, NEW, CONTACTED, INTERESTED, HOT, WARM, COLD
+
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
-  // Outcome logger state
+  
+  // Post-Call Outcome & Soft-Block Enforcement (Problem 5)
+  const [isInCall, setIsInCall] = useState(false);
   const [outcome, setOutcome] = useState<string>("CONNECTED");
   const [notes, setNotes] = useState("");
   const [followupPreset, setFollowupPreset] = useState<string>("tomorrow");
   const [loggingOutcome, setLoggingOutcome] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [softBlockAttemptedLead, setSoftBlockAttemptedLead] = useState<Lead | null>(null);
+
+  // Targets & Real-time Progress (Problem 2)
+  const [targets, setTargets] = useState<TelecallerTargetToday | null>(null);
+
+  // Next Best Action (Problems 16 & 17)
+  const [nextActions, setNextActions] = useState<NextActionItem[]>([]);
+  const [showNextActions, setShowNextActions] = useState(true);
+
+  // Daily Queue (Problem 18)
+  const [dailyQueue, setDailyQueue] = useState<DailyQueueItem[]>([]);
+
+  // Pre-call context & details
+  const [preCallContext, setPreCallContext] = useState<any>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [stages, setStages] = useState<PipelineStage[]>([]);
+
+  // Shift & Attendance Tracking (Problem 11)
+  const [shiftStatus, setShiftStatus] = useState<"ACTIVE" | "ON_BREAK" | "OFFLINE">("ACTIVE");
+
+  // Dynamic Payment Link Modal (Problem 19)
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState<number>(5000);
+  const [generatedPaymentLink, setGeneratedPaymentLink] = useState<string | null>(null);
+  const [generatingPayment, setGeneratingPayment] = useState(false);
 
   useEffect(() => {
-    loadMyLeads();
+    loadInitialData();
   }, []);
 
-  // Fetch all leads from the organization (synced with ORG Admin dashboard)
+  const loadInitialData = async () => {
+    loadMyLeads();
+    loadTargets();
+    loadNextActions();
+    loadDailyQueue();
+    loadStages();
+  };
+
+  const loadStages = async () => {
+    try {
+      const data = await api.getPipeline();
+      setStages(data?.stages || []);
+    } catch (e) {
+      console.error("Error loading stages:", e);
+    }
+  };
+
+  const loadTargets = async () => {
+    try {
+      const data = await api.getTelecallerTargetsToday();
+      setTargets(data);
+    } catch (e) {
+      console.error("Error loading daily targets:", e);
+    }
+  };
+
+  const loadNextActions = async () => {
+    try {
+      const data = await api.getTelecallerNextActions();
+      setNextActions(data || []);
+    } catch (e) {
+      console.error("Error loading next best actions:", e);
+    }
+  };
+
+  const loadDailyQueue = async () => {
+    try {
+      const data = await api.getTelecallerDailyQueue();
+      setDailyQueue(data || []);
+    } catch (e) {
+      console.error("Error loading daily queue:", e);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedLead) {
+      loadPreCallContext(selectedLead.id);
+    }
+  }, [selectedLead]);
+
+  const loadPreCallContext = async (id: string) => {
+    try {
+      const data = await api.getPreCallContext(id);
+      setPreCallContext(data);
+    } catch (e) {
+      console.error("Failed to load pre-call context:", e);
+    }
+  };
+
   const loadMyLeads = async () => {
     setLoading(true);
     try {
       const data = await api.getLeads();
       setLeads(data || []);
-      if (data && data.length > 0) {
-        setSelectedLead((prev) => (prev ? data.find((l) => l.id === prev.id) || data[0] : data[0]));
+      if (data && data.length > 0 && !selectedLead) {
+        setSelectedLead(data[0]);
       }
     } catch (e) {
       console.error("Error loading leads in telecaller desk:", e);
@@ -66,18 +181,32 @@ export const TelecallerDesk: React.FC = () => {
     }
   };
 
-  // Filtered leads based on search query and priority chip
+  // Filtered leads based on search query, B2B/B2C segment, and stage/type filter
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
-      // Priority filter
-      if (filterPriority !== "ALL") {
-        if (filterPriority === "HOT") {
+      // 1. Segment filter (Problem 20)
+      if (activeSegment !== "ALL") {
+        if (lead.segment && lead.segment.toUpperCase() !== activeSegment) return false;
+      }
+
+      // 2. Stage/Type filter (Problem 6)
+      if (activeStageFilter !== "ALL") {
+        if (activeStageFilter === "HOT") {
           if (lead.priority !== "URGENT" && lead.priority !== "HIGH") return false;
-        } else if (lead.priority !== filterPriority) {
-          return false;
+        } else if (activeStageFilter === "WARM") {
+          if (lead.priority !== "MEDIUM") return false;
+        } else if (activeStageFilter === "COLD") {
+          if (lead.priority !== "LOW") return false;
+        } else if (activeStageFilter === "NEW") {
+          if (lead.status !== "NEW" && (!lead.stage || !lead.stage.name.toLowerCase().includes("new"))) return false;
+        } else if (activeStageFilter === "CONTACTED") {
+          if (!lead.stage || !lead.stage.name.toLowerCase().includes("contacted")) return false;
+        } else if (activeStageFilter === "INTERESTED") {
+          if (!lead.stage || !lead.stage.name.toLowerCase().includes("interested")) return false;
         }
       }
-      // Text search
+
+      // 3. Text search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchTitle = lead.title?.toLowerCase().includes(q);
@@ -88,23 +217,55 @@ export const TelecallerDesk: React.FC = () => {
       }
       return true;
     });
-  }, [leads, filterPriority, searchQuery]);
+  }, [leads, activeSegment, activeStageFilter, searchQuery]);
 
-  // Single Call button that straightaway opens the native OS/Mobile "Pick an App" / Phone dialer
+  // Lead selection with UX soft-block enforcement (Problem 5)
+  const handleSelectLead = (lead: Lead) => {
+    if (isInCall && selectedLead && selectedLead.id !== lead.id) {
+      setSoftBlockAttemptedLead(lead);
+      return;
+    }
+    setSelectedLead(lead);
+    setSoftBlockAttemptedLead(null);
+  };
+
+  // Start Next Call (Problem 18 - Sequential Worklist Stepper)
+  const handleStartNextCall = async () => {
+    try {
+      const res = await api.getTelecallerQueueNext(selectedLead?.id);
+      if (res && res.lead) {
+        setSelectedLead(res.lead);
+        setSuccessMsg(`Advanced to next prioritized worklist lead: ${res.lead.contact_name || res.lead.title}`);
+        setTimeout(() => setSuccessMsg(null), 3000);
+      } else {
+        // Fallback to next in filtered list
+        const currentIndex = filteredLeads.findIndex((l) => l.id === selectedLead?.id);
+        if (currentIndex < filteredLeads.length - 1) {
+          setSelectedLead(filteredLeads[currentIndex + 1]);
+        } else {
+          setSuccessMsg("You have completed all leads in the current execution queue!");
+          setTimeout(() => setSuccessMsg(null), 3000);
+        }
+      }
+    } catch (e) {
+      console.error("Queue next error:", e);
+    }
+  };
+
+  // Dial Call (Problem 3 & 5)
   const handleCall = async () => {
     if (!selectedLead) return;
-    setSuccessMsg("Opening Phone App / 'Pick an App' prompt on your device...");
+    setIsInCall(true);
+    setSuccessMsg("Call initiated! Post-call outcome drawer is active.");
     setTimeout(() => setSuccessMsg(null), 4000);
 
-    // Pre-fill notes for the telecaller to log discussion after the call
     if (!notes) {
       setNotes(`Outbound Call placed to ${selectedLead.contact_name || selectedLead.title}. Notes: `);
     }
 
     try {
-      const res = await api.triggerLeadAction(selectedLead.id, "call");
+      const res = await api.dialLead(selectedLead.id);
       if (res.tel_url) {
-        // Triggers the device's native "Pick an App" / Phone dialer
         window.location.href = res.tel_url;
       }
     } catch (e) {
@@ -112,8 +273,14 @@ export const TelecallerDesk: React.FC = () => {
     }
   };
 
+  // WhatsApp (Problem 13 & 15)
   const handleWhatsApp = async () => {
     if (!selectedLead) return;
+    if (isLandlineNumber(selectedLead.contact_phone)) {
+      alert("WhatsApp is not supported on Indian Landline numbers. Please use Voice Call.");
+      return;
+    }
+
     try {
       const res = await api.triggerLeadAction(selectedLead.id, "whatsapp");
       if (res.whatsapp_url) {
@@ -135,6 +302,7 @@ export const TelecallerDesk: React.FC = () => {
     setTimeout(() => setCopiedEmail(null), 2000);
   };
 
+  // Outcome Logging (Problem 5 & 16/17 Policy Engine)
   const handleRecordOutcome = async () => {
     if (!selectedLead) return;
     setLoggingOutcome(true);
@@ -149,7 +317,7 @@ export const TelecallerDesk: React.FC = () => {
         duration_seconds: outcome === "CONNECTED" ? 120 : 15,
       });
 
-      // 2. If followup selected, schedule task
+      // 2. Automated Followup Task
       if (followupPreset !== "none") {
         const dueDate = new Date();
         if (followupPreset === "tomorrow") dueDate.setDate(dueDate.getDate() + 1);
@@ -167,6 +335,7 @@ export const TelecallerDesk: React.FC = () => {
 
       setSuccessMsg(`Call outcome "${outcome}" recorded successfully!`);
       setNotes("");
+      setIsInCall(false);
       setTimeout(() => setSuccessMsg(null), 3000);
 
       // Move to next lead in filtered queue
@@ -174,10 +343,54 @@ export const TelecallerDesk: React.FC = () => {
       if (currentIndex < filteredLeads.length - 1) {
         setSelectedLead(filteredLeads[currentIndex + 1]);
       }
+      
+      // Refresh Targets & Next Actions
+      loadTargets();
+      loadNextActions();
     } catch (err: any) {
       alert(err.message);
     } finally {
       setLoggingOutcome(false);
+    }
+  };
+
+  // Escape hatch for soft block (Problem 5)
+  const handleSkipOutcome = async () => {
+    if (!selectedLead) return;
+    try {
+      await api.logActivity({
+        lead_id: selectedLead.id,
+        activity_type: "SYSTEM",
+        subject: "Call Outcome Skipped",
+        description: "Agent used escape hatch to advance without logging formal disposition.",
+        status: "SKIPPED"
+      });
+    } catch (e) {}
+
+    setIsInCall(false);
+    if (softBlockAttemptedLead) {
+      setSelectedLead(softBlockAttemptedLead);
+      setSoftBlockAttemptedLead(null);
+    }
+  };
+
+  // Dynamic Payment Link Generator (Problem 19)
+  const handleGeneratePayment = async () => {
+    if (!selectedLead) return;
+    setGeneratingPayment(true);
+    try {
+      const res = await api.generatePaymentLink({
+        lead_id: selectedLead.id,
+        amount: paymentAmount,
+        currency: "INR"
+      });
+      setGeneratedPaymentLink(res.payment_link);
+      setSuccessMsg("Dynamic Payment Link successfully generated!");
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setGeneratingPayment(false);
     }
   };
 
@@ -187,20 +400,19 @@ export const TelecallerDesk: React.FC = () => {
     { id: "CALLBACK", label: "Callback Requested", color: "var(--primary)" },
     { id: "NO_ANSWER", label: "No Answer / Ringing", color: "var(--rose)" },
     { id: "BUSY", label: "Line Busy", color: "var(--text-secondary)" },
-    { id: "VOICEMAIL", label: "Voicemail Left", color: "var(--text-secondary)" },
     { id: "WRONG_NUMBER", label: "Wrong Number", color: "var(--rose)" },
     { id: "NOT_INTERESTED", label: "Not Interested", color: "var(--rose)" },
   ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      {/* Top Header */}
+      {/* Top Header & Shift Attendance Bar (Problem 11) */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <h2 style={{ fontSize: "1.375rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: "8px" }}>
               <PhoneCall style={{ width: "20px", height: "20px", color: "var(--emerald)" }} />
-              Telecaller Outbound Desk
+              Telecaller Operations Desk
             </h2>
             <span style={{
               fontSize: "0.6875rem",
@@ -211,18 +423,50 @@ export const TelecallerDesk: React.FC = () => {
               color: "var(--emerald-dark)",
               border: "1px solid var(--emerald-border)"
             }}>
-              Synced with ORG Admin
+              Live Session Active
             </span>
           </div>
           <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-            Direct device dialing (Pick an App), contact masking, and one-tap discussion outcome logging
+            Target enforcement, Next-Best-Action prioritization, Landline/Mobile segregation & 2-tap outcome logging
           </p>
         </div>
 
+        {/* Shift Tracking Buttons (Problem 11) */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: "8px", padding: "3px 6px", gap: "4px" }}>
+            <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-secondary)", marginRight: "4px" }}>
+              Shift Status:
+            </span>
+            <span style={{
+              fontSize: "0.6875rem",
+              fontWeight: 700,
+              padding: "2px 6px",
+              borderRadius: "4px",
+              background: shiftStatus === "ACTIVE" ? "#dcfce7" : "#fef3c7",
+              color: shiftStatus === "ACTIVE" ? "#166534" : "#b45309"
+            }}>
+              {shiftStatus}
+            </span>
+            {shiftStatus === "ACTIVE" ? (
+              <button 
+                onClick={async () => { await api.startBreak(); setShiftStatus("ON_BREAK"); }}
+                style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: "0.6875rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "2px", padding: "2px 4px" }}
+              >
+                <Coffee style={{ width: "12px", height: "12px" }} /> Break
+              </button>
+            ) : (
+              <button 
+                onClick={async () => { await api.endBreak(); setShiftStatus("ACTIVE"); }}
+                style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: "0.6875rem", color: "var(--primary)", display: "flex", alignItems: "center", gap: "2px", padding: "2px 4px" }}
+              >
+                <Play style={{ width: "12px", height: "12px" }} /> Resume
+              </button>
+            )}
+          </div>
+
           <button
-            onClick={loadMyLeads}
-            title="Refresh queue from ORG Admin"
+            onClick={loadInitialData}
+            title="Refresh queue and targets"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -238,15 +482,179 @@ export const TelecallerDesk: React.FC = () => {
             }}
           >
             <RefreshCw style={{ width: "13px", height: "13px", color: "var(--primary)" }} />
-            Sync Leads
+            Sync
           </button>
           <span className="badge badge-masked" style={{ fontSize: "0.75rem", padding: "5px 10px" }}>
             <ShieldCheck style={{ width: "14px", height: "14px" }} />
-            Anti-Theft Active
+            Data Masking Active
           </span>
         </div>
       </div>
 
+      {/* Target Engine Header: 4 Real-Time Quota Progress Rings (Problem 2) */}
+      {targets && (
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "14px",
+          padding: "16px",
+          background: "var(--bg-surface)",
+          borderRadius: "12px",
+          border: "1px solid var(--border-subtle)",
+          boxShadow: "var(--shadow-sm)"
+        }}>
+          {/* Calls Quota */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "var(--primary-light)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <PhoneCall style={{ width: "20px", height: "20px", color: "var(--primary)" }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Daily Calls</span>
+                <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--primary)" }}>{targets.calls_progress_pct}%</span>
+              </div>
+              <p style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                {targets.actual_calls} <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>/ {targets.target_calls}</span>
+              </p>
+              <div style={{ width: "100%", height: "4px", background: "var(--border-subtle)", borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
+                <div style={{ width: `${targets.calls_progress_pct}%`, height: "100%", background: "var(--primary)", borderRadius: "2px" }}></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Connects Quota */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Flame style={{ width: "20px", height: "20px", color: "#d97706" }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Connected Calls</span>
+                <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#d97706" }}>{targets.connects_progress_pct}%</span>
+              </div>
+              <p style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                {targets.actual_connects} <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>/ {targets.target_connects}</span>
+              </p>
+              <div style={{ width: "100%", height: "4px", background: "var(--border-subtle)", borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
+                <div style={{ width: `${targets.connects_progress_pct}%`, height: "100%", background: "#f59e0b", borderRadius: "2px" }}></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Talk Time Quota */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "#dbeafe", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Clock style={{ width: "20px", height: "20px", color: "#2563eb" }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Talk Time</span>
+                <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#2563eb" }}>{targets.talk_time_progress_pct}%</span>
+              </div>
+              <p style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                {targets.actual_talk_time_minutes}m <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>/ {targets.target_talk_time_minutes}m</span>
+              </p>
+              <div style={{ width: "100%", height: "4px", background: "var(--border-subtle)", borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
+                <div style={{ width: `${targets.talk_time_progress_pct}%`, height: "100%", background: "#3b82f6", borderRadius: "2px" }}></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Conversions / Won Deals Quota */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <CheckCircle2 style={{ width: "20px", height: "20px", color: "#16a34a" }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Conversions</span>
+                <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#16a34a" }}>{targets.conversions_progress_pct}%</span>
+              </div>
+              <p style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                {targets.actual_conversions} <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>/ {targets.target_conversions}</span>
+              </p>
+              <div style={{ width: "100%", height: "4px", background: "var(--border-subtle)", borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
+                <div style={{ width: `${targets.conversions_progress_pct}%`, height: "100%", background: "#10b981", borderRadius: "2px" }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Next-Best-Action Smart Queue Accordion (Problems 16 & 17) */}
+      {nextActions.length > 0 && (
+        <div style={{
+          background: "linear-gradient(135deg, rgba(99, 102, 241, 0.04), rgba(168, 85, 247, 0.04))",
+          borderRadius: "12px",
+          border: "1px solid rgba(99, 102, 241, 0.2)",
+          padding: "14px 18px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Sparkles style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
+              <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                Next-Best-Action Worklist ({nextActions.length} Scheduled)
+              </span>
+            </div>
+            <button
+              onClick={() => setShowNextActions(!showNextActions)}
+              style={{ border: "none", background: "transparent", color: "var(--primary)", fontSize: "0.75rem", cursor: "pointer", fontWeight: 600 }}
+            >
+              {showNextActions ? "Collapse" : "Expand"}
+            </button>
+          </div>
+
+          {showNextActions && (
+            <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "4px" }}>
+              {nextActions.slice(0, 5).map((act, i) => (
+                <div
+                  key={i}
+                  onClick={() => {
+                    const match = leads.find((l) => l.id === act.lead_id);
+                    if (match) handleSelectLead(match);
+                  }}
+                  style={{
+                    minWidth: "230px",
+                    background: "var(--bg-surface)",
+                    padding: "10px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-subtle)",
+                    cursor: "pointer",
+                    boxShadow: "var(--shadow-xs)"
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                    <span style={{
+                      fontSize: "0.6875rem",
+                      fontWeight: 800,
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      background: act.scheduled_time === "NOW" ? "#fee2e2" : "var(--primary-light)",
+                      color: act.scheduled_time === "NOW" ? "#b91c1c" : "var(--primary)"
+                    }}>
+                      {act.scheduled_time}
+                    </span>
+                    <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-secondary)" }}>
+                      {act.action_type}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {act.company_name} — {act.contact_name}
+                  </p>
+                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "2px" }}>
+                    {act.action_reason}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Success Notification Banner */}
       {successMsg && (
         <div style={{
           padding: "12px 16px",
@@ -265,29 +673,94 @@ export const TelecallerDesk: React.FC = () => {
         </div>
       )}
 
-      {/* Main Two-Column Workflow Desk */}
+      {/* Soft-block warning modal if telecaller navigates without logging outcome */}
+      {softBlockAttemptedLead && (
+        <div style={{
+          padding: "14px 18px",
+          borderRadius: "10px",
+          background: "#fff1f2",
+          border: "1px solid #fecdd3",
+          color: "#9f1239",
+          fontSize: "0.8125rem",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "10px"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <AlertCircle style={{ width: "18px", height: "18px", color: "#e11d48" }} />
+            <span>
+              <strong>Action required:</strong> Please record the call outcome for <strong>{selectedLead?.contact_name || selectedLead?.title}</strong> before switching leads.
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              onClick={handleSkipOutcome}
+              style={{
+                fontSize: "0.75rem",
+                padding: "4px 10px",
+                borderRadius: "6px",
+                border: "1px solid #fda4af",
+                background: "#ffffff",
+                color: "#be123c",
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+            >
+              Skip Outcome & Switch
+            </button>
+            <button
+              onClick={() => setSoftBlockAttemptedLead(null)}
+              style={{
+                fontSize: "0.75rem",
+                padding: "4px 10px",
+                borderRadius: "6px",
+                border: "none",
+                background: "#e11d48",
+                color: "#ffffff",
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+            >
+              Record Now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Two-Column Layout */}
       <div className="grid-cols-desk">
-        {/* Left Column: Leads to Contact (Fetched from ORG Admin) */}
+        {/* Left Column: Prioritized Leads Queue */}
         <div className="card" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
-          {/* Queue Header & Counter */}
+          {/* Queue Header & Sequential Advance Button (Problem 18) */}
           <div style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             paddingBottom: "10px",
-            borderBottom: "1px solid var(--border-subtle)"
+            borderBottom: "1px solid var(--border-subtle)",
+            flexWrap: "wrap",
+            gap: "8px"
           }}>
             <div>
               <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                Leads to Contact ({filteredLeads.length})
+                Worklist Queue ({filteredLeads.length})
               </span>
               <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "block" }}>
-                Total in Organization: {leads.length} leads
+                Total assigned: {leads.length} leads
               </span>
             </div>
-            <span style={{ fontSize: "0.6875rem", color: "var(--emerald-dark)", fontWeight: 700, background: "var(--emerald-light)", padding: "2px 6px", borderRadius: "4px" }}>
-              Live Connected
-            </span>
+
+            <button
+              onClick={handleStartNextCall}
+              className="btn-primary"
+              style={{ fontSize: "0.6875rem", padding: "5px 10px", display: "flex", alignItems: "center", gap: "4px" }}
+              title="Step to next prioritized lead sequentially"
+            >
+              <ArrowRight style={{ width: "12px", height: "12px" }} />
+              Start Next Call
+            </button>
           </div>
 
           {/* Search Box */}
@@ -325,24 +798,49 @@ export const TelecallerDesk: React.FC = () => {
             )}
           </div>
 
-          {/* Filter Chips */}
+          {/* Segmented Filter Chips: [B2B] [B2C] [NEW] [CONTACTED] [INTERESTED] [HOT] [WARM] [COLD] (Problems 6 & 20) */}
           <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+            {/* Segment Chips */}
+            {["ALL", "B2B", "B2C"].map((seg) => (
+              <button
+                key={seg}
+                onClick={() => setActiveSegment(seg)}
+                style={{
+                  fontSize: "0.6875rem",
+                  fontWeight: 700,
+                  padding: "3px 8px",
+                  borderRadius: "999px",
+                  border: activeSegment === seg ? "1px solid var(--primary)" : "1px solid var(--border-subtle)",
+                  background: activeSegment === seg ? "var(--primary-light)" : "var(--bg-surface-subtle)",
+                  color: activeSegment === seg ? "var(--primary)" : "var(--text-secondary)",
+                  cursor: "pointer"
+                }}
+              >
+                {seg}
+              </button>
+            ))}
+
+            <span style={{ color: "var(--border-subtle)", alignSelf: "center" }}>|</span>
+
+            {/* Stage/Type Chips */}
             {[
-              { key: "ALL", label: `All (${leads.length})` },
-              { key: "HOT", label: `Hot (${leads.filter((l) => l.priority === "URGENT" || l.priority === "HIGH").length})` },
-              { key: "MEDIUM", label: `Medium (${leads.filter((l) => l.priority === "MEDIUM").length})` }
+              { key: "ALL", label: "All Stages" },
+              { key: "HOT", label: "Hot 🔥" },
+              { key: "NEW", label: "New" },
+              { key: "CONTACTED", label: "Contacted" },
+              { key: "INTERESTED", label: "Interested" },
             ].map((chip) => (
               <button
                 key={chip.key}
-                onClick={() => setFilterPriority(chip.key)}
+                onClick={() => setActiveStageFilter(chip.key)}
                 style={{
                   fontSize: "0.6875rem",
                   fontWeight: 600,
                   padding: "3px 8px",
                   borderRadius: "999px",
-                  border: filterPriority === chip.key ? "1px solid var(--primary)" : "1px solid var(--border-subtle)",
-                  background: filterPriority === chip.key ? "var(--primary-light)" : "var(--bg-surface-subtle)",
-                  color: filterPriority === chip.key ? "var(--primary)" : "var(--text-secondary)",
+                  border: activeStageFilter === chip.key ? "1px solid var(--primary)" : "1px solid var(--border-subtle)",
+                  background: activeStageFilter === chip.key ? "var(--primary-light)" : "var(--bg-surface-subtle)",
+                  color: activeStageFilter === chip.key ? "var(--primary)" : "var(--text-secondary)",
                   cursor: "pointer"
                 }}
               >
@@ -354,65 +852,70 @@ export const TelecallerDesk: React.FC = () => {
           {/* Leads List */}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", flex: 1, paddingRight: "4px", maxHeight: "560px" }}>
             {loading ? (
-              <p style={{ textAlign: "center", padding: "32px 0", fontSize: "0.75rem", color: "var(--text-muted)" }}>Loading leads from organization...</p>
+              <p style={{ textAlign: "center", padding: "32px 0", fontSize: "0.75rem", color: "var(--text-muted)" }}>Loading worklist...</p>
             ) : filteredLeads.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "32px 12px", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                <p style={{ fontWeight: 600 }}>No matching leads found</p>
-                <p style={{ fontSize: "0.6875rem", marginTop: "4px" }}>Leads from ORG Admin will appear here.</p>
-              </div>
+              <p style={{ textAlign: "center", padding: "32px 0", fontSize: "0.75rem", color: "var(--text-muted)" }}>No leads match current filter criteria.</p>
             ) : (
               filteredLeads.map((lead) => {
                 const isSelected = selectedLead?.id === lead.id;
+                const isLandline = isLandlineNumber(lead.contact_phone);
+
                 return (
                   <div
                     key={lead.id}
-                    onClick={() => setSelectedLead(lead)}
+                    onClick={() => handleSelectLead(lead)}
                     style={{
                       padding: "12px",
-                      borderRadius: "8px",
+                      borderRadius: "10px",
                       border: isSelected ? "2px solid var(--primary)" : "1px solid var(--border-subtle)",
                       background: isSelected ? "var(--primary-light)" : "var(--bg-surface)",
-                      boxShadow: isSelected ? "var(--shadow-sm)" : "var(--shadow-xs)",
                       cursor: "pointer",
-                      transition: "all 0.15s ease"
+                      transition: "all 0.15s ease",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "6px"
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                      <span className={`badge ${lead.priority === "URGENT" || lead.priority === "HIGH" ? "badge-hot" : "badge-medium"}`}>
-                        {lead.priority}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {lead.contact_name || lead.title}
                       </span>
-                      <div style={{ display: "flex", alignItems: "center", gap: "3px", fontSize: "0.75rem", fontFamily: "monospace", fontWeight: 700, color: "var(--amber-dark)" }}>
-                        <Flame style={{ width: "12px", height: "12px", color: "var(--amber)" }} />
-                        {lead.score}
-                      </div>
-                    </div>
-
-                    <h4 style={{ fontSize: "0.8125rem", fontWeight: 700, color: isSelected ? "var(--primary)" : "var(--text-primary)", marginBottom: "2px", lineHeight: "1.3" }}>
-                      {lead.title}
-                    </h4>
-
-                    <div style={{ fontSize: "0.6875rem", color: "var(--text-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "4px" }}>
-                      <span style={{ fontWeight: 600 }}>{lead.company_name || "Account"}</span>
-                      <span style={{ color: "var(--purple-dark)", fontWeight: 600, fontFamily: "monospace" }}>
-                        {maskPhone(lead.contact_phone)}
-                      </span>
-                    </div>
-
-                    {lead.stage && (
-                      <div style={{ marginTop: "6px", display: "flex", justifyContent: "flex-start" }}>
+                      <div style={{ display: "flex", gap: "4px" }}>
+                        {lead.segment && (
+                          <span style={{ fontSize: "0.625rem", fontWeight: 800, padding: "1px 5px", borderRadius: "4px", background: "#f3f4f6", color: "#374151" }}>
+                            {lead.segment}
+                          </span>
+                        )}
                         <span style={{
                           fontSize: "0.625rem",
                           fontWeight: 700,
-                          padding: "1px 6px",
+                          padding: "1px 5px",
                           borderRadius: "4px",
-                          background: "var(--bg-surface-subtle)",
-                          color: "var(--text-secondary)",
-                          border: "1px solid var(--border-subtle)"
+                          background: lead.priority === "URGENT" || lead.priority === "HIGH" ? "#fee2e2" : "#f3f4f6",
+                          color: lead.priority === "URGENT" || lead.priority === "HIGH" ? "#b91c1c" : "#4b5563"
                         }}>
-                          Stage: {lead.stage.name}
+                          {lead.priority}
                         </span>
                       </div>
-                    )}
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                      <span>{lead.company_name || "Direct Customer"}</span>
+                      <span style={{ fontFamily: "monospace", fontWeight: 600 }}>
+                        {maskPhone(lead.contact_phone ?? undefined)}
+                      </span>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "2px" }}>
+                      <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+                        Stage: {lead.stage?.name || "New Lead"}
+                      </span>
+                      {isLandline && (
+                        <span style={{ fontSize: "0.625rem", color: "#6b7280", background: "#e5e7eb", padding: "1px 4px", borderRadius: "3px" }}>
+                          Landline
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })
@@ -423,7 +926,7 @@ export const TelecallerDesk: React.FC = () => {
         {/* Right Column: Active Lead Outbound Workspace */}
         {selectedLead ? (
           <div className="card" style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
-            {/* Contact Header Card */}
+            {/* Contact Header Card & Action Triggers (Problem 3, 13, 15) */}
             <div style={{
               padding: "18px",
               borderRadius: "10px",
@@ -441,8 +944,13 @@ export const TelecallerDesk: React.FC = () => {
                     <Lock style={{ width: "11px", height: "11px" }} />
                     Anti-Theft Active
                   </span>
+                  {selectedLead.segment && (
+                    <span style={{ fontSize: "0.6875rem", fontWeight: 800, padding: "2px 6px", borderRadius: "4px", background: "var(--primary-light)", color: "var(--primary)" }}>
+                      {selectedLead.segment} Opportunity
+                    </span>
+                  )}
                   <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>
-                    Sourced via {selectedLead.source}
+                    Sourced: {selectedLead.source}
                   </span>
                 </div>
                 <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-primary)" }}>
@@ -453,13 +961,13 @@ export const TelecallerDesk: React.FC = () => {
                 </p>
               </div>
 
-              {/* Masked Phone Display & Action Triggers */}
+              {/* Masked Phone Display & Triggers */}
               <div style={{ textAlign: "right" }}>
                 <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "block", marginBottom: "2px", fontWeight: 600 }}>
-                  Masked Mobile Contact
+                  Masked Contact Number
                 </span>
                 <p style={{ fontSize: "1.25rem", fontFamily: "monospace", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "0.05em" }}>
-                  {maskPhone(selectedLead.contact_phone)}
+                  {maskPhone(selectedLead.contact_phone ?? undefined)}
                 </p>
                 {selectedLead.contact_email && (
                   <span
@@ -482,9 +990,9 @@ export const TelecallerDesk: React.FC = () => {
                   </span>
                 )}
 
-                {/* Direct Action Buttons: Call (Opens Pick an App), WhatsApp, Gmail */}
+                {/* Direct Action Buttons: Call, WhatsApp (Disabled for Landlines), Gmail, Payment */}
                 <div style={{ display: "flex", gap: "8px", marginTop: "12px", justifyContent: "flex-end", flexWrap: "wrap" }}>
-                  {/* Single Call button that straightaway opens the native OS / Mobile Pick an App prompt */}
+                  {/* Call button */}
                   <button
                     onClick={handleCall}
                     className="btn-primary"
@@ -497,79 +1005,171 @@ export const TelecallerDesk: React.FC = () => {
                       alignItems: "center",
                       gap: "6px"
                     }}
-                    title="Prompts device's 'Pick an App' / phone dialer"
+                    title="Initiates call and opens device dialer"
                   >
                     <PhoneCall style={{ width: "14px", height: "14px" }} />
                     Call Lead
                   </button>
 
+                  {/* WhatsApp button - Disabled for Landlines (Problem 15) */}
+                  {isLandlineNumber(selectedLead.contact_phone) ? (
+                    <button
+                      disabled
+                      title="Disabled: Landline phone numbers cannot receive WhatsApp messages."
+                      style={{
+                        fontSize: "0.75rem",
+                        padding: "7px 12px",
+                        borderRadius: "8px",
+                        border: "1px solid var(--border-subtle)",
+                        background: "#f3f4f6",
+                        color: "#9ca3af",
+                        cursor: "not-allowed",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px"
+                      }}
+                    >
+                      <MessageCircle style={{ width: "14px", height: "14px" }} />
+                      WhatsApp (Landline)
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleWhatsApp}
+                      className="btn-secondary"
+                      style={{ fontSize: "0.75rem", padding: "7px 14px", display: "flex", alignItems: "center", gap: "6px" }}
+                      title="Open WhatsApp chat"
+                    >
+                      <MessageCircle style={{ width: "14px", height: "14px", color: "var(--emerald)" }} />
+                      WhatsApp
+                    </button>
+                  )}
+
+                  {/* Payment Link Trigger Modal (Problem 19) */}
                   <button
-                    onClick={handleWhatsApp}
+                    onClick={() => setShowPaymentModal(true)}
                     className="btn-secondary"
-                    style={{ fontSize: "0.75rem", padding: "7px 14px", display: "flex", alignItems: "center", gap: "6px" }}
-                    title="Open WhatsApp chat in new tab"
+                    style={{ fontSize: "0.75rem", padding: "7px 14px", display: "flex", alignItems: "center", gap: "6px", color: "#6366f1", borderColor: "rgba(99, 102, 241, 0.3)" }}
+                    title="Generate Dynamic Payment Link (Won/Deal conversion)"
                   >
-                    <MessageCircle style={{ width: "14px", height: "14px", color: "var(--emerald)" }} />
-                    WhatsApp
+                    <CreditCard style={{ width: "14px", height: "14px" }} />
+                    Payment Link
                   </button>
 
                   <button
-                    onClick={() => handleCopyEmail(selectedLead.contact_email!)}
+                    onClick={() => setShowDetailModal(true)}
                     className="btn-secondary"
-                    style={{ fontSize: "0.75rem", padding: "7px 14px", color: "#dc2626", borderColor: "#fecaca", display: "flex", alignItems: "center", gap: "6px" }}
-                    title="Copy email to clipboard"
+                    style={{ fontSize: "0.75rem", padding: "7px 14px", display: "flex", alignItems: "center", gap: "6px" }}
+                    title="Open Lead 360° Profile"
                   >
-                    <Mail style={{ width: "14px", height: "14px", color: "#dc2626" }} />
-                    {copiedEmail === selectedLead.contact_email ? "Copied!" : "Copy Email"}
+                    <ExternalLink style={{ width: "14px", height: "14px", color: "var(--primary)" }} />
+                    Profile
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Outcome & Rapid Discussion Logger */}
+            {/* Static Call Brief Sidebar (Problem 12) */}
+            <div style={{
+              padding: "16px",
+              borderRadius: "10px",
+              background: "var(--primary-light)",
+              border: "1px solid var(--primary)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Sparkles style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
+                  <h4 style={{ fontSize: "0.875rem", fontWeight: 800, color: "var(--primary-dark)" }}>
+                    CALL BRIEF & PRE-CALL CONTEXT
+                  </h4>
+                </div>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--primary)" }}>
+                  Score: {selectedLead.score} | Stage: {selectedLead.stage?.name || selectedLead.status}
+                </span>
+              </div>
+
+              {/* Pre-Call History Stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "8px", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                <div>
+                  <strong>Previous Calls:</strong> {preCallContext?.timeline?.filter((a: any) => a.activity_type === "CALL").length || 0} attempts
+                </div>
+                <div>
+                  <strong>Last Activity:</strong> {preCallContext?.timeline?.[0]?.subject || "No prior calls recorded"}
+                </div>
+                <div>
+                  <strong>Deal Value:</strong> INR {selectedLead.value?.toLocaleString() || "0"}
+                </div>
+              </div>
+
+              {/* AI Recommendation Talking Points */}
+              {preCallContext?.ai_next_action && (
+                <div style={{ padding: "8px 12px", background: "rgba(255, 255, 255, 0.7)", borderRadius: "6px", fontSize: "0.8125rem", color: "var(--text-primary)" }}>
+                  <strong>AI Recommendation:</strong> {preCallContext.ai_next_action.recommended_action || "Introduce product capabilities and qualify annual budget."}
+                </div>
+              )}
+            </div>
+
+            {/* Docked 2-Tap Post-Call Outcome Sheet (Problem 5) */}
             <div style={{
               padding: "18px",
               borderRadius: "10px",
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
+              background: isInCall ? "rgba(16, 185, 129, 0.04)" : "var(--bg-surface)",
+              border: isInCall ? "2px solid var(--emerald)" : "1px solid var(--border-subtle)",
               display: "flex",
               flexDirection: "column",
-              gap: "16px"
+              gap: "16px",
+              transition: "all 0.2s ease"
             }}>
-              <div>
-                <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
-                  1. Select Call Outcome
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h4 style={{ fontSize: "0.875rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>1. Select Call Outcome (2-Tap Logging)</span>
+                  {isInCall && (
+                    <span style={{ fontSize: "0.6875rem", background: "var(--emerald-light)", color: "var(--emerald-dark)", padding: "2px 6px", borderRadius: "4px" }}>
+                      Active Call in Progress
+                    </span>
+                  )}
                 </h4>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "8px", marginTop: "8px" }}>
-                  {OUTCOMES.map((o) => {
-                    const isSelected = outcome === o.id;
-                    return (
-                      <button
-                        key={o.id}
-                        type="button"
-                        onClick={() => setOutcome(o.id)}
-                        style={{
-                          padding: "10px 12px",
-                          borderRadius: "8px",
-                          border: isSelected ? "2px solid var(--primary)" : "1px solid var(--border-subtle)",
-                          background: isSelected ? "var(--primary-light)" : "var(--bg-surface)",
-                          color: isSelected ? "var(--primary)" : "var(--text-primary)",
-                          fontWeight: isSelected ? 700 : 500,
-                          fontSize: "0.75rem",
-                          textAlign: "left",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          transition: "all 0.15s ease"
-                        }}
-                      >
-                        <span>{o.label}</span>
-                        {isSelected && <Check style={{ width: "14px", height: "14px", color: "var(--primary)" }} />}
-                      </button>
-                    );
-                  })}
-                </div>
+                {isInCall && (
+                  <button
+                    onClick={handleSkipOutcome}
+                    style={{ border: "none", background: "transparent", color: "var(--text-muted)", fontSize: "0.6875rem", cursor: "pointer", textDecoration: "underline" }}
+                  >
+                    Skip Outcome
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "8px" }}>
+                {OUTCOMES.map((o) => {
+                  const isSelected = outcome === o.id;
+                  return (
+                    <button
+                      key={o.id}
+                      type="button"
+                      onClick={() => setOutcome(o.id)}
+                      style={{
+                        padding: "10px 12px",
+                        borderRadius: "8px",
+                        border: isSelected ? "2px solid var(--primary)" : "1px solid var(--border-subtle)",
+                        background: isSelected ? "var(--primary-light)" : "var(--bg-surface)",
+                        color: isSelected ? "var(--primary)" : "var(--text-primary)",
+                        fontWeight: isSelected ? 700 : 500,
+                        fontSize: "0.75rem",
+                        textAlign: "left",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        transition: "all 0.15s ease"
+                      }}
+                    >
+                      <span>{o.label}</span>
+                      {isSelected && <Check style={{ width: "14px", height: "14px", color: "var(--primary)" }} />}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Call Notes */}
@@ -581,7 +1181,7 @@ export const TelecallerDesk: React.FC = () => {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Record summary of discussion, interest level, budget, or objections..."
-                  rows={3}
+                  rows={2}
                   style={{
                     width: "100%",
                     padding: "10px 12px",
@@ -596,10 +1196,10 @@ export const TelecallerDesk: React.FC = () => {
                 />
               </div>
 
-              {/* Auto Follow-up Preset */}
+              {/* Follow-up Policy Preset (Problems 16 & 17) */}
               <div>
                 <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
-                  3. Automated Follow-up Task
+                  3. Automated Follow-up Policy
                 </h4>
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                   {[
@@ -618,7 +1218,7 @@ export const TelecallerDesk: React.FC = () => {
                         border: followupPreset === p.id ? "1px solid var(--primary)" : "1px solid var(--border-subtle)",
                         background: followupPreset === p.id ? "var(--primary-light)" : "var(--bg-surface-subtle)",
                         color: followupPreset === p.id ? "var(--primary)" : "var(--text-secondary)",
-                        fontWeight: 600,
+                        fontWeight: followupPreset === p.id ? 700 : 500,
                         fontSize: "0.75rem",
                         cursor: "pointer"
                       }}
@@ -629,28 +1229,159 @@ export const TelecallerDesk: React.FC = () => {
                 </div>
               </div>
 
-              {/* Action Submit */}
-              <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--border-subtle)", paddingTop: "14px" }}>
-                <button
-                  onClick={handleRecordOutcome}
-                  disabled={loggingOutcome}
-                  className="btn-primary"
-                  style={{ fontSize: "0.8125rem", padding: "8px 20px" }}
-                >
-                  {loggingOutcome ? "Recording..." : "Save Outcome & Next Lead"}
-                  <ChevronRight style={{ width: "16px", height: "16px" }} />
-                </button>
-              </div>
+              {/* Save Button */}
+              <button
+                type="button"
+                disabled={loggingOutcome}
+                onClick={handleRecordOutcome}
+                className="btn-primary"
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "0.875rem",
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px"
+                }}
+              >
+                <CheckCircle2 style={{ width: "16px", height: "16px" }} />
+                {loggingOutcome ? "Saving Outcome..." : "Confirm & Save Outcome"}
+              </button>
             </div>
           </div>
         ) : (
           <div className="card" style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)" }}>
-            Select a lead from the organization queue to begin outbound calling.
+            <PhoneCall style={{ width: "32px", height: "32px", margin: "0 auto 12px", opacity: 0.4 }} />
+            <p>Select a lead from the worklist queue to begin outbound calling session.</p>
           </div>
         )}
       </div>
 
+      {/* Dynamic Payment Link Modal (Problem 19) */}
+      {showPaymentModal && selectedLead && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+          padding: "16px"
+        }}>
+          <div style={{
+            background: "var(--bg-surface)",
+            borderRadius: "14px",
+            padding: "24px",
+            width: "100%",
+            maxWidth: "480px",
+            boxShadow: "var(--shadow-lg)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <CreditCard style={{ width: "20px", height: "20px", color: "var(--primary)" }} />
+                <h3 style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                  Dynamic Payment Link Generator
+                </h3>
+              </div>
+              <button
+                onClick={() => { setShowPaymentModal(false); setGeneratedPaymentLink(null); }}
+                style={{ border: "none", background: "transparent", cursor: "pointer", color: "var(--text-muted)" }}
+              >
+                <X style={{ width: "18px", height: "18px" }} />
+              </button>
+            </div>
 
+            <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
+              Generate an instant checkout payment link for <strong>{selectedLead.contact_name || selectedLead.title}</strong> ({selectedLead.company_name || "Direct"}).
+            </p>
+
+            <div>
+              <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", display: "block", marginBottom: "4px" }}>
+                Deal Amount (INR)
+              </label>
+              <input
+                type="number"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-medium)",
+                  background: "var(--bg-surface)",
+                  color: "var(--text-primary)",
+                  fontSize: "0.875rem",
+                  fontWeight: 700
+                }}
+              />
+            </div>
+
+            {generatedPaymentLink ? (
+              <div style={{
+                padding: "14px",
+                background: "var(--emerald-light)",
+                borderRadius: "8px",
+                border: "1px solid var(--emerald-border)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px"
+              }}>
+                <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--emerald-dark)" }}>
+                  Payment Link Generated:
+                </span>
+                <input
+                  readOnly
+                  value={generatedPaymentLink}
+                  style={{ width: "100%", fontSize: "0.75rem", padding: "6px 8px", borderRadius: "4px", border: "1px solid var(--emerald-border)" }}
+                />
+                <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(generatedPaymentLink); alert("Link copied!"); }}
+                    className="btn-secondary"
+                    style={{ fontSize: "0.75rem", padding: "6px 12px", flex: 1 }}
+                  >
+                    Copy Link
+                  </button>
+                  <button
+                    onClick={() => openWhatsApp(selectedLead.contact_phone, `Here is your payment link: ${generatedPaymentLink}`)}
+                    className="btn-primary"
+                    style={{ fontSize: "0.75rem", padding: "6px 12px", flex: 1, background: "var(--emerald)" }}
+                  >
+                    Send via WhatsApp
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                disabled={generatingPayment}
+                onClick={handleGeneratePayment}
+                className="btn-primary"
+                style={{ padding: "10px", fontSize: "0.875rem", fontWeight: 700 }}
+              >
+                {generatingPayment ? "Creating Link..." : `Generate Payment Link (INR ${paymentAmount.toLocaleString()})`}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 360° Profile Modal */}
+      {showDetailModal && selectedLead && (
+        <LeadDetailModal
+          lead={selectedLead}
+          stages={stages}
+          onClose={() => setShowDetailModal(false)}
+          onRefresh={loadMyLeads}
+        />
+      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.models.base import TimestampMixin, generate_uuid
+from datetime import datetime, timezone
 
 
 class Task(Base, TimestampMixin):
@@ -31,3 +32,24 @@ class Task(Base, TimestampMixin):
     lead = relationship("Lead", back_populates="tasks")
     assignee = relationship("User", foreign_keys=[assigned_to])
     creator = relationship("User", foreign_keys=[created_by])
+
+
+class DailyCallPlan(Base):
+    __tablename__ = "daily_call_plans"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    organization_id = Column(String(36), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    date = Column(DateTime, nullable=False) # Or Date
+    generated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class DailyTask(Base):
+    __tablename__ = "daily_tasks"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    organization_id = Column(String(36), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    plan_id = Column(String(36), ForeignKey("daily_call_plans.id", ondelete="CASCADE"), nullable=False, index=True)
+    lead_id = Column(String(36), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False, index=True)
+    sequence = Column(Integer, nullable=False)
+    source = Column(String(20), nullable=False) # FOLLOWUP, NEW_LEAD, RETRY

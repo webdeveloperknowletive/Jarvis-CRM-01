@@ -16,6 +16,13 @@ from app.api.v1 import (
     ai,
     health,
     gmail,
+    telephony,
+    templates,
+    payments,
+    shifts,
+    telecaller,
+    dedupe,
+    communications,
 )
 
 api_router = APIRouter()
@@ -36,3 +43,11 @@ api_router.include_router(global_people.router)
 api_router.include_router(radar.router)
 api_router.include_router(ai.router)
 api_router.include_router(gmail.router)
+api_router.include_router(telephony.router)
+api_router.include_router(templates.router)
+api_router.include_router(payments.router)
+api_router.include_router(shifts.router)
+api_router.include_router(telecaller.router)
+api_router.include_router(dedupe.router)
+api_router.include_router(communications.router)
+

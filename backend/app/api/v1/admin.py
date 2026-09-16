@@ -22,12 +22,19 @@ def require_super_admin(current_user: User = Depends(get_current_user)):
     return current_user
 
 
+from app.models.activity import Activity
+from app.models.session import TelecallerSession
+from datetime import datetime, timezone
+
 class KPIDashboardOut(BaseModel):
     total_organizations: int
     total_org_admins: int
     total_global_companies: int
     total_people_leads: int
     total_data_pulls: int
+    total_calls_today: int
+    active_telecaller_sessions: int
+    total_talk_time_minutes: int
 
 
 @router.get("/kpis", response_model=KPIDashboardOut)
@@ -41,12 +48,34 @@ def get_kpis(
     total_people = db.query(GlobalPerson).filter(GlobalPerson.status == "ACTIVE").count()
     total_pulls = db.query(GlobalDataPullLog).count()
 
+    today = datetime.now(timezone.utc).date()
+    
+    # Telecaller stats
+    total_calls_today = db.query(Activity).filter(
+        Activity.activity_type == "CALL",
+        Activity.occurred_at >= datetime.combine(today, datetime.min.time())
+    ).count()
+
+    active_sessions = db.query(TelecallerSession).filter(
+        TelecallerSession.end_time == None
+    ).count()
+
+    # Sum of talk time today
+    from sqlalchemy import func
+    talk_time_seconds = db.query(func.sum(Activity.duration_seconds)).filter(
+        Activity.activity_type == "CALL",
+        Activity.occurred_at >= datetime.combine(today, datetime.min.time())
+    ).scalar() or 0
+
     return KPIDashboardOut(
         total_organizations=total_orgs,
         total_org_admins=total_admins,
         total_global_companies=total_companies,
         total_people_leads=total_people,
-        total_data_pulls=total_pulls
+        total_data_pulls=total_pulls,
+        total_calls_today=total_calls_today,
+        active_telecaller_sessions=active_sessions,
+        total_talk_time_minutes=talk_time_seconds // 60
     )
 
 

@@ -61,7 +61,7 @@ services:
       dockerfile: Dockerfile.backend
     container_name: jarvis_worker
     restart: unless-stopped
-    command: python -m app.worker
+    command: celery -A app.worker.celery_app worker --loglevel=info
     environment:
       - ENVIRONMENT=production
       - DATABASE_URL=postgresql://jarvis_user:jarvis_secure_password_2026@postgres:5432/jarvis_crm
@@ -85,6 +85,22 @@ services:
       - "80:80"
     depends_on:
       - backend
+
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: jarvis_beat
+    restart: unless-stopped
+    command: celery -A app.worker.celery_app beat --loglevel=info
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://jarvis_user:jarvis_secure_password_2026@postgres:5432/jarvis_crm
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=production-jarvis-secret-key-change-in-env-32-chars
+    depends_on:
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres_data:

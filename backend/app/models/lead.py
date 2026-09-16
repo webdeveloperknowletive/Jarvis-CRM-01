@@ -26,6 +26,9 @@ class Lead(Base, TimestampMixin):
     source_global_company_id = Column(String(36), nullable=True)
     source_global_contact_id = Column(String(36), nullable=True)
 
+    lead_type = Column(String(50), nullable=True)  # e.g., INBOUND, OUTBOUND, RENEWAL
+    segment = Column(String(10), nullable=True)  # e.g., B2B, B2C
+
     status = Column(String(30), nullable=False, default="OPEN", index=True)  # OPEN, WON, LOST, ARCHIVED
     priority = Column(String(30), nullable=False, default="MEDIUM")          # LOW, MEDIUM, HIGH, URGENT
     score = Column(Integer, nullable=False, default=50)                       # 0-100 Radar Opportunity Score

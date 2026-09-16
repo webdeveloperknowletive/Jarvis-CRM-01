@@ -616,6 +616,22 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
                 Normalizing identifiers, assigning UUIDs, isolating errors, and indexing profiles...
               </p>
             </div>
+            {activeJob && activeJob.total_rows > 0 && (
+              <div style={{ width: "100%", maxWidth: "400px", margin: "0 auto", marginTop: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
+                  <span>{activeJob.processed_rows} / {activeJob.total_rows} rows processed</span>
+                  <span>{Math.round((activeJob.processed_rows / activeJob.total_rows) * 100)}%</span>
+                </div>
+                <div style={{ width: "100%", height: "8px", background: "var(--bg-surface-subtle)", borderRadius: "4px", overflow: "hidden" }}>
+                  <div style={{ 
+                    width: `${Math.round((activeJob.processed_rows / activeJob.total_rows) * 100)}%`, 
+                    height: "100%", 
+                    background: "var(--primary)", 
+                    transition: "width 0.3s ease" 
+                  }} />
+                </div>
+              </div>
+            )}
           </div>
         )}
 

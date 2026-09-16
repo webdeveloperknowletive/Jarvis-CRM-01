@@ -43,11 +43,13 @@ def create_lead(
             comp_name = company.name
 
     # 3. Resolve or sync Contact
-    from app.services.import_service import normalize_phone
+    from app.services.telephony_service import parse_and_format_phone
     contact = None
     c_name = data.contact_name
     c_email = data.contact_email
-    c_phone = normalize_phone(data.contact_phone)
+    c_phone, p_type, p_sms = parse_and_format_phone(data.contact_phone)
+    if not c_phone:
+        c_phone = data.contact_phone
 
     if data.contact_id:
         contact = db.query(Contact).filter(
@@ -57,7 +59,7 @@ def create_lead(
         if contact:
             c_name = c_name or contact.full_name
             c_email = c_email or contact.email
-            c_phone = c_phone or normalize_phone(contact.phone)
+            c_phone = c_phone or (parse_and_format_phone(contact.phone)[0] or contact.phone)
             if not company and contact.company_id:
                 company = contact.company
                 comp_name = comp_name or (company.name if company else None)

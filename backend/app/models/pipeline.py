@@ -10,9 +10,10 @@ class Pipeline(Base, TimestampMixin):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     organization_id = Column(String(36), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String(150), nullable=False)
-    description = Column(Text, nullable=True)
+    description = Column(String(500), nullable=True)
     is_default = Column(Boolean, nullable=False, default=False)
-    status = Column(String(30), nullable=False, default="ACTIVE")
+    status = Column(String(20), nullable=False, default="ACTIVE")
+    segment = Column(String(10), nullable=True)  # e.g., B2B, B2C
 
     # Relationships
     organization = relationship("Organization", back_populates="pipelines")

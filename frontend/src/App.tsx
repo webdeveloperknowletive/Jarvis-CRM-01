@@ -15,6 +15,7 @@ import { PeopleIntelligenceView } from "./components/PeopleIntelligenceView";
 import { GlobalIntelligenceView } from "./components/GlobalIntelligenceView";
 import { TeamManagementView } from "./components/TeamManagementView";
 import { NewLeadModal } from "./components/NewLeadModal";
+import { TemplatesView } from "./components/TemplatesView";
 import { UploadCloud, FileSpreadsheet, Plus, Check, ActivitySquare, Building2, Users, BrainCircuit, Globe2, UserCheck, LogOut } from "lucide-react";
 
 export const TAB_TO_ROUTE: Record<string, string> = {
@@ -25,6 +26,7 @@ export const TAB_TO_ROUTE: Record<string, string> = {
   global_intelligence: "/global_intelligence",
   global: "/global_intelligence",
   team: "/team",
+  templates: "/templates",
   telecaller: "/telecaller_desk",
   people: "/people",
   organizations: "/organizations",
@@ -44,6 +46,7 @@ export const ROUTE_TO_TAB: Record<string, string> = {
   "/global": "global_intelligence",
   "/global_registry": "global_intelligence",
   "/team": "team",
+  "/templates": "templates",
   "/telecaller_desk": "telecaller",
   "/telecaller": "telecaller",
   "/people": "people",
@@ -368,6 +371,11 @@ export const App: React.FC = () => {
         {/* Team & Telecaller Management */}
         {activeTab === "team" && (
           <TeamManagementView onNavigateToLeads={() => handleTabChange("leads")} />
+        )}
+
+        {/* Templates Management */}
+        {activeTab === "templates" && (
+          <TemplatesView />
         )}
 
         {/* Import Leads Landing */}

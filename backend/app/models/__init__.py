@@ -4,17 +4,29 @@ from app.models.organization import Organization, Plan, Subscription
 from app.models.user import User
 from app.models.company import Company
 from app.models.contact import Contact
+from app.models.contact_phone import ContactPhone
+from app.models.call_record import CallRecord
+from app.models.followup_policy import FollowupPolicy
+from app.models.telecaller_target import TelecallerTarget
 from app.models.pipeline import Pipeline, PipelineStage
 from app.models.lead import Lead
 from app.models.lead_history import LeadStageHistory, LeadAssignment
 from app.models.activity import Activity
-from app.models.task import Task
+from app.models.task import Task, DailyCallPlan, DailyTask
+from app.models.delegation import AbsenceDelegation
+from app.models.session import TelecallerSession
+from app.models.eod_report import EODReport
 from app.models.masking import MaskingPolicy, MaskingException
 from app.models.import_job import ImportJob, ImportRowError
 from app.models.global_registry import GlobalCompany, GlobalContact, GlobalCompanyContactMap, GlobalDataPullLog
 from app.models.global_people import GlobalPerson
 from app.models.audit import AuditLog, RadarEvent
 from app.models.ai import AIRun, AIInsight
+from app.models.template import Template
+from app.models.payment import Payment
+from app.models.availability import AvailabilityStatus, LeaveRequest
+from app.models.dedupe import DedupeCandidate
+from app.models.communication import CommunicationLog
 
 __all__ = [
     "Base",
@@ -27,6 +39,10 @@ __all__ = [
     "User",
     "Company",
     "Contact",
+    "ContactPhone",
+    "CallRecord",
+    "FollowupPolicy",
+    "TelecallerTarget",
     "Pipeline",
     "PipelineStage",
     "Lead",
@@ -34,6 +50,11 @@ __all__ = [
     "LeadAssignment",
     "Activity",
     "Task",
+    "DailyCallPlan",
+    "DailyTask",
+    "AbsenceDelegation",
+    "TelecallerSession",
+    "EODReport",
     "MaskingPolicy",
     "MaskingException",
     "ImportJob",
@@ -47,4 +68,10 @@ __all__ = [
     "RadarEvent",
     "AIRun",
     "AIInsight",
+    "Template",
+    "Payment",
+    "AvailabilityStatus",
+    "LeaveRequest",
+    "DedupeCandidate",
+    "CommunicationLog",
 ]

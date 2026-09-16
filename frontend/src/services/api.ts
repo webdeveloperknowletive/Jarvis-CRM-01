@@ -64,6 +64,13 @@ export interface Lead {
   notes?: string | null;
   is_phone_masked: boolean;
   is_email_masked: boolean;
+  segment?: string | null;
+  lead_type?: string | null;
+  phone_type?: string | null;
+  is_whatsapp?: boolean;
+  is_sms_capable?: boolean;
+  is_callable?: boolean;
+  payment_link_url?: string | null;
   stage?: PipelineStage | null;
   created_at: string;
   updated_at: string;
@@ -112,6 +119,14 @@ export interface ImportJob {
   created_at: string;
 }
 
+export interface PreCallContext {
+  lead: Lead;
+  timeline: Activity[];
+  stage_history: any[];
+  ai_summary?: any | null;
+  ai_next_action?: any | null;
+}
+
 export interface RadarOpportunity {
   lead_id: string;
   title: string;
@@ -157,6 +172,7 @@ export interface GlobalCompany {
   contacts_count: number;
   first_seen_at?: string;
   last_updated_at?: string;
+  pull_history?: any;
 }
 
 export interface GlobalCompanyCreatePayload {
@@ -207,6 +223,7 @@ export interface GlobalPerson {
   notes?: string | null;
   first_seen_at: string;
   last_updated_at: string;
+  pull_history?: any;
 }
 
 export interface LinkedPerson {
@@ -391,6 +408,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ owner_id }),
     }),
+  getPreCallContext: (id: string) => api.request<PreCallContext>(`/leads/${id}/pre-call-context`),
   getLeadTimeline: (id: string) => api.request<Activity[]>(`/leads/${id}/timeline`),
   getLeadStageHistory: (id: string) => api.request<any[]>(`/leads/${id}/stage-history`),
   triggerLeadAction: (id: string, action_type: string) =>
@@ -415,6 +433,15 @@ export const api = {
     }>(`/leads/${id}/send-email`, {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+  dialLead: (lead_id: string, contact_phone_id?: string) =>
+    api.request<{
+      status: string;
+      call_record_id: string;
+      tel_url?: string;
+    }>(`/telephony/dial`, {
+      method: "POST",
+      body: JSON.stringify({ lead_id, contact_phone_id }),
     }),
 
   // Gmail API Integration
@@ -619,8 +646,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     }),
-    
-  // Super Admin
+
+
+  getMyTelecallerKPIs: () => api.request<any>("/telephony/my-kpis"),
+
+  // Admin Telemetry
   getAdminKPIs: () => api.request<any>("/admin/kpis"),
   getAdminUsers: () => api.request<any[]>("/admin/users"),
   createAdminUser: (data: any) =>
@@ -630,7 +660,7 @@ export const api = {
     }),
   updateAdminUser: (id: string, data: any) =>
     api.request<any>(`/admin/users/${id}`, {
-      method: "PATCH",
+      method: "PUT",
       body: JSON.stringify(data),
     }),
   updateUserStatus: (id: string, status: string) =>
@@ -638,4 +668,143 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ status }),
     }),
+
+  // Templates
+  getTemplates: () => api.request<any[]>("/templates"),
+  createTemplate: (data: any) =>
+    api.request<any>("/templates", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  renderTemplate: (id: string, lead_id: string) =>
+    api.request<any>(`/templates/${id}/render`, {
+      method: "POST",
+      body: JSON.stringify({ lead_id }),
+    }),
+
+  // Payments
+  generatePaymentLink: (data: { lead_id: string; amount: number; currency?: string }) =>
+    api.request<any>("/payments/generate", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  getLeadPayments: (lead_id: string) => api.request<any[]>(`/payments/lead/${lead_id}`),
+  simulatePayment: (payment_id: string) =>
+    api.request<any>(`/payments/${payment_id}/simulate-payment`, {
+      method: "POST",
+    }),
+
+  // Gmail Status
+  getGmailStatus: () =>
+    api.request<{
+      status: string;
+      connected: boolean;
+    }>("/gmail/status", {
+      method: "GET",
+    }),
+
+  // Telecaller Targets (Problem 2)
+  getTelecallerTargetsToday: () => api.request<TelecallerTargetToday>("/telecaller/targets/today"),
+  setTelecallerTarget: (data: any) => api.request<any>("/telecaller/targets", { method: "POST", body: JSON.stringify(data) }),
+  getTelecallerPerformanceToday: () => api.request<any>("/telecaller/performance/today"),
+
+  // Telecaller Execution Queues & Next Best Action (Problems 12, 16, 17, 18)
+  getTelecallerDailyQueue: () => api.request<DailyQueueItem[]>("/telecaller/queue/today"),
+  getTelecallerQueueNext: (currentLeadId?: string) => api.request<any>(`/telecaller/queue/next${currentLeadId ? `?current_lead_id=${currentLeadId}` : ""}`),
+  getTelecallerNextActions: () => api.request<NextActionItem[]>("/telecaller/next-actions"),
+
+  // Availability & Coverage (Problems 8, 9)
+  getTelecallerAvailability: () => api.request<{ user_id: string; status: string }>("/telecaller/availability"),
+  updateTelecallerAvailability: (status: string) => api.request<any>("/telecaller/availability", { method: "PUT", body: JSON.stringify({ status }) }),
+  submitLeaveRequest: (data: { starts_at: string; ends_at: string; reason?: string }) => api.request<any>("/telecaller/leave-requests", { method: "POST", body: JSON.stringify(data) }),
+  getActiveDelegations: () => api.request<any[]>("/telecaller/delegations/active"),
+
+  // Deduplication & Data Quality (Problem 7)
+  getDedupeCandidates: (statusFilter: string = "PENDING") => api.request<DedupeCandidate[]>(`/dedupe/candidates?status_filter=${statusFilter}`),
+  resolveDedupeCandidate: (id: string, action: string) => api.request<any>(`/dedupe/candidates/${id}/resolve`, { method: "POST", body: JSON.stringify({ action }) }),
+  triggerDedupeScan: () => api.request<any>("/dedupe/run", { method: "POST" }),
+
+  // Communications & Messaging (Problems 13, 14)
+  sendWhatsAppMessage: (leadId: string, message: string) => api.request<any>("/communications/whatsapp/send", { method: "POST", body: JSON.stringify({ lead_id: leadId, message }) }),
+  sendTemplatedMessage: (leadId: string, templateId: string, channel: string, variables?: any) => api.request<any>(`/communications/leads/${leadId}/send-message`, { method: "POST", body: JSON.stringify({ template_id: templateId, channel, variables }) }),
+
+  // Productivity Tracking (Problem 11)
+  getProductivityReport: (userId?: string) => api.request<ProductivityReport>(`/shift/productivity${userId ? `?user_id=${userId}` : ""}`),
+
+  // Bulk Reassign Fallback (Problem 8)
+  bulkReassignLeads: (fromUserId: string, toUserId: string, reason?: string) => api.request<any>("/leads/bulk-reassign", { method: "PATCH", body: JSON.stringify({ from_user_id: fromUserId, to_user_id: toUserId, reason }) }),
+
+  // Shifts (Problem 11)
+  startShift: () => api.request<any>("/shift/start", { method: "POST" }),
+  endShift: () => api.request<any>("/shift/end", { method: "POST" }),
+  startBreak: () => api.request<any>("/shift/break-start", { method: "POST" }),
+  endBreak: () => api.request<any>("/shift/break-end", { method: "POST" }),
 };
+
+export interface TelecallerTargetToday {
+  id?: string;
+  user_id: string;
+  target_date: string;
+  target_calls: number;
+  actual_calls: number;
+  target_connects: number;
+  actual_connects: number;
+  target_talk_time_minutes: number;
+  actual_talk_time_minutes: number;
+  target_conversions: number;
+  actual_conversions: number;
+  calls_progress_pct: number;
+  connects_progress_pct: number;
+  talk_time_progress_pct: number;
+  conversions_progress_pct: number;
+}
+
+export interface NextActionItem {
+  lead_id: string;
+  scheduled_time: string;
+  company_name: string;
+  contact_name: string;
+  action_type: string;
+  action_reason: string;
+  score: number;
+  deal_value: number;
+}
+
+export interface DailyQueueItem {
+  lead_id: string;
+  source: string;
+  priority: string;
+  due_at?: string | null;
+  title: string;
+  company_name?: string | null;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  is_phone_masked: boolean;
+  score: number;
+  segment?: string | null;
+  lead_type?: string | null;
+}
+
+export interface DedupeCandidate {
+  id: string;
+  match_confidence: number;
+  match_basis?: string | null;
+  status: string;
+  lead_a?: Lead | null;
+  lead_b?: Lead | null;
+  created_at?: string | null;
+}
+
+export interface ProductivityReport {
+  user_id: string;
+  date: string;
+  total_shift_minutes: number;
+  talk_time_minutes: number;
+  break_time_minutes: number;
+  idle_wrap_minutes: number;
+  connection_rate_pct: number;
+  total_calls: number;
+  connected_calls: number;
+  activity_breakdown: Record<string, number>;
+  chart_buckets: Array<{ label: string; minutes: number; color: string }>;
+}

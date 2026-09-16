@@ -2,15 +2,16 @@ from typing import List, Optional, Tuple
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.contact import Contact
-from app.models.user import User
 from app.models.audit import AuditLog
+from app.models.contact_phone import ContactPhone
+from app.models.user import User
 from app.schemas.contact import ContactCreate, ContactUpdate, ContactOut
 from app.services.masking_service import should_mask_field, mask_phone_number, mask_email_address
 
 
 def create_contact(db: Session, organization_id: str, data: ContactCreate, user_id: str = None) -> Contact:
-    from app.services.import_service import normalize_phone
-    phone_norm = normalize_phone(data.phone)
+    from app.services.telephony_service import parse_and_format_phone
+    phone_norm, p_type, p_sms = parse_and_format_phone(data.phone)
     contact = Contact(
         organization_id=organization_id,
         company_id=data.company_id,
@@ -20,8 +21,8 @@ def create_contact(db: Session, organization_id: str, data: ContactCreate, user_
         designation=data.designation,
         department=data.department,
         email=data.email.lower().strip() if data.email else None,
-        phone=phone_norm,
-        alternate_phone=normalize_phone(data.alternate_phone),
+        phone=phone_norm if phone_norm else data.phone,
+        alternate_phone=data.alternate_phone,
         linkedin_url=data.linkedin_url,
         city=data.city,
         state=data.state,
@@ -31,6 +32,18 @@ def create_contact(db: Session, organization_id: str, data: ContactCreate, user_
     )
     db.add(contact)
     db.flush()
+
+    if phone_norm:
+        cp = ContactPhone(
+            contact_id=contact.id,
+            phone_number=phone_norm,
+            phone_type=p_type,
+            label="Primary",
+            is_primary=True,
+            is_sms_capable=p_sms,
+            is_callable=True
+        )
+        db.add(cp)
 
     audit = AuditLog(
         organization_id=organization_id,
@@ -60,8 +73,8 @@ def get_or_create_contact(
     user_id: Optional[str] = None
 ) -> Tuple[Contact, bool]:
     clean_name = full_name.strip()
-    from app.services.import_service import normalize_phone
-    clean_phone = normalize_phone(phone)
+    from app.services.telephony_service import parse_and_format_phone
+    clean_phone, p_type, p_sms = parse_and_format_phone(phone)
     clean_email = email.lower().strip() if email else None
 
     # Priority 1: Check phone match within org
@@ -97,13 +110,26 @@ def get_or_create_contact(
         organization_id=organization_id,
         company_id=company_id,
         full_name=clean_name,
-        phone=clean_phone,
+        phone=clean_phone if clean_phone else phone,
         email=clean_email,
         designation=designation,
         created_by=user_id
     )
     db.add(new_contact)
     db.flush()
+    
+    if clean_phone:
+        cp = ContactPhone(
+            contact_id=new_contact.id,
+            phone_number=clean_phone,
+            phone_type=p_type,
+            label="Primary",
+            is_primary=True,
+            is_sms_capable=p_sms,
+            is_callable=True
+        )
+        db.add(cp)
+        
     return new_contact, True
 
 

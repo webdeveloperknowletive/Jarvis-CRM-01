@@ -68,6 +68,11 @@ def create_activity(
         )
         db.add(radar_event)
 
+    # Trigger Followup Policy Engine if it's a Call
+    from app.services.followup_service import execute_followup_policy
+    if act_type == "CALL":
+        execute_followup_policy(db, activity, organization_id, user)
+
     db.commit()
 
     return ActivityOut(

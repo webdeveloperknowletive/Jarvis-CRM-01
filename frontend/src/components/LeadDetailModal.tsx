@@ -13,7 +13,8 @@ import {
   CheckCircle, 
   History,
   Shield, 
-  Send
+  Send,
+  ActivitySquare
 } from "lucide-react";
 
 interface LeadDetailModalProps {
@@ -32,7 +33,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   const [currentLead, setCurrentLead] = useState<Lead>(lead);
   const [timeline, setTimeline] = useState<Activity[]>([]);
   const [stageHistories, setStageHistories] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"timeline" | "ai" | "history">("timeline");
+  const [activeTab, setActiveTab] = useState<"timeline" | "ai" | "history" | "templates" | "payments">("timeline");
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   
   const handleCopyEmail = (email: string) => {
@@ -54,9 +55,17 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
   const [aiSummaryData, setAiSummaryData] = useState<any>(null);
   const [aiNextAction, setAiNextAction] = useState<any>(null);
 
+  // Templates and Payments states
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [renderedTemplate, setRenderedTemplate] = useState<{ id: string, text: string } | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+
   useEffect(() => {
     loadTimelineAndHistory();
-  }, [lead.id]);
+    if (activeTab === "templates") loadTemplates();
+    if (activeTab === "payments") loadPayments();
+  }, [lead.id, activeTab]);
 
   const loadTimelineAndHistory = async () => {
     try {
@@ -68,6 +77,63 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
       setStageHistories(sh);
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const loadTemplates = async () => {
+    try {
+      const data = await api.getTemplates();
+      setTemplates(data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const loadPayments = async () => {
+    try {
+      const data = await api.getLeadPayments(currentLead.id);
+      setPayments(data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRenderTemplate = async (templateId: string) => {
+    try {
+      const res = await api.renderTemplate(templateId, currentLead.id);
+      setRenderedTemplate({ id: templateId, text: res.rendered });
+    } catch (e) {
+      alert("Failed to render template");
+    }
+  };
+
+  const handleGeneratePayment = async () => {
+    if (!paymentAmount || paymentAmount <= 0) return alert("Enter valid amount");
+    try {
+      await api.generatePaymentLink({ lead_id: currentLead.id, amount: paymentAmount });
+      setPaymentAmount(0);
+      loadPayments();
+    } catch (e) {
+      alert("Failed to generate payment");
+    }
+  };
+
+  const handleSimulatePayment = async (paymentId: string) => {
+    try {
+      await api.simulatePayment(paymentId);
+      loadPayments();
+      
+      const wonStage = stages.find(s => s.is_won);
+      setCurrentLead(prev => ({ 
+        ...prev, 
+        status: "WON", 
+        pipeline_stage_id: wonStage ? wonStage.id : prev.pipeline_stage_id 
+      }));
+
+      // Wait for status to be propagated if possible, or just refresh timeline
+      onRefresh();
+    } catch (e) {
+      alert("Simulation failed");
     }
   };
 
@@ -164,12 +230,19 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                 Sourced via {currentLead.source}
               </span>
             </div>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-              {currentLead.title}
-            </h2>
-            <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-              {currentLead.company_name || "Account not specified"}
-            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                {currentLead.title}
+              </h2>
+              <span style={{ fontSize: "0.625rem", fontWeight: 700, padding: "2px 6px", borderRadius: "4px", backgroundColor: currentLead.company_name ? "var(--primary-light)" : "var(--amber-light)", color: currentLead.company_name ? "var(--primary-dark)" : "var(--amber-dark)" }}>
+                {currentLead.company_name ? "B2B" : "B2C"}
+              </span>
+            </div>
+            {currentLead.company_name && (
+              <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+                {currentLead.company_name}
+              </p>
+            )}
           </div>
 
           <button
@@ -222,9 +295,16 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
           {/* Quick Communication Triggers */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (currentLead.contact_phone && !currentLead.is_phone_masked) {
-                  window.open(getCallUrl(currentLead.contact_phone));
+                  try {
+                    const res = await api.dialLead(currentLead.id);
+                    if (res.tel_url) {
+                      window.location.href = res.tel_url;
+                    }
+                  } catch (e) {
+                    console.warn("Call dialer error", e);
+                  }
                 }
               }}
               className="btn-secondary"
@@ -336,12 +416,22 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                 </div>
               </div>
 
-              <div>
-                <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "block" }}>Deal Value</span>
-                <p style={{ fontWeight: 800, fontFamily: "monospace", color: "var(--emerald-dark)", marginTop: "2px" }}>
-                  ₹{Number(currentLead.value || 0).toLocaleString("en-IN")}
-                </p>
-              </div>
+              {currentLead.company_name && (
+                <div>
+                  <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "block" }}>Deal Value</span>
+                  <p style={{ fontWeight: 800, fontFamily: "monospace", color: "var(--emerald-dark)", marginTop: "2px" }}>
+                    ₹{Number(currentLead.value || 0).toLocaleString("en-IN")}
+                  </p>
+                </div>
+              )}
+              {!currentLead.company_name && (
+                <div>
+                  <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "block" }}>Individual Value</span>
+                  <p style={{ fontWeight: 800, fontFamily: "monospace", color: "var(--emerald-dark)", marginTop: "2px" }}>
+                    ₹{Number(currentLead.value || 0).toLocaleString("en-IN")}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -364,7 +454,47 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
               }}
             >
               <Clock style={{ width: "14px", height: "14px" }} />
-              Activity Timeline ({timeline.length})
+              Timeline
+            </button>
+
+            <button
+              onClick={() => setActiveTab("templates")}
+              style={{
+                background: "transparent",
+                border: "none",
+                borderBottom: activeTab === "templates" ? "2px solid var(--primary)" : "2px solid transparent",
+                color: activeTab === "templates" ? "var(--primary)" : "var(--text-secondary)",
+                fontWeight: 700,
+                fontSize: "0.8125rem",
+                padding: "6px 12px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              <MessageCircle style={{ width: "14px", height: "14px" }} />
+              Templates
+            </button>
+
+            <button
+              onClick={() => setActiveTab("payments")}
+              style={{
+                background: "transparent",
+                border: "none",
+                borderBottom: activeTab === "payments" ? "2px solid var(--primary)" : "2px solid transparent",
+                color: activeTab === "payments" ? "var(--primary)" : "var(--text-secondary)",
+                fontWeight: 700,
+                fontSize: "0.8125rem",
+                padding: "6px 12px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              <ActivitySquare style={{ width: "14px", height: "14px" }} />
+              Payments
             </button>
 
             <button
@@ -404,7 +534,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
               }}
             >
               <History style={{ width: "14px", height: "14px" }} />
-              Stage Audit ({stageHistories.length})
+              Stage Audit
             </button>
           </div>
 
@@ -627,6 +757,97 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Tab 4: Templates */}
+          {activeTab === "templates" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {templates.length === 0 ? (
+                <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>No templates available.</p>
+              ) : (
+                templates.map(t => (
+                  <div key={t.id} className="card" style={{ padding: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)" }}>{t.name}</span>
+                      <span className="badge badge-medium">{t.medium}</span>
+                    </div>
+                    {renderedTemplate?.id === t.id ? (
+                      <div style={{ background: "var(--bg-surface-subtle)", padding: "12px", borderRadius: "6px", fontSize: "0.8125rem", whiteSpace: "pre-wrap" }}>
+                        {renderedTemplate?.text || ""}
+                      </div>
+                    ) : (
+                      <button onClick={() => handleRenderTemplate(t.id)} className="btn-secondary" style={{ width: "fit-content", fontSize: "0.75rem", padding: "4px 8px" }}>
+                        Preview Rendered Message
+                      </button>
+                    )}
+                    {renderedTemplate?.id === t.id && (
+                      <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                        {t.medium === "EMAIL" && (
+                          <a href={`mailto:${currentLead.contact_email}?subject=${encodeURIComponent(t.subject || '')}&body=${encodeURIComponent(renderedTemplate?.text || '')}`} className="btn-primary" style={{ fontSize: "0.75rem", padding: "4px 12px" }}>
+                            Open in Mail
+                          </a>
+                        )}
+                        {t.medium === "WHATSAPP" && (
+                          <a href={`https://wa.me/${currentLead.contact_phone}?text=${encodeURIComponent(renderedTemplate?.text || '')}`} target="_blank" rel="noreferrer" className="btn-primary" style={{ fontSize: "0.75rem", padding: "4px 12px", background: "#25D366" }}>
+                            Open in WhatsApp
+                          </a>
+                        )}
+                        <button onClick={() => navigator.clipboard.writeText(renderedTemplate?.text || "")} className="btn-secondary" style={{ fontSize: "0.75rem", padding: "4px 12px" }}>
+                          Copy Text
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Tab 5: Payments & Conversions */}
+          {activeTab === "payments" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div className="card" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)" }}>Generate Payment Link</span>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input
+                    type="number"
+                    className="form-input"
+                    placeholder="Amount (INR)"
+                    value={paymentAmount || ""}
+                    onChange={e => setPaymentAmount(parseFloat(e.target.value))}
+                    style={{ flex: 1 }}
+                  />
+                  <button onClick={handleGeneratePayment} className="btn-primary">Generate</button>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Payment Links</span>
+                {payments.length === 0 ? (
+                  <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>No payments generated.</p>
+                ) : (
+                  payments.map(p => (
+                    <div key={p.id} className="card" style={{ padding: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: "0.875rem" }}>₹{Number(p.amount).toLocaleString("en-IN")}</div>
+                        <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", fontFamily: "monospace" }}>{p.reference_id}</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <span className={`badge ${p.status === "PAID" ? "badge-hot" : "badge-medium"}`}>{p.status}</span>
+                        {p.status === "PENDING" && (
+                          <button onClick={() => handleSimulatePayment(p.id)} className="btn-secondary" style={{ fontSize: "0.75rem", padding: "4px 8px" }}>
+                            Simulate Payment
+                          </button>
+                        )}
+                        {p.status === "PAID" && (
+                          <CheckCircle style={{ width: 16, height: 16, color: "var(--emerald)" }} />
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           )}
         </div>

@@ -52,7 +52,14 @@ def create_tenant_schema_tables(db: Session, schema_name: str, org_id: str) -> N
     TENANT_TABLES = [
         "companies", "contacts", "pipelines", "pipeline_stages", "leads",
         "lead_stage_history", "lead_assignments", "activities", "tasks",
-        "import_jobs", "import_row_errors", "audit_logs", "masking_policies"
+        "import_jobs", "import_row_errors", "audit_logs", "masking_policies",
+        "contact_phones", "radar_events", "templates", "payments",
+        "call_records", "telecaller_targets", "followup_policies",
+        "absence_delegations", "eod_reports", "telecaller_sessions",
+        "ai_insights", "ai_runs", "masking_exceptions",
+        "attendance_sessions", "break_sessions", "daily_call_plans",
+        "daily_tasks", "dedupe_candidates", "communication_logs",
+        "availability_status", "leave_requests"
     ]
     for tbl in TENANT_TABLES:
         try:
