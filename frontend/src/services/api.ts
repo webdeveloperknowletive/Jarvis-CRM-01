@@ -291,6 +291,11 @@ export const api = {
     });
 
     if (!res.ok) {
+      if (res.status === 402) {
+        window.location.href = '/expired';
+        throw new Error("Subscription Expired");
+      }
+
       let errorMsg = "Request failed";
       try {
         const errJson = await res.json();
@@ -623,6 +628,11 @@ export const api = {
 
   // AI Copilot
   scoreLeadAI: (id: string) => api.request<any>(`/ai/leads/${id}/score`, { method: "POST" }),
+  grantTrial: (id: string, days: number = 3) =>
+    api.request<any>(`/admin/organizations/${id}/trial`, {
+      method: "POST",
+      body: JSON.stringify({ days }),
+    }),
   summarizeLeadAI: (id: string) => api.request<any>(`/ai/leads/${id}/summary`),
   recommendNextActionAI: (id: string) => api.request<any>(`/ai/leads/${id}/recommendation`),
 
@@ -739,6 +749,81 @@ export const api = {
   endShift: () => api.request<any>("/shift/end", { method: "POST" }),
   startBreak: () => api.request<any>("/shift/break-start", { method: "POST" }),
   endBreak: () => api.request<any>("/shift/break-end", { method: "POST" }),
+
+  // --- Phase 1: Security, Access, Audit & Recovery ---
+  getPlatformRoles: () => api.request<PlatformRole[]>("/admin/access/roles"),
+  getPlatformPermissions: () => api.request<PlatformPermission[]>("/admin/access/permissions"),
+  assignPlatformRole: (userId: string, roleCode: string, reason?: string) =>
+    api.request<any>("/admin/access/assign-role", {
+      method: "POST",
+      body: JSON.stringify({ user_id: userId, role_code: roleCode, reason }),
+    }),
+  setPermissionOverride: (userId: string, permissionCode: string, granted: boolean, reason?: string) =>
+    api.request<any>("/admin/access/permission-override", {
+      method: "POST",
+      body: JSON.stringify({ user_id: userId, permission_code: permissionCode, granted, reason }),
+    }),
+  revokeUserSessions: (userId: string, reason?: string) =>
+    api.request<any>("/admin/access/revoke-sessions", {
+      method: "POST",
+      body: JSON.stringify({ user_id: userId, reason }),
+    }),
+  createSupportSession: (data: { organization_id: string; target_user_id?: string; reason: string; duration_minutes?: number }) =>
+    api.request<SupportSessionResponse>("/admin/support/session", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  revokeSupportSession: (sessionId: string, reason?: string) =>
+    api.request<any>(`/admin/support/session/${sessionId}/revoke`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
+  getAdminAuditLogsPaged: (params: {
+    skip?: number;
+    limit?: number;
+    organization_id?: string;
+    actor_user_id?: string;
+    action?: string;
+    context_type?: string;
+  } = {}) => {
+    const query = new URLSearchParams();
+    if (params.skip !== undefined) query.append("skip", params.skip.toString());
+    if (params.limit !== undefined) query.append("limit", params.limit.toString());
+    if (params.organization_id) query.append("organization_id", params.organization_id);
+    if (params.actor_user_id) query.append("actor_user_id", params.actor_user_id);
+    if (params.action) query.append("action", params.action);
+    if (params.context_type && params.context_type !== "ALL") query.append("context_type", params.context_type);
+    const qs = query.toString();
+    return api.request<AuditLogPagedResponse>(`/admin/audit-logs${qs ? "?" + qs : ""}`);
+  },
+  verifyAuditChain: () => api.request<AuditChainVerification>("/admin/audit-logs/verify-chain"),
+  getRecycleBinItems: (entity: string) => api.request<RecycleBinItem[]>(`/admin/recovery/${entity}`),
+  restoreRecycleBinItem: (entity: string, id: string, reason?: string) =>
+    api.request<any>(`/admin/recovery/${entity}/${id}/restore`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
+  purgeRecycleBinItem: (entity: string, id: string, reason?: string) =>
+    api.request<any>(`/admin/recovery/${entity}/${id}/purge`, {
+      method: "DELETE",
+      body: JSON.stringify({ reason }),
+    }),
+  suspendOrganization: (id: string, reason: string, idempotencyKey?: string) => {
+    const headers: Record<string, string> = {};
+    if (idempotencyKey) {
+      headers["Idempotency-Key"] = idempotencyKey;
+    }
+    return api.request<any>(`/admin/organizations/${id}/suspend`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ reason }),
+    });
+  },
+  softDeleteAdminUser: (id: string, reason?: string) =>
+    api.request<any>(`/admin/users/${id}`, {
+      method: "DELETE",
+      body: JSON.stringify({ reason }),
+    }),
 };
 
 export interface TelecallerTargetToday {
@@ -808,3 +893,82 @@ export interface ProductivityReport {
   activity_breakdown: Record<string, number>;
   chart_buckets: Array<{ label: string; minutes: number; color: string }>;
 }
+
+export interface PlatformPermission {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  module: string;
+  risk_level: string;
+}
+
+export interface PlatformRole {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  hierarchy_level: number;
+  permissions: PlatformPermission[];
+}
+
+export interface SupportSessionResponse {
+  support_session_id: string;
+  support_token: string;
+  expires_at: string;
+  organization_id: string;
+  target_user_id?: string | null;
+}
+
+export interface AuditLogItem {
+  id: string;
+  organization_id?: string | null;
+  user_id?: string | null;
+  actor_user_id?: string | null;
+  target_user_id?: string | null;
+  support_session_id?: string | null;
+  context_type: string;
+  action: string;
+  entity_type: string;
+  entity_id?: string | null;
+  reason?: string | null;
+  sequence_number?: number | null;
+  event_hash?: string | null;
+  previous_event_hash?: string | null;
+  created_at: string;
+  old_values?: any;
+  new_values?: any;
+  ip_address?: string | null;
+}
+
+export interface AuditLogPagedResponse {
+  total: number;
+  items: AuditLogItem[];
+  skip: number;
+  limit: number;
+}
+
+export interface AuditChainVerification {
+  status: string;
+  is_valid: boolean;
+  verified_count?: number;
+  total_events_checked?: number;
+  latest_event_hash?: string | null;
+  message: string;
+  tampered_at_id?: string | null;
+  broken_event_id?: string | null;
+  index?: number | null;
+}
+
+export interface RecycleBinItem {
+  id: string;
+  title?: string;
+  name?: string;
+  full_name?: string;
+  email?: string;
+  deleted_at?: string;
+  deleted_by?: string;
+  deletion_reason?: string;
+  [key: string]: any;
+}
+

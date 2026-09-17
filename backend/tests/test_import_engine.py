@@ -5,7 +5,7 @@ from app.models.lead import Lead
 from app.models.company import Company
 from app.models.contact import Contact
 from app.services.import_service import preview_import_file, execute_import_job
-from app.models.import_job import ImportJob
+from app.models.import_job import ImportJob, ImportRowError
 
 
 def test_import_engine_pipeline_immutability(db_session, tenant_a_fixture):
@@ -50,8 +50,9 @@ def test_import_engine_pipeline_immutability(db_session, tenant_a_fixture):
     db_session.add(job)
     db_session.commit()
 
+    job_id = job.id
     # Execute import synchronously for testing
-    completed_job = execute_import_job(db_session, job.id)
+    completed_job = execute_import_job(db_session, job_id)
     assert completed_job.status == "COMPLETED"
     assert completed_job.successful_rows == 1000
     assert completed_job.total_rows == 1000

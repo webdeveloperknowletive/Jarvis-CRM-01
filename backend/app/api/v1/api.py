@@ -23,6 +23,9 @@ from app.api.v1 import (
     telecaller,
     dedupe,
     communications,
+    admin_access,
+    admin_audit,
+    admin_recovery,
 )
 
 api_router = APIRouter()
@@ -50,4 +53,8 @@ api_router.include_router(shifts.router)
 api_router.include_router(telecaller.router)
 api_router.include_router(dedupe.router)
 api_router.include_router(communications.router)
+api_router.include_router(admin_access.router)
+api_router.include_router(admin_audit.router)
+api_router.include_router(admin_recovery.router)
+
 

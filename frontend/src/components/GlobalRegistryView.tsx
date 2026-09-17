@@ -29,7 +29,7 @@ export const GlobalRegistryView: React.FC<GlobalRegistryViewProps> = ({ currentU
   const storedUser = localStorage.getItem("jarvis_user");
   const currentUser = propUser || (storedUser ? JSON.parse(storedUser) : null);
   const isSuperAdmin = currentUser?.is_super_admin ?? false;
-  const canManage = isSuperAdmin || currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY";
+  const canManage = isSuperAdmin || currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY" || currentUser?.tenant_role === "DATA_ENTRY";
   const [companies, setCompanies] = useState<GlobalCompany[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [cityFilter, setCityFilter] = useState("");

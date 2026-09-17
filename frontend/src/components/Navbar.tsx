@@ -42,43 +42,46 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
     <header className="nav-header">
       <div className="nav-container">
         {/* Brand & Workspace */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{
-            width: "38px",
-            height: "38px",
-            borderRadius: "10px",
-            background: "linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 4px 10px rgba(79, 70, 229, 0.25)",
-            color: "#ffffff",
-            fontWeight: 800,
-            fontSize: "1.125rem",
-            flexShrink: 0
-          }}>
-            J
-          </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontWeight: 800, fontSize: "1.05rem", color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+          <img
+            src="/jarvis-icon.png"
+            alt="JARVIS CRM"
+            style={{
+              width: "32px",
+              height: "32px",
+              objectFit: "contain",
+              flexShrink: 0,
+              filter: "drop-shadow(0 2px 6px rgba(6, 182, 212, 0.4))"
+            }}
+          />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <span style={{ fontWeight: 800, fontSize: "0.95rem", color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
                 JARVIS
               </span>
               <span style={{
-                fontSize: "0.625rem",
+                fontSize: "0.5625rem",
                 fontWeight: 700,
-                padding: "2px 6px",
-                borderRadius: "4px",
+                padding: "1px 5px",
+                borderRadius: "3px",
                 background: "var(--primary-light)",
                 color: "var(--primary)",
                 border: "1px solid var(--primary-border)",
-                letterSpacing: "0.04em"
+                letterSpacing: "0.03em"
               }}>
                 RADAR CRM
               </span>
             </div>
-            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>
-              {user.organization ? user.organization.name : isDataEntry ? "Data Operations (Super Admin Control)" : "Platform Management"}
+            <p style={{
+              fontSize: "0.6875rem",
+              color: "var(--text-secondary)",
+              fontWeight: 500,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              maxWidth: "135px"
+            }} title={user.organization ? user.organization.name : undefined}>
+              {user.organization ? user.organization.name : isDataEntry ? "Data Operations" : "Platform Management"}
             </p>
           </div>
         </div>
@@ -91,7 +94,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               onClick={() => handleTabClick("telecaller")}
               className={`nav-tab-btn ${activeTab === "telecaller" ? "active" : ""}`}
             >
-              <PhoneCall style={{ width: "15px", height: "15px" }} />
+              <PhoneCall style={{ width: "14px", height: "14px" }} />
               Calling Desk
             </button>
           )}
@@ -104,7 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 className={`nav-tab-btn ${activeTab === "global_intelligence" ? "active" : ""}`}
                 id="nav-tab-dataentry-global-intel"
               >
-                <BrainCircuit style={{ width: "15px", height: "15px", color: "var(--primary)" }} />
+                <BrainCircuit style={{ width: "14px", height: "14px", color: "var(--primary)" }} />
                 Global Intelligence
               </button>
 
@@ -113,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 className={`nav-tab-btn ${activeTab === "global" ? "active" : ""}`}
                 id="nav-tab-dataentry-companies"
               >
-                <Globe2 style={{ width: "15px", height: "15px", color: "var(--cyan)" }} />
+                <Globe2 style={{ width: "14px", height: "14px", color: "var(--cyan)" }} />
                 Company Intelligence
               </button>
 
@@ -122,7 +125,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 className={`nav-tab-btn ${activeTab === "people" ? "active" : ""}`}
                 id="nav-tab-dataentry-people"
               >
-                <UserCheck style={{ width: "15px", height: "15px", color: "var(--emerald)" }} />
+                <UserCheck style={{ width: "14px", height: "14px", color: "var(--emerald)" }} />
                 People Intelligence
               </button>
 
@@ -131,7 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 className={`nav-tab-btn ${activeTab === "import" ? "active" : ""}`}
                 id="nav-tab-dataentry-import"
               >
-                <UploadCloud style={{ width: "15px", height: "15px", color: "#6366f1" }} />
+                <UploadCloud style={{ width: "14px", height: "14px", color: "#6366f1" }} />
                 Data Ingestion
               </button>
             </>
@@ -144,7 +147,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 onClick={() => handleTabClick("radar")}
                 className={`nav-tab-btn ${activeTab === "radar" ? "active" : ""}`}
               >
-                <Sparkles style={{ width: "15px", height: "15px", color: "var(--amber)" }} />
+                <Sparkles style={{ width: "14px", height: "14px", color: "var(--amber)" }} />
                 Radar Insights
               </button>
 
@@ -152,7 +155,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 onClick={() => handleTabClick("pipeline")}
                 className={`nav-tab-btn ${activeTab === "pipeline" ? "active" : ""}`}
               >
-                <Kanban style={{ width: "15px", height: "15px" }} />
+                <Kanban style={{ width: "14px", height: "14px" }} />
                 Pipeline
               </button>
 
@@ -160,7 +163,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 onClick={() => handleTabClick("leads")}
                 className={`nav-tab-btn ${activeTab === "leads" ? "active" : ""}`}
               >
-                <Users style={{ width: "15px", height: "15px" }} />
+                <Users style={{ width: "14px", height: "14px" }} />
                 Leads & Contacts
               </button>
 
@@ -168,7 +171,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 onClick={() => handleTabClick("import")}
                 className={`nav-tab-btn ${activeTab === "import" ? "active" : ""}`}
               >
-                <UploadCloud style={{ width: "15px", height: "15px" }} />
+                <UploadCloud style={{ width: "14px", height: "14px" }} />
                 Import Leads
               </button>
 
@@ -176,7 +179,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 onClick={() => handleTabClick("global")}
                 className={`nav-tab-btn ${activeTab === "global" ? "active" : ""}`}
               >
-                <Globe2 style={{ width: "15px", height: "15px", color: "var(--cyan)" }} />
+                <Globe2 style={{ width: "14px", height: "14px", color: "var(--cyan)" }} />
                 Global Registry
               </button>
 
@@ -185,7 +188,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 className={`nav-tab-btn ${activeTab === "team" ? "active" : ""}`}
                 id="nav-tab-team"
               >
-                <UserCheck style={{ width: "15px", height: "15px", color: "var(--emerald)" }} />
+                <UserCheck style={{ width: "14px", height: "14px", color: "var(--emerald)" }} />
                 Team & Telecallers
               </button>
 
@@ -194,7 +197,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 className={`nav-tab-btn ${activeTab === "templates" ? "active" : ""}`}
                 id="nav-tab-templates"
               >
-                <ActivitySquare style={{ width: "15px", height: "15px", color: "var(--primary)" }} />
+                <ActivitySquare style={{ width: "14px", height: "14px", color: "var(--primary)" }} />
                 Templates
               </button>
             </>
@@ -265,20 +268,9 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
         </nav>
 
         {/* User Profile & Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {!isSuperAdmin && !isDataEntry && !isTelecaller && onNewLeadClick && (
-            <button
-              onClick={onNewLeadClick}
-              className="btn-primary"
-              style={{ fontSize: "0.75rem", padding: "6px 12px", display: "inline-flex", alignItems: "center", gap: "5px" }}
-            >
-              <Plus style={{ width: "13px", height: "13px" }} />
-              Add Lead
-            </button>
-          )}
-
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
           <div style={{ textAlign: "right" }} className="user-profile-meta">
-            <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-primary)" }}>
+            <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "125px" }} title={user.full_name}>
               {user.full_name}
             </p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
@@ -294,7 +286,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 </span>
               ) : isDataEntry ? (
                 <span className="badge" style={{ fontSize: "0.625rem", background: "rgba(245, 158, 11, 0.15)", color: "#b45309", border: "1px solid rgba(245, 158, 11, 0.3)", fontWeight: 700 }}>
-                  DATA ENTRY (SUPERVISED)
+                  DATA ENTRY
                 </span>
               ) : (
                 <span className="badge badge-medium" style={{ fontSize: "0.625rem" }}>
@@ -308,8 +300,8 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
             onClick={onLogout}
             title="Sign out"
             style={{
-              padding: "8px",
-              borderRadius: "8px",
+              padding: "7px",
+              borderRadius: "7px",
               border: "1px solid var(--border-subtle)",
               background: "var(--bg-surface)",
               color: "var(--text-secondary)",
@@ -330,7 +322,7 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               e.currentTarget.style.background = "var(--bg-surface)";
             }}
           >
-            <LogOut style={{ width: "16px", height: "16px" }} />
+            <LogOut style={{ width: "15px", height: "15px" }} />
           </button>
 
           {/* Mobile Hamburger Toggle */}
@@ -469,6 +461,16 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               >
                 <UserCheck style={{ width: "16px", height: "16px", color: "var(--emerald)" }} />
                 Team & Telecallers
+              </button>
+
+              <button
+                onClick={() => handleTabClick("templates")}
+                className={`nav-tab-btn ${activeTab === "templates" ? "active" : ""}`}
+                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
+                id="mobile-nav-tab-templates"
+              >
+                <ActivitySquare style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
+                Templates
               </button>
             </>
           )}

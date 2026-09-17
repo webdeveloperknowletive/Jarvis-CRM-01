@@ -27,6 +27,9 @@ def test_audit():
             org = Organization(id="org_test_audit", name="Test Org Audit", slug="test-org-audit")
             db.add(org)
             db.commit()
+            
+        org.feature_overrides = {"WHATSAPP_MESSAGING": True}
+        db.commit()
 
         # Telecaller User
         telecaller = db.query(User).filter(User.organization_id == org.id, User.tenant_role == "TELECALLER").first()

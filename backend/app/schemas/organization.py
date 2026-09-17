@@ -82,3 +82,9 @@ class SubscriptionOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class SubscriptionChangePlan(BaseModel):
+    plan_code: str
+
+class SubscriptionChangeStatus(BaseModel):
+    status: str

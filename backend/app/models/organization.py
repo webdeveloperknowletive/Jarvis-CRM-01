@@ -1,11 +1,12 @@
 from sqlalchemy import Column, String, Boolean, Integer, Numeric, Date, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
-from app.models.base import TimestampMixin, generate_uuid, utc_now
+from app.models.base import TimestampMixin, SoftDeleteMixin, generate_uuid, utc_now
 
 
-class Organization(Base, TimestampMixin):
+class Organization(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "organizations"
+
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     name = Column(String(255), nullable=False)
@@ -15,6 +16,7 @@ class Organization(Base, TimestampMixin):
     currency = Column(String(10), nullable=False, default="INR")
     schema_name = Column(String(100), nullable=True, index=True)
     settings = Column(JSON, nullable=False, default=dict)
+    feature_overrides = Column(JSON, nullable=True)
 
     # Relationships
     users = relationship("User", back_populates="organization", cascade="all, delete-orphan")

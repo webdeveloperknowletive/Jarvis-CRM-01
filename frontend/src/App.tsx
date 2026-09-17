@@ -16,7 +16,8 @@ import { GlobalIntelligenceView } from "./components/GlobalIntelligenceView";
 import { TeamManagementView } from "./components/TeamManagementView";
 import { NewLeadModal } from "./components/NewLeadModal";
 import { TemplatesView } from "./components/TemplatesView";
-import { UploadCloud, FileSpreadsheet, Plus, Check, ActivitySquare, Building2, Users, BrainCircuit, Globe2, UserCheck, LogOut } from "lucide-react";
+import { ExpiredScreen } from "./components/ExpiredScreen";
+import { UploadCloud, FileSpreadsheet, Plus, Check, ActivitySquare, Building2, Users, BrainCircuit, Globe2, UserCheck, LogOut, ShieldAlert, Trash2 } from "lucide-react";
 
 export const TAB_TO_ROUTE: Record<string, string> = {
   radar: "/radar_insights",
@@ -24,13 +25,15 @@ export const TAB_TO_ROUTE: Record<string, string> = {
   leads: "/leads",
   import: "/imports",
   global_intelligence: "/global_intelligence",
-  global: "/global_intelligence",
+  global: "/global_registry",
   team: "/team",
   templates: "/templates",
   telecaller: "/telecaller_desk",
   people: "/people",
   organizations: "/organizations",
   audit: "/audit",
+  security: "/super_admin_security",
+  recovery: "/super_admin_recovery",
   dashboard: "/super_admin_dashboard",
   users: "/super_admin_users",
 };
@@ -43,8 +46,8 @@ export const ROUTE_TO_TAB: Record<string, string> = {
   "/imports": "import",
   "/import": "import",
   "/global_intelligence": "global_intelligence",
-  "/global": "global_intelligence",
-  "/global_registry": "global_intelligence",
+  "/global": "global",
+  "/global_registry": "global",
   "/team": "team",
   "/templates": "templates",
   "/telecaller_desk": "telecaller",
@@ -55,6 +58,10 @@ export const ROUTE_TO_TAB: Record<string, string> = {
   "/super_admin_users": "users",
   "/organizations": "organizations",
   "/audit": "audit",
+  "/security": "security",
+  "/super_admin_security": "security",
+  "/recovery": "recovery",
+  "/super_admin_recovery": "recovery",
 };
 
 export const App: React.FC = () => {
@@ -74,7 +81,9 @@ export const App: React.FC = () => {
 
   const getDefaultTabAndRoute = (user: User) => {
     if (user.is_super_admin) return { tab: "dashboard", route: "/super_admin_dashboard" };
-    if (user.is_data_entry || user.platform_role === "DATA_ENTRY") return { tab: "global_intelligence", route: "/global_intelligence" };
+    if (user.is_data_entry || user.platform_role === "DATA_ENTRY" || user.tenant_role === "DATA_ENTRY") {
+      return { tab: "global_intelligence", route: "/global_intelligence" };
+    }
     if (user.tenant_role === "TELECALLER") return { tab: "telecaller", route: "/telecaller_desk" };
     return { tab: "radar", route: "/radar_insights" };
   };
@@ -99,10 +108,13 @@ export const App: React.FC = () => {
     
     // --- SECURITY ROUTE GUARD ---
     if (matchedTab) {
-      const superAdminTabs = ['dashboard', 'organizations', 'users', 'audit'];
+      const superAdminTabs = ['dashboard', 'organizations', 'users', 'security', 'audit', 'recovery'];
+      const dataEntryTabs = ['global_intelligence', 'global', 'people', 'import'];
+      const isDataEntry = Boolean(currentUser.is_data_entry || currentUser.platform_role === 'DATA_ENTRY' || currentUser.tenant_role === 'DATA_ENTRY');
+
       if (!currentUser.is_super_admin && superAdminTabs.includes(matchedTab)) {
         matchedTab = null;
-      } else if ((currentUser.is_data_entry || currentUser.platform_role === 'DATA_ENTRY') && matchedTab !== 'global_intelligence') {
+      } else if (isDataEntry && !dataEntryTabs.includes(matchedTab)) {
         matchedTab = null;
       } else if (currentUser.tenant_role === 'TELECALLER' && matchedTab !== 'telecaller') {
         matchedTab = null;
@@ -140,10 +152,13 @@ export const App: React.FC = () => {
       
       // --- SECURITY ROUTE GUARD ---
       if (matchedTab) {
-        const superAdminTabs = ['dashboard', 'organizations', 'users', 'audit'];
+        const superAdminTabs = ['dashboard', 'organizations', 'users', 'security', 'audit', 'recovery'];
+        const dataEntryTabs = ['global_intelligence', 'global', 'people', 'import'];
+        const isDataEntry = Boolean(user.is_data_entry || user.platform_role === 'DATA_ENTRY' || user.tenant_role === 'DATA_ENTRY');
+
         if (!user.is_super_admin && superAdminTabs.includes(matchedTab)) {
           matchedTab = null;
-        } else if ((user.is_data_entry || user.platform_role === 'DATA_ENTRY') && matchedTab !== 'global_intelligence') {
+        } else if (isDataEntry && !dataEntryTabs.includes(matchedTab)) {
           matchedTab = null;
         } else if (user.tenant_role === 'TELECALLER' && matchedTab !== 'telecaller') {
           matchedTab = null;
@@ -252,6 +267,10 @@ export const App: React.FC = () => {
     );
   }
 
+  if (location.pathname === "/expired") {
+    return <ExpiredScreen />;
+  }
+
   if (!currentUser) {
     return (
       <LoginScreen
@@ -270,13 +289,17 @@ export const App: React.FC = () => {
     <div className="app-wrapper" style={currentUser.is_super_admin ? { display: "flex", flexDirection: "row", height: "100vh", overflow: "hidden", background: "var(--bg-canvas)" } : undefined}>
       {currentUser.is_super_admin && (
         <aside style={{ width: '260px', background: '#0f172a', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', flexShrink: 0, height: '100%' }}>
-           <div style={{ padding: '24px 24px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid #1e293b' }}>
-             <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '1.25rem', boxShadow: '0 4px 10px rgba(79, 70, 229, 0.25)' }}>J</div>
-             <div>
-                <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#f8fafc', letterSpacing: '-0.02em', display: 'block' }}>JARVIS</span>
-                <span style={{ fontSize: '0.625rem', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', background: 'rgba(79,70,229,0.2)', color: '#818cf8', border: '1px solid rgba(79,70,229,0.3)', display: 'inline-block', marginTop: '2px' }}>SUPER ADMIN</span>
-             </div>
-           </div>
+            <div style={{ padding: '20px 20px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid #1e293b' }}>
+              <img
+                src="/jarvis-icon.png"
+                alt="JARVIS"
+                style={{ width: '38px', height: '38px', objectFit: 'contain', filter: 'drop-shadow(0 2px 8px rgba(6, 182, 212, 0.4))' }}
+              />
+              <div>
+                 <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#f8fafc', letterSpacing: '-0.02em', display: 'block' }}>JARVIS</span>
+                 <span style={{ fontSize: '0.625rem', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', background: 'rgba(79,70,229,0.2)', color: '#818cf8', border: '1px solid rgba(79,70,229,0.3)', display: 'inline-block', marginTop: '2px' }}>SUPER ADMIN</span>
+              </div>
+            </div>
            
            <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
               <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', paddingLeft: '12px' }}>Platform</span>
@@ -302,8 +325,14 @@ export const App: React.FC = () => {
               </button>
 
               <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '20px', marginBottom: '8px', paddingLeft: '12px' }}>System</span>
+              <button onClick={() => handleTabChange('security')} className={`nav-tab-btn ${activeTab === 'security' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'security' ? '#fff' : '#94a3b8', background: activeTab === 'security' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
+                 <ShieldAlert style={{ width: '16px', height: '16px', color: activeTab === 'security' ? '#f59e0b' : '#d97706' }} /> Access & Security
+              </button>
               <button onClick={() => handleTabChange('audit')} className={`nav-tab-btn ${activeTab === 'audit' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'audit' ? '#fff' : '#94a3b8', background: activeTab === 'audit' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
                  <ActivitySquare style={{ width: '16px', height: '16px' }} /> Audit Logs
+              </button>
+              <button onClick={() => handleTabChange('recovery')} className={`nav-tab-btn ${activeTab === 'recovery' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'recovery' ? '#fff' : '#94a3b8', background: activeTab === 'recovery' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
+                 <Trash2 style={{ width: '16px', height: '16px', color: activeTab === 'recovery' ? '#ef4444' : '#dc2626' }} /> Recycle Bin
               </button>
            </div>
            
@@ -425,7 +454,7 @@ export const App: React.FC = () => {
 
         {/* Global Registry in ORG Admin / Company Intelligence in Super Admin & Data Entry */}
         {activeTab === "global" && (
-          (currentUser.is_super_admin || currentUser.is_data_entry || currentUser.platform_role === "DATA_ENTRY") ? (
+          (currentUser.is_super_admin || currentUser.is_data_entry || currentUser.platform_role === "DATA_ENTRY" || currentUser.tenant_role === "DATA_ENTRY") ? (
             <GlobalRegistryView currentUser={currentUser} />
           ) : (
             <GlobalIntelligenceView isOrgAdmin={true} currentUser={currentUser} />
@@ -439,7 +468,9 @@ export const App: React.FC = () => {
         {activeTab === "dashboard" && <SuperAdminView viewMode="dashboard" />}
         {activeTab === "organizations" && <SuperAdminView viewMode="organizations" />}
         {activeTab === "users" && <SuperAdminView viewMode="users" />}
+        {activeTab === "security" && <SuperAdminView viewMode="security" />}
         {activeTab === "audit" && <SuperAdminView viewMode="audit" />}
+        {activeTab === "recovery" && <SuperAdminView viewMode="recovery" />}
         </main>
       </div>
 

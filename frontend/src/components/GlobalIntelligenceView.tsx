@@ -43,7 +43,7 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
   const storedUser = localStorage.getItem("jarvis_user");
   const currentUser = propUser || (storedUser ? JSON.parse(storedUser) : null);
   const isSuperAdmin = currentUser?.is_super_admin ?? !isOrgAdmin;
-  const canManage = isSuperAdmin || currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY";
+  const canManage = isSuperAdmin || currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY" || currentUser?.tenant_role === "DATA_ENTRY";
   const orgName = currentUser?.organization?.name || "Your Organization";
   const orgId = currentUser?.organization_id || currentUser?.organization?.id;
 

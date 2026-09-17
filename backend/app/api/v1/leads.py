@@ -42,7 +42,8 @@ def list_leads(
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
 ):
-    query = db.query(Lead).filter(Lead.organization_id == tenant_id)
+    query = db.query(Lead).filter(Lead.organization_id == tenant_id, Lead.deleted_at.is_(None))
+
 
     # Telecallers strictly see only leads explicitly assigned to them by Org Admin, plus active delegations
     if current_user.tenant_role == "TELECALLER":
@@ -127,7 +128,8 @@ def get_lead_detail(
 ):
     lead = db.query(Lead).filter(
         Lead.id == id,
-        Lead.organization_id == tenant_id
+        Lead.organization_id == tenant_id,
+        Lead.deleted_at.is_(None)
     ).first()
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
@@ -145,6 +147,46 @@ def get_lead_detail(
     db.commit()
 
     return serialize_lead(lead, current_user, db)
+
+
+@router.delete("/{id}")
+def delete_lead(
+    id: str,
+    reason: Optional[str] = "Deleted by user",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """Soft-deletes a lead and sends it to the platform Recycle Bin (Problem #10)."""
+    lead = db.query(Lead).filter(
+        Lead.id == id,
+        Lead.organization_id == tenant_id,
+        Lead.deleted_at.is_(None)
+    ).first()
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+
+    from datetime import datetime, timezone
+    lead.deleted_at = datetime.now(timezone.utc)
+    lead.deleted_by = current_user.id
+    lead.deletion_reason = reason
+    db.commit()
+
+    from app.services.audit_service import audit_service
+    audit_service.record(
+        db=db,
+        action="LEAD_DELETED",
+        entity_type="LEAD",
+        entity_id=lead.id,
+        actor_user_id=current_user.id,
+        organization_id=tenant_id,
+        old_values={"title": lead.title, "company_name": lead.company_name},
+        new_values={"deleted_at": lead.deleted_at.isoformat()},
+        reason=reason
+    )
+
+    return {"success": True, "message": "Lead moved to Recycle Bin"}
+
 
 
 @router.patch("/{id}", response_model=LeadOut)

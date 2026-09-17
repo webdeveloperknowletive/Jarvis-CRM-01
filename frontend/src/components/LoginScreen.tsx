@@ -54,25 +54,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
       }}>
         {/* Brand Header */}
         <div style={{ textAlign: "center", marginBottom: "28px" }}>
-          <div style={{
-            width: "56px",
-            height: "56px",
-            margin: "0 auto 14px auto",
-            borderRadius: "14px",
-            background: "linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 10px 20px rgba(79, 70, 229, 0.25)",
-            color: "#ffffff",
-            fontWeight: 800,
-            fontSize: "1.625rem"
-          }}>
-            J
-          </div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-            JARVIS CRM
-          </h1>
+          <img
+            src="/jarvis-logo.png"
+            alt="JARVIS CRM"
+            style={{
+              height: "56px",
+              maxWidth: "240px",
+              objectFit: "contain",
+              margin: "0 auto 12px auto",
+              display: "block",
+              filter: "drop-shadow(0 4px 12px rgba(6, 182, 212, 0.2))"
+            }}
+          />
           <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: "4px" }}>
             Lead Intelligence Radar & Controlled Outbound
           </p>

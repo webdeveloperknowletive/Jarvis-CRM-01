@@ -14,6 +14,7 @@ from app.models.activity import Activity
 from app.models.template import Template
 from app.models.communication import CommunicationLog
 from app.models.base import generate_uuid, utc_now
+from app.services.feature_service import is_feature_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,9 @@ def send_whatsapp_message(
     Level 2: WhatsApp Business API (WABA) server-side message dispatch.
     Sends template or direct message, logs to communication_logs and Activity timeline.
     """
+    if not is_feature_enabled(db, tenant_id, "WHATSAPP_MESSAGING"):
+        raise HTTPException(status_code=403, detail="WhatsApp messaging feature is not enabled for your plan. Please upgrade or contact admin.")
+        
     lead = db.query(Lead).filter(
         Lead.id == data.lead_id,
         Lead.organization_id == tenant_id
@@ -147,6 +151,9 @@ def send_templated_message_to_lead(
         raise HTTPException(status_code=400, detail=f"Failed to render template: {str(e)}")
 
     channel = data.channel.upper()
+    if channel == "WHATSAPP" and not is_feature_enabled(db, tenant_id, "WHATSAPP_MESSAGING"):
+        raise HTTPException(status_code=403, detail="WhatsApp messaging feature is not enabled for your plan.")
+        
     now = utc_now()
     msg_id = f"msg_{uuid.uuid4().hex[:12]}"
 

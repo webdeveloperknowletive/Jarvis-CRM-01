@@ -139,6 +139,37 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px", position: "relative" }}>
+      {/* Page Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+        <div>
+          <h2 style={{ fontSize: "1.375rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: "8px" }}>
+            <Users style={{ width: "22px", height: "22px", color: "var(--primary)" }} />
+            Leads & Contacts Directory
+          </h2>
+          <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+            Pipeline progression, contact records, and telecaller assignment
+          </p>
+        </div>
+
+        {onNewLeadClick && (
+          <button
+            onClick={onNewLeadClick}
+            className="btn-primary"
+            style={{
+              padding: "8px 18px",
+              fontSize: "0.8125rem",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              boxShadow: "0 2px 8px rgba(79, 70, 229, 0.25)"
+            }}
+          >
+            <Plus style={{ width: "15px", height: "15px" }} />
+            Add New Lead
+          </button>
+        )}
+      </div>
+
       {/* Metrics Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
         <div className="card" style={{ padding: "16px", display: "flex", alignItems: "center", gap: "12px", background: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>

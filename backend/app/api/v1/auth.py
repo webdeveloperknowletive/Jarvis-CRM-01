@@ -22,34 +22,45 @@ def login(request: LoginRequest, http_request: Request, db: Session = Depends(ge
             detail="Incorrect email or password"
         )
 
-    if user.status in ("SUSPENDED", "DEACTIVATED"):
+    if user.is_deleted or user.status in ("SUSPENDED", "DEACTIVATED"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Your account has been suspended. Please contact your administrator."
+            detail="Your account has been suspended or deactivated. Please contact support."
         )
 
-    # Issue access token
-    access_token = create_access_token(subject=user.id)
+    # Validate Organization status (Problem #15, #40)
+    if user.organization_id and not user.is_super_admin:
+        org = user.organization
+        if org and (org.status in ("SUSPENDED", "DEACTIVATED", "CANCELLED") or org.is_deleted):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Organization access is currently {org.status}. Please contact support."
+            )
+
+    # Issue access token with token_version for immediate revocation capability (Problem #15, #18)
+    access_token = create_access_token(subject=user.id, token_version=user.token_version or 1)
 
     # Update last login
     from datetime import datetime, timezone
     user.last_login_at = datetime.now(timezone.utc)
+    db.commit()
 
-    # Audit log (SECURITY GUARDRAIL: Login Tracking)
+    # Centralized Tamper-Evident Audit log (Problem #22, #24)
     client_ip = http_request.client.host if http_request.client else "Unknown"
     user_agent = http_request.headers.get("user-agent", "Unknown")
 
-    audit = AuditLog(
-        organization_id=user.organization_id,
-        user_id=user.id,
+    from app.services.audit_service import audit_service
+    audit_service.record(
+        db=db,
         action="USER_LOGIN",
         entity_type="USER",
         entity_id=user.id,
+        actor_user_id=user.id,
+        organization_id=user.organization_id,
         ip_address=client_ip,
         user_agent=user_agent
     )
-    db.add(audit)
-    db.commit()
+
 
     org_data = None
     if user.organization:
@@ -109,11 +120,30 @@ def get_current_user_profile(current_user: User = Depends(get_current_user)):
 @router.post("/change-password")
 def change_password(
     data: PasswordChangeRequest,
+    http_request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     if not verify_password(data.old_password, current_user.password_hash):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password incorrect")
     current_user.password_hash = get_password_hash(data.new_password)
+    # Increment token_version to immediately revoke all existing sessions (Problem #15, #18)
+    current_user.token_version = (current_user.token_version or 1) + 1
     db.commit()
-    return {"success": True, "message": "Password updated successfully"}
+
+    from app.services.audit_service import audit_service
+    client_ip = http_request.client.host if http_request.client else "Unknown"
+    user_agent = http_request.headers.get("user-agent", "Unknown")
+    audit_service.record(
+        db=db,
+        action="PASSWORD_CHANGED",
+        entity_type="USER",
+        entity_id=current_user.id,
+        actor_user_id=current_user.id,
+        organization_id=current_user.organization_id,
+        ip_address=client_ip,
+        user_agent=user_agent
+    )
+
+    return {"success": True, "message": "Password updated successfully. All existing sessions invalidated."}
+

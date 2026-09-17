@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_db, require_super_admin, get_current_user
 from app.models.organization import Organization, Subscription, Plan
 from app.models.user import User
-from app.schemas.organization import OrganizationCreate, OrganizationUpdate, OrganizationOut, SubscriptionOut, PlanOut
+from app.schemas.organization import OrganizationCreate, OrganizationUpdate, OrganizationOut, SubscriptionOut, PlanOut, SubscriptionChangePlan, SubscriptionChangeStatus
 from app.services.organization_service import create_organization
 
 router = APIRouter(prefix="/organizations", tags=["Organizations"])
@@ -104,4 +104,56 @@ def get_organization_subscription(
     sub = db.query(Subscription).filter(Subscription.organization_id == id).first()
     if not sub:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subscription not found")
+    return sub
+
+
+@router.post("/{id}/subscription/change-plan", response_model=SubscriptionOut)
+def change_organization_plan(
+    id: str,
+    data: SubscriptionChangePlan,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Super Admins can upgrade or downgrade an organization's plan."""
+    org = db.query(Organization).filter(Organization.id == id).first()
+    if not org:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+
+    sub = db.query(Subscription).filter(Subscription.organization_id == id).first()
+    if not sub:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subscription not found")
+
+    new_plan = db.query(Plan).filter(Plan.code == data.plan_code.upper()).first()
+    if not new_plan:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plan not found")
+
+    sub.plan_id = new_plan.id
+    sub.seats_purchased = new_plan.seat_limit
+    sub.pull_quota_monthly = new_plan.monthly_pull_quota
+    # User said "keep it simple" - no pro-ration or quota resets right now, just change limits
+
+    db.commit()
+    db.refresh(sub)
+    return sub
+
+
+@router.post("/{id}/subscription/status", response_model=SubscriptionOut)
+def update_subscription_status(
+    id: str,
+    data: SubscriptionChangeStatus,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Super Admins can change subscription status (e.g. to PAST_DUE for grace period handling)"""
+    org = db.query(Organization).filter(Organization.id == id).first()
+    if not org:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+
+    sub = db.query(Subscription).filter(Subscription.organization_id == id).first()
+    if not sub:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subscription not found")
+
+    sub.status = data.status.upper()
+    db.commit()
+    db.refresh(sub)
     return sub

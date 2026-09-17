@@ -10,7 +10,7 @@ celery_app = Celery(
     "jarvis_worker",
     broker=redis_url,
     backend=redis_url,
-    include=['app.tasks.import_tasks', 'app.tasks.daily_tasks']
+    include=['app.tasks.import_tasks', 'app.tasks.daily_tasks', 'app.tasks.billing_tasks']
 )
 
 from celery.schedules import crontab
@@ -34,6 +34,14 @@ celery_app.conf.update(
         'generate-eod-reports': {
             'task': 'app.tasks.daily_tasks.generate_eod_reports',
             'schedule': crontab(hour=23, minute=30), # runs at 11:30 PM
+        },
+        'subscription-monitor': {
+            'task': 'tasks.billing.subscription_monitor',
+            'schedule': crontab(hour=1, minute=0), # runs daily at 1:00 AM
+        },
+        'billing-reconciliation': {
+            'task': 'tasks.billing.billing_reconciliation',
+            'schedule': crontab(hour=3, minute=0), # runs daily at 3:00 AM
         }
     }
 )

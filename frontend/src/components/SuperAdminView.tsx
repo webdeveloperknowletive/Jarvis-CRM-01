@@ -17,11 +17,21 @@ import {
   Eye, 
   Layers, 
   Globe, 
-  UserCheck 
+  UserCheck,
+  LifeBuoy,
+  PauseCircle,
+  Trash2,
+  Key
 } from "lucide-react";
+import { SupportModeBanner } from "./super_admin/SupportModeBanner";
+import { SupportSessionModal } from "./super_admin/SupportSessionModal";
+import { SuspendOrgModal } from "./super_admin/SuspendOrgModal";
+import { PlatformSecurityView } from "./super_admin/PlatformSecurityView";
+import { RecycleBinView } from "./super_admin/RecycleBinView";
+import { AuditChainView } from "./super_admin/AuditChainView";
 
 interface SuperAdminViewProps {
-  viewMode?: "dashboard" | "organizations" | "users" | "audit";
+  viewMode?: "dashboard" | "organizations" | "users" | "security" | "audit" | "recovery";
 }
 
 export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dashboard" }) => {
@@ -38,6 +48,18 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
   const [auditSearch, setAuditSearch] = useState("");
   const [auditActionFilter, setAuditActionFilter] = useState("ALL");
   const [auditTenantFilter, setAuditTenantFilter] = useState("ALL");
+
+  // Phase 1 Security, Support & Governance State
+  const [activeSupportSession, setActiveSupportSession] = useState<any | null>(() => {
+    try {
+      const saved = localStorage.getItem("jarvis_support_session");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [supportOrgModal, setSupportOrgModal] = useState<any | null>(null);
+  const [suspendOrgModal, setSuspendOrgModal] = useState<any | null>(null);
 
   // Provisioning & User State
   const [name, setName] = useState("");
@@ -127,23 +149,58 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
 
   useEffect(() => {
     loadPlatformData();
-  }, []);
+  }, [viewMode]);
+
+  const handleGrantTrial = async (org: any) => {
+    const daysStr = window.prompt(`How many days of trial do you want to grant to ${org.name}?`, "3");
+    if (!daysStr) return;
+    
+    const days = parseInt(daysStr, 10);
+    if (isNaN(days) || days <= 0) {
+      alert("Please enter a valid number of days.");
+      return;
+    }
+    
+    try {
+      await api.grantTrial(org.id, days);
+      setMsg(`Successfully granted a ${days}-day trial to ${org.name}`);
+      const orgs = await api.getOrganizations();
+      setOrganizations(orgs);
+      setTimeout(() => setMsg(""), 3000);
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || "Failed to grant trial.");
+    }
+  };
 
   const loadPlatformData = async () => {
     setLoading(true);
     try {
-      const [orgs, logs, adminKpis, adminUsers] = await Promise.all([
-        api.getOrganizations(),
-        api.getAuditLogs(),
-        api.getAdminKPIs(),
-        api.getAdminUsers(),
-      ]);
-      setOrganizations(orgs);
-      setAuditLogs(logs);
-      setKpis(adminKpis);
-      setUsers(adminUsers);
+      if (viewMode === "dashboard") {
+        const [adminKpis, orgs, logs] = await Promise.all([
+          api.getAdminKPIs(),
+          api.getOrganizations(),
+          api.getAuditLogs(),
+        ]);
+        setKpis(adminKpis);
+        setOrganizations(orgs);
+        setAuditLogs(logs);
+      } else if (viewMode === "organizations") {
+        const orgs = await api.getOrganizations();
+        setOrganizations(orgs);
+      } else if (viewMode === "users" || viewMode === "security") {
+        const [adminUsers, orgs] = await Promise.all([
+          api.getAdminUsers(),
+          api.getOrganizations(),
+        ]);
+        setUsers(adminUsers);
+        setOrganizations(orgs);
+      } else if (viewMode === "audit") {
+        const orgs = await api.getOrganizations();
+        setOrganizations(orgs);
+      }
     } catch (e) {
-      console.error(e);
+      console.error("Failed loading platform data:", e);
     } finally {
       setLoading(false);
     }
@@ -321,6 +378,13 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      {/* Phase 1 Support Session Active Banner */}
+      <SupportModeBanner
+        session={activeSupportSession}
+        orgName={activeSupportSession?.org_name}
+        onSessionEnded={() => setActiveSupportSession(null)}
+      />
+
       {/* ========================================================================= */}
       {/* MODULE 1: DASHBOARD VIEW                                                  */}
       {/* ========================================================================= */}
@@ -828,18 +892,19 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
                   <th>Subscription Tier</th>
                   <th>Status</th>
                   <th>Created Date</th>
+                  <th style={{ textAlign: "right", paddingRight: "20px" }}>Tenant Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={5} style={{ textAlign: "center", padding: "36px 0", color: "var(--text-muted)" }}>
+                    <td colSpan={6} style={{ textAlign: "center", padding: "36px 0", color: "var(--text-muted)" }}>
                       Loading platform organizations...
                     </td>
                   </tr>
                 ) : filteredOrgs.length === 0 ? (
                   <tr>
-                    <td colSpan={5} style={{ textAlign: "center", padding: "36px 0", color: "var(--text-muted)" }}>
+                    <td colSpan={6} style={{ textAlign: "center", padding: "36px 0", color: "var(--text-muted)" }}>
                       No matching organizations found.
                     </td>
                   </tr>
@@ -859,12 +924,78 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
                         </span>
                       </td>
                       <td>
-                        <span className="badge badge-open">
+                        <span className={`badge ${org.status === "SUSPENDED" ? "badge-lost" : "badge-open"}`}>
                           {org.status || "ACTIVE"}
                         </span>
                       </td>
                       <td style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                         {new Date(org.created_at).toLocaleDateString()}
+                      </td>
+                      <td style={{ textAlign: "right", paddingRight: "20px" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "6px" }}>
+                          <button
+                            onClick={() => setSupportOrgModal(org)}
+                            className="btn-secondary"
+                            style={{
+                              fontSize: "0.6875rem",
+                              padding: "5px 10px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              color: "#b45309",
+                              borderColor: "#fde68a",
+                              background: "#fffbeb",
+                              fontWeight: 700,
+                            }}
+                            title="Start time-boxed, audited support session"
+                          >
+                            <LifeBuoy style={{ width: "12px", height: "12px" }} /> Support
+                          </button>
+                          
+                          <button
+                            onClick={() => handleGrantTrial(org)}
+                            className="btn-secondary"
+                            style={{
+                              fontSize: "0.6875rem",
+                              padding: "5px 10px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              color: "var(--primary)",
+                              borderColor: "var(--primary)",
+                              background: "transparent",
+                              fontWeight: 700,
+                            }}
+                            title="Grant or extend trial days"
+                          >
+                            Grant Trial
+                          </button>
+
+                          {org.status !== "SUSPENDED" ? (
+                            <button
+                              onClick={() => setSuspendOrgModal(org)}
+                              className="btn-secondary"
+                              style={{
+                                fontSize: "0.6875rem",
+                                padding: "5px 10px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                color: "#dc2626",
+                                borderColor: "#fecaca",
+                                background: "#fee2e2",
+                                fontWeight: 700,
+                              }}
+                              title="Suspend organization and invalidate all user tokens"
+                            >
+                              <PauseCircle style={{ width: "12px", height: "12px" }} /> Suspend
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: "0.6875rem", color: "#dc2626", fontWeight: 700 }}>
+                              SUSPENDED
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -928,7 +1059,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
                       </span>
                     </td>
                     <td>
-                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                         <button
                           onClick={() => handleEditUser(u)}
                           className="btn-secondary"
@@ -943,6 +1074,25 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
                         >
                           {u.status === "ACTIVE" ? "Suspend" : "Activate"}
                         </button>
+                        <button
+                          onClick={async () => {
+                            const reason = prompt(`Provide compliance reason to move user "${u.full_name}" to Recycle Bin:`);
+                            if (reason) {
+                              try {
+                                await api.softDeleteAdminUser(u.id, reason);
+                                setMsg(`User ${u.full_name} moved to Recycle Bin.`);
+                                loadPlatformData();
+                              } catch (e: any) {
+                                alert(e.message || "Failed to soft delete user.");
+                              }
+                            }
+                          }}
+                          className="btn-secondary"
+                          style={{ padding: "4px 8px", fontSize: "0.6875rem", color: "#dc2626", borderColor: "#fecaca" }}
+                          title="Move user to Recycle Bin"
+                        >
+                          <Trash2 style={{ width: "11px", height: "11px" }} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -954,173 +1104,24 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
       )}
 
       {/* ========================================================================= */}
-      {/* MODULE 4: PLATFORM ACTIVITIES VIEW                                        */}
+      {/* MODULE 4: PLATFORM ACTIVITIES & CRYPTOGRAPHIC AUDIT VIEW                  */}
       {/* ========================================================================= */}
       {viewMode === "audit" && (
-        <>
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-            <div>
-              <h2 style={{ fontSize: "1.375rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: "8px" }}>
-                <ActivitySquare style={{ width: "22px", height: "22px", color: "var(--primary)" }} />
-                Platform Activities & System Events
-              </h2>
-              <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-                Real-time event stream recording user actions, communication dispatches, and system activities
-              </p>
-            </div>
+        <AuditChainView organizations={organizations} />
+      )}
 
-            <button onClick={loadPlatformData} className="btn-secondary" style={{ fontSize: "0.8125rem" }}>
-              Refresh Event Stream
-            </button>
-          </div>
+      {/* ========================================================================= */}
+      {/* MODULE 5: PLATFORM SECURITY & RBAC                                       */}
+      {/* ========================================================================= */}
+      {viewMode === "security" && (
+        <PlatformSecurityView users={users} onRefreshUsers={loadPlatformData} />
+      )}
 
-          {/* KPI Stats */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
-            <div className="stat-card stat-card-accent-indigo">
-              <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-secondary)" }}>Total Audit Events Captured</span>
-              <p style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "monospace", marginTop: "4px" }}>
-                {auditLogs.length}
-              </p>
-            </div>
-
-            <div className="stat-card stat-card-accent-emerald">
-              <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-secondary)" }}>Communication Triggers (Calls/Mail/WA)</span>
-              <p style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--emerald-dark)", fontFamily: "monospace", marginTop: "4px" }}>
-                {auditLogs.filter(l => l.action.includes("TRIGGERED")).length} Events
-              </p>
-            </div>
-
-            <div className="stat-card stat-card-accent-amber">
-              <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-secondary)" }}>Contact Profile Views</span>
-              <p style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--amber-dark)", fontFamily: "monospace", marginTop: "4px" }}>
-                {auditLogs.filter(l => l.action.includes("VIEW")).length} Views
-              </p>
-            </div>
-          </div>
-
-          {/* Audit Trail Filter Bar */}
-          <div className="card" style={{ padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-            <div style={{ position: "relative", flex: 1, minWidth: "260px" }}>
-              <Search style={{ width: "15px", height: "15px", color: "var(--text-muted)", position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)" }} />
-              <input
-                type="text"
-                value={auditSearch}
-                onChange={(e) => setAuditSearch(e.target.value)}
-                placeholder="Search audit trail by actor, IP, or entity ID..."
-                className="input-text"
-                style={{ paddingLeft: "32px", fontSize: "0.8125rem" }}
-              />
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <select
-                value={auditActionFilter}
-                onChange={(e) => setAuditActionFilter(e.target.value)}
-                className="select-dropdown"
-                style={{ fontSize: "0.8125rem" }}
-              >
-                <option value="ALL">All Action Types</option>
-                <option value="CALL_TRIGGERED">Call Triggered</option>
-                <option value="EMAIL_TRIGGERED">Email Triggered</option>
-                <option value="WHATSAPP_TRIGGERED">WhatsApp Triggered</option>
-                <option value="CONTACT_VIEW">Contact Viewed</option>
-                <option value="STAGE_CHANGED">Stage Changed</option>
-                <option value="LOGIN_SUCCESS">Login Success</option>
-                <option value="ORGANIZATION_CREATED">Org Provisioned</option>
-              </select>
-
-              <select
-                value={auditTenantFilter}
-                onChange={(e) => setAuditTenantFilter(e.target.value)}
-                className="select-dropdown"
-                style={{ fontSize: "0.8125rem" }}
-              >
-                <option value="ALL">All Organizations</option>
-                {organizations.map((o) => (
-                  <option key={o.id} value={o.id}>{o.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Detailed Platform Audit Events Table */}
-          <div className="table-container">
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h3 style={{ fontSize: "0.875rem", fontWeight: 800, color: "var(--text-primary)" }}>
-                Audited Platform Security Events ({filteredLogs.length})
-              </h3>
-              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>
-                Real-time chronological feed
-              </span>
-            </div>
-
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ paddingLeft: "20px" }}>Timestamp</th>
-                  <th>Action</th>
-                  <th>Target Entity</th>
-                  <th>Actor User</th>
-                  <th>Tenant ID</th>
-                  <th>IP Address</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: "center", padding: "36px 0", color: "var(--text-muted)" }}>
-                      Loading platform audit stream...
-                    </td>
-                  </tr>
-                ) : filteredLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: "center", padding: "36px 0", color: "var(--text-muted)" }}>
-                      No audit events match the active filters.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredLogs.map((log) => (
-                    <tr key={log.id}>
-                      <td style={{ paddingLeft: "20px", fontSize: "0.75rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                        <p style={{ fontWeight: 600, color: "var(--text-primary)" }}>{new Date(log.created_at).toLocaleDateString()}</p>
-                        <p style={{ fontFamily: "monospace", fontSize: "0.6875rem", color: "var(--text-muted)" }}>{new Date(log.created_at).toLocaleTimeString()}</p>
-                      </td>
-                      <td>
-                        {getActionBadge(log.action)}
-                      </td>
-                      <td style={{ fontSize: "0.75rem" }}>
-                        <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{log.entity_type || "PLATFORM"}</span>
-                        {log.entity_id && (
-                          <span style={{ fontFamily: "monospace", fontSize: "0.6875rem", color: "var(--text-muted)", display: "block" }}>
-                            {log.entity_id.substring(0, 12)}...
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ fontFamily: "monospace", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-                        {log.actor_user_id ? log.actor_user_id.substring(0, 10) : "SYSTEM"}
-                      </td>
-                      <td>
-                        {log.organization_id ? (
-                          <span className="badge" style={{ background: "#f8fafc", border: "1px solid #e2e8f0", color: "var(--text-secondary)", fontFamily: "monospace", fontSize: "0.6875rem" }}>
-                            {log.organization_id.substring(0, 8)}
-                          </span>
-                        ) : (
-                          <span className="badge" style={{ background: "var(--primary-light)", border: "1px solid var(--primary-border)", color: "var(--primary)", fontSize: "0.6875rem" }}>
-                            PLATFORM
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ fontFamily: "monospace", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                        {log.ip_address || "127.0.0.1"}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
+      {/* ========================================================================= */}
+      {/* MODULE 6: ENTERPRISE RECYCLE BIN                                         */}
+      {/* ========================================================================= */}
+      {viewMode === "recovery" && (
+        <RecycleBinView />
       )}
 
       {/* Unified Add Platform User & Provisioning Modal */}
@@ -1312,6 +1313,27 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
             </form>
           </div>
         </div>
+      )}
+      {/* Support Session Modal */}
+      {supportOrgModal && (
+        <SupportSessionModal
+          organization={supportOrgModal}
+          onClose={() => setSupportOrgModal(null)}
+          onSessionCreated={(session, orgName) => {
+            setActiveSupportSession({ ...session, org_name: orgName });
+          }}
+        />
+      )}
+
+      {/* Suspend Org Modal */}
+      {suspendOrgModal && (
+        <SuspendOrgModal
+          organization={suspendOrgModal}
+          onClose={() => setSuspendOrgModal(null)}
+          onSuspended={() => {
+            loadPlatformData();
+          }}
+        />
       )}
     </div>
   );

@@ -1,10 +1,10 @@
 from sqlalchemy import Column, String, Integer, Numeric, Text, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
-from app.models.base import TimestampMixin, generate_uuid
+from app.models.base import TimestampMixin, SoftDeleteMixin, generate_uuid
 
 
-class Lead(Base, TimestampMixin):
+class Lead(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "leads"
 
     id = Column(String(36), primary_key=True, default=generate_uuid)

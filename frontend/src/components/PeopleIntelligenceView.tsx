@@ -34,7 +34,7 @@ export const PeopleIntelligenceView: React.FC<PeopleIntelligenceViewProps> = ({ 
   const storedUser = localStorage.getItem("jarvis_user");
   const currentUser = propUser || (storedUser ? JSON.parse(storedUser) : null);
   const isSuperAdmin = currentUser?.is_super_admin ?? false;
-  const canManage = isSuperAdmin || currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY";
+  const canManage = isSuperAdmin || currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY" || currentUser?.tenant_role === "DATA_ENTRY";
   const [people, setPeople] = useState<GlobalPerson[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("ALL");

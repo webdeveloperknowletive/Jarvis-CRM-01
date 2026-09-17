@@ -374,7 +374,7 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                     person_name = cont_name or lead_title
                     if not person_name:
                         error = ImportRowError(
-                            job_id=job.id,
+                            job_id=job_id,
                             row_number=row_num,
                             raw_data=raw_dict,
                             error_code="EMPTY_NAME",
@@ -567,7 +567,7 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                     # Row validation
                     if not comp_name and not cont_name and not lead_title:
                         error = ImportRowError(
-                            job_id=job.id,
+                            job_id=job_id,
                             row_number=row_num,
                             raw_data=raw_dict,
                             error_code="EMPTY_IDENTIFIER",
@@ -588,7 +588,7 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                             name=comp_name,
                             cin=cin,
                             city=city,
-                            user_id=job.uploaded_by
+                            user_id=uploaded_by
                         )
 
                     # 2. Contact Resolution & Deduplication
@@ -602,7 +602,7 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                             email=email,
                             company_id=company.id if company else None,
                             designation=designation,
-                            user_id=job.uploaded_by
+                            user_id=uploaded_by
                         )
 
                     # 3. Duplicate Detection for Lead
@@ -784,18 +784,10 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
             except Exception:
                 db.rollback()
 
-        # Update in-memory job if not detached
-        try:
-            job.processed_rows = total
-            job.successful_rows = successful
-            job.duplicate_rows = duplicates
-            job.error_rows = errors
-            job.status = final_status
-            job.completed_at = completed_time
-            job.error_summary = error_summary_dict
-        except Exception:
-            pass
-
+        # Reload fresh job from DB
+        fresh_job = db.query(ImportJob).filter(ImportJob.id == job_id).first()
+        if fresh_job:
+            return fresh_job
         return job
 
     except Exception as exc:

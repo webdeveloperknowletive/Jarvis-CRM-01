@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_db, get_current_user, require_org_admin, get_tenant_id
 from app.models.user import User
 from app.models.audit import AuditLog
+from app.models.organization import Subscription
 from app.schemas.user import UserCreate, UserUpdate, UserOut
 from app.core.security import get_password_hash
 
@@ -75,6 +76,24 @@ def create_tenant_user(
     role = data.tenant_role or "SALES_REP"
     if role not in allowed_roles:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid tenant role: {role}")
+
+    # Check seat limit
+    active_user_count = db.query(User).filter(
+        User.organization_id == tenant_id,
+        User.status == "ACTIVE",
+        User.deleted_at.is_(None)
+    ).count()
+    
+    subscription = db.query(Subscription).filter(
+        Subscription.organization_id == tenant_id,
+        Subscription.status == "ACTIVE"
+    ).first()
+    
+    if subscription and active_user_count >= subscription.seats_purchased:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Seat limit exceeded. Your plan allows up to {subscription.seats_purchased} active users."
+        )
 
     user = User(
         organization_id=tenant_id,

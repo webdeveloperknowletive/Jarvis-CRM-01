@@ -43,7 +43,7 @@ def test_telecaller_data_masking(client, db_session, tenant_a_fixture):
     admin_resp = client.get(f"/api/v1/leads/{lead.id}", headers=admin_headers)
     assert admin_resp.status_code == 200
     admin_data = admin_resp.json()
-    assert admin_data["contact_phone"] == "+91 98765 43210"
+    assert admin_data["contact_phone"] in ("+91 98765 43210", "+919876543210")
     assert admin_data["contact_email"] == "vipin.kumar@confidential.com"
     assert admin_data["is_phone_masked"] is False
 

@@ -69,6 +69,33 @@ def create_tenant_schema_tables(db: Session, schema_name: str, org_id: str) -> N
             logger.warning(f"Notice creating table {tbl} in {schema_name}: {exc}")
     db.commit()
 
+    # Ensure schema evolution columns are present in existing tenant tables
+    TENANT_COLUMN_MIGRATIONS = [
+        ("leads", "deleted_at TIMESTAMP"),
+        ("leads", "deleted_by VARCHAR(36)"),
+        ("leads", "deletion_reason VARCHAR(500)"),
+        ("companies", "deleted_at TIMESTAMP"),
+        ("companies", "deleted_by VARCHAR(36)"),
+        ("companies", "deletion_reason VARCHAR(500)"),
+        ("contacts", "deleted_at TIMESTAMP"),
+        ("contacts", "deleted_by VARCHAR(36)"),
+        ("contacts", "deletion_reason VARCHAR(500)"),
+        ("audit_logs", "actor_user_id VARCHAR(36)"),
+        ("audit_logs", "target_user_id VARCHAR(36)"),
+        ("audit_logs", "support_session_id VARCHAR(36)"),
+        ("audit_logs", "context_type VARCHAR(30) DEFAULT 'PLATFORM_CONTEXT'"),
+        ("audit_logs", "reason VARCHAR(500)"),
+        ("audit_logs", "sequence_number INTEGER"),
+        ("audit_logs", "event_hash VARCHAR(64)"),
+        ("audit_logs", "previous_event_hash VARCHAR(64)"),
+    ]
+    for tbl, col_def in TENANT_COLUMN_MIGRATIONS:
+        try:
+            db.execute(text(f'ALTER TABLE "{schema_name}"."{tbl}" ADD COLUMN IF NOT EXISTS {col_def}'))
+            db.commit()
+        except Exception:
+            db.rollback()
+
     # 3. Seed Canonical Default Pipeline & Stages in tenant schema
     pipeline_check = db.execute(text(f'SELECT count(*) FROM "{schema_name}"."pipelines"')).scalar()
     if pipeline_check == 0:

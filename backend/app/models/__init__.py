@@ -1,5 +1,5 @@
 from app.core.database import Base
-from app.models.base import generate_uuid, utc_now, TimestampMixin
+from app.models.base import generate_uuid, utc_now, TimestampMixin, SoftDeleteMixin
 from app.models.organization import Organization, Plan, Subscription
 from app.models.user import User
 from app.models.company import Company
@@ -27,7 +27,11 @@ from app.models.payment import Payment
 from app.models.availability import AvailabilityStatus, LeaveRequest
 from app.models.dedupe import DedupeCandidate
 from app.models.communication import CommunicationLog
-
+from app.models.rbac import Permission, PlatformRole, RolePermission, PlatformUserRole, seed_platform_rbac
+from app.models.support import SupportSession
+from app.models.revocation import RevokedToken
+from app.models.idempotency import IdempotencyRecord
+from app.models.billing import BillingEvent, PaymentTransaction
 __all__ = [
     "Base",
     "generate_uuid",
@@ -74,4 +78,6 @@ __all__ = [
     "LeaveRequest",
     "DedupeCandidate",
     "CommunicationLog",
+    "BillingEvent",
+    "PaymentTransaction",
 ]
