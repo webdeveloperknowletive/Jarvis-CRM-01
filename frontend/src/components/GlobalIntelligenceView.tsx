@@ -1118,16 +1118,12 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                                 borderRadius: "999px",
                                 fontSize: "0.6875rem",
                                 fontWeight: 700,
-                                background: company.pull_status === "PULLED" ? "rgba(225, 29, 72, 0.12)" : "rgba(16, 185, 129, 0.12)",
-                                color: company.pull_status === "PULLED" ? "var(--rose-dark)" : "var(--emerald)",
-                                border: company.pull_status === "PULLED" ? "1px solid rgba(225, 29, 72, 0.3)" : "1px solid rgba(16, 185, 129, 0.3)",
+                                background: "rgba(16, 185, 129, 0.12)",
+                                color: "var(--emerald)",
+                                border: "1px solid rgba(16, 185, 129, 0.3)",
                               }}
                             >
-                              {company.pull_status === "PULLED" ? (
-                                <span>TAKEN • Pulled by {company.pulled_by_org_name || "Enterprise"}</span>
-                              ) : (
-                                <span>AVAILABLE</span>
-                              )}
+                              <span>AVAILABLE</span>
                             </span>
                             <button
                               type="button"
@@ -1420,22 +1416,7 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                                       )}
                                     </div>
 
-                                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                      {person.pull_status === "PULLED" ? (
-                                        <span
-                                          style={{
-                                            fontSize: "0.5625rem",
-                                            fontWeight: 700,
-                                            padding: "1px 5px",
-                                            borderRadius: "4px",
-                                            background: "rgba(225, 29, 72, 0.12)",
-                                            color: "var(--rose-dark)",
-                                            border: "1px solid rgba(225, 29, 72, 0.3)",
-                                          }}
-                                        >
-                                          TAKEN • {person.pulled_by_org_name || company.pulled_by_org_name || "Pulled"}
-                                        </span>
-                                      ) : (
+                                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                                         <span
                                           style={{
                                             fontSize: "0.5625rem",
@@ -1448,7 +1429,6 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                                         >
                                           Verified
                                         </span>
-                                      )}
                                       {canManage && (
                                         <button
                                           type="button"
@@ -1814,16 +1794,12 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
                                 borderRadius: "999px",
                                 fontSize: "0.625rem",
                                 fontWeight: 700,
-                                background: person.pull_status === "PULLED" ? "rgba(225, 29, 72, 0.12)" : "rgba(16, 185, 129, 0.12)",
-                                color: person.pull_status === "PULLED" ? "var(--rose-dark)" : "var(--emerald)",
-                                border: person.pull_status === "PULLED" ? "1px solid rgba(225, 29, 72, 0.3)" : "1px solid rgba(16, 185, 129, 0.3)",
+                                background: "rgba(16, 185, 129, 0.12)",
+                                color: "var(--emerald)",
+                                border: "1px solid rgba(16, 185, 129, 0.3)",
                               }}
                             >
-                              {person.pull_status === "PULLED" ? (
-                                <span>TAKEN • Pulled by {person.pulled_by_org_name || "Enterprise"}</span>
-                              ) : (
-                                <span>AVAILABLE</span>
-                              )}
+                              <span>AVAILABLE</span>
                             </span>
                             <button
                               type="button"
@@ -1957,8 +1933,13 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
           company={editingCompany}
           isOpen={Boolean(editingCompany)}
           onClose={() => setEditingCompany(null)}
-          onSaved={(updated) => {
-            setSuccessMsg(`Enterprise "${updated.legal_name}" updated successfully!`);
+          currentUser={currentUser}
+          onSaved={(updated, pendingApproval) => {
+            if (pendingApproval) {
+              setSuccessMsg(`Edits to "${updated.legal_name}" submitted for admin approval.`);
+            } else {
+              setSuccessMsg(`Enterprise "${updated.legal_name}" updated successfully!`);
+            }
             setTimeout(() => setSuccessMsg(null), 4000);
             loadIntelligence();
           }}
@@ -1970,8 +1951,13 @@ export const GlobalIntelligenceView: React.FC<GlobalIntelligenceViewProps> = ({ 
           person={editingPerson}
           isOpen={Boolean(editingPerson)}
           onClose={() => setEditingPerson(null)}
-          onSaved={(updated) => {
-            setSuccessMsg(`Executive profile for "${updated.full_name}" updated successfully!`);
+          currentUser={currentUser}
+          onSaved={(updated, pendingApproval) => {
+            if (pendingApproval) {
+              setSuccessMsg(`Edits to "${updated.full_name}" submitted for admin approval.`);
+            } else {
+              setSuccessMsg(`Executive profile for "${updated.full_name}" updated successfully!`);
+            }
             setTimeout(() => setSuccessMsg(null), 4000);
             loadIntelligence();
           }}

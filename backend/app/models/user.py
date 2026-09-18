@@ -21,6 +21,7 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
     permission_overrides = Column(JSON, nullable=False, default=dict)
     last_login_at = Column(DateTime, nullable=True)
     gmail_tokens = Column(JSON, nullable=True)  # {"access_token": "...", "refresh_token": "...", "expires_at": ..., "email": "..."}
+    telecaller_targets = Column(JSON, nullable=True) # {"calls": 50, "connects": 20, "conversions": 2}
 
     # Relationships
     organization = relationship("Organization", back_populates="users")

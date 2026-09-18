@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from app.models.global_registry import GlobalCompany, GlobalContact, GlobalCompanyContactMap, GlobalDataPullLog
+from app.models.global_registry import GlobalCompany, GlobalContact, GlobalCompanyContactMap
 from app.models.global_people import GlobalPerson
 from app.models.organization import Organization, Subscription
 from app.models.company import Company
@@ -66,11 +66,6 @@ def search_global_companies(
             state=c.state,
             country=c.country,
             status=c.status,
-            pull_status=c.pull_status or "AVAILABLE",
-            pulled_by_org_id=c.pulled_by_org_id,
-            pulled_by_org_name=c.pulled_by_org_name,
-            pulled_at=c.pulled_at,
-            pull_history=c.pull_history if current_user and current_user.is_super_admin else [],
             contacts_count=cnt,
             first_seen_at=c.first_seen_at,
             last_updated_at=c.last_updated_at
@@ -143,7 +138,6 @@ def create_global_company(db: Session, data: GlobalCompanyCreate) -> GlobalCompa
         country=company.country,
         status=company.status,
         contacts_count=0,
-        pull_history=[],
         first_seen_at=company.first_seen_at,
         last_updated_at=company.last_updated_at
     )
@@ -213,11 +207,6 @@ def update_global_company(db: Session, company_id: str, data: GlobalCompanyUpdat
         email=company.email,
         phone=company.phone,
         status=company.status,
-        pull_status=getattr(company, "pull_status", "AVAILABLE") or "AVAILABLE",
-        pulled_by_org_id=getattr(company, "pulled_by_org_id", None),
-        pulled_by_org_name=getattr(company, "pulled_by_org_name", None),
-        pulled_at=getattr(company, "pulled_at", None),
-        pull_history=getattr(company, "pull_history", []),
         contacts_count=db.query(GlobalContact).join(GlobalCompanyContactMap).filter(GlobalCompanyContactMap.company_id == company.id).count(),
         first_seen_at=company.first_seen_at,
         last_updated_at=company.last_updated_at
@@ -269,34 +258,6 @@ def pull_global_companies_to_crm(
         g_comp = db.query(GlobalCompany).filter(GlobalCompany.id == g_id).first()
         if not g_comp:
             continue
-
-        # Append to pull_history instead of marking as PULLED for everyone
-        current_history = list(g_comp.pull_history) if g_comp.pull_history else []
-        current_history.append({
-            "org_id": organization_id,
-            "org_name": org_name,
-            "pulled_by": user.id,
-            "pulled_at": now_utc.isoformat()
-        })
-        g_comp.pull_history = current_history
-        # Keep pull_status as AVAILABLE to not hide it from others
-        g_comp.pull_status = "AVAILABLE"
-
-        # Also append to pull_history for corresponding GlobalPerson records
-        matched_people = db.query(GlobalPerson).filter(
-            (GlobalPerson.company_name == g_comp.legal_name) |
-            (GlobalPerson.company_name == g_comp.display_name)
-        ).all()
-        for mp in matched_people:
-            mp_history = list(mp.pull_history) if mp.pull_history else []
-            mp_history.append({
-                "org_id": organization_id,
-                "org_name": org_name,
-                "pulled_by": user.id,
-                "pulled_at": now_utc.isoformat()
-            })
-            mp.pull_history = mp_history
-            mp.pull_status = "AVAILABLE"
 
         # Check if already pulled or existing in tenant CRM
         crm_comp = db.query(Company).filter(
@@ -399,24 +360,6 @@ def pull_global_companies_to_crm(
             db.add(history)
             created_leads += 1
 
-            # Log Pull
-            pull_log = GlobalDataPullLog(
-                organization_id=organization_id,
-                pulled_by=user.id,
-                global_company_id=g_comp.id,
-                global_contact_id=primary_contact.source_global_contact_id if primary_contact else None,
-                resulting_company_id=crm_comp.id,
-                resulting_contact_id=primary_contact.id if primary_contact else None,
-                resulting_lead_id=new_lead.id,
-                snapshot_json={
-                    "company_name": g_comp.legal_name,
-                    "cin": g_comp.registry_id,
-                    "city": g_comp.city,
-                    "industry": g_comp.industry
-                }
-            )
-            db.add(pull_log)
-
     # 3. Deduct Quota
     sub.pull_quota_used += needed
     db.commit()
@@ -476,11 +419,6 @@ def update_global_company(db: Session, company_id: str, data: GlobalCompanyUpdat
         state=company.state,
         country=company.country,
         status=company.status,
-        pull_status=company.pull_status or "AVAILABLE",
-        pulled_by_org_id=company.pulled_by_org_id,
-        pulled_by_org_name=company.pulled_by_org_name,
-        pulled_at=company.pulled_at,
-        pull_history=getattr(company, "pull_history", []),
         contacts_count=cnt,
         first_seen_at=company.first_seen_at,
         last_updated_at=company.last_updated_at

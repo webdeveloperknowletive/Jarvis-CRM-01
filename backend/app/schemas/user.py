@@ -20,6 +20,7 @@ class UserUpdate(BaseModel):
     tenant_role: Optional[str] = None
     status: Optional[str] = None
     permission_overrides: Optional[Dict[str, Any]] = None
+    telecaller_targets: Optional[Dict[str, Any]] = None
 
 
 class UserOut(BaseModel):
@@ -32,6 +33,7 @@ class UserOut(BaseModel):
     phone: Optional[str] = None
     status: str
     permission_overrides: Dict[str, Any] = {}
+    telecaller_targets: Optional[Dict[str, Any]] = None
     last_login_at: Optional[datetime] = None
     created_at: datetime
 

@@ -23,10 +23,11 @@ export interface TelecallerUser {
   id: string;
   full_name: string;
   email: string;
-  phone?: string | null;
+  phone?: string;
   status: string;
   assigned_leads_count: number;
-  created_at?: string | null;
+  telecaller_targets?: { calls: number; connects: number; conversions: number };
+  created_at?: string;
 }
 
 export interface PipelineStage {
@@ -165,14 +166,9 @@ export interface GlobalCompany {
   state?: string | null;
   country?: string;
   status?: string;
-  pull_status?: string;
-  pulled_by_org_id?: string | null;
-  pulled_by_org_name?: string | null;
-  pulled_at?: string | null;
   contacts_count: number;
   first_seen_at?: string;
   last_updated_at?: string;
-  pull_history?: any;
 }
 
 export interface GlobalCompanyCreatePayload {
@@ -215,15 +211,10 @@ export interface GlobalPerson {
   country: string;
   estimated_value: number;
   status: string;
-  pull_status?: string;
-  pulled_by_org_id?: string | null;
-  pulled_by_org_name?: string | null;
-  pulled_at?: string | null;
   source: string;
   notes?: string | null;
   first_seen_at: string;
   last_updated_at: string;
-  pull_history?: any;
 }
 
 export interface LinkedPerson {
@@ -239,10 +230,6 @@ export interface LinkedPerson {
   state?: string | null;
   linkedin_url?: string | null;
   status: string;
-  pull_status?: string;
-  pulled_by_org_id?: string | null;
-  pulled_by_org_name?: string | null;
-  pulled_at?: string | null;
   is_primary: boolean;
   estimated_value: number;
 }
@@ -633,6 +620,36 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ days }),
     }),
+  grantFullAccess: (id: string) =>
+    api.request<any>(`/admin/organizations/${id}/full-access`, {
+      method: "POST"
+    }),
+  getAdminAlerts: () => api.request<any[]>("/admin/alerts"),
+  dismissAdminAlert: (id: string) => api.request<any>(`/admin/alerts/${id}/dismiss`, { method: "POST" }),
+  getApiKeys: () => api.request<any[]>("/admin/api-keys"),
+  createApiKey: (data: any) => api.request<any>("/admin/api-keys", {
+    method: "POST",
+    body: JSON.stringify(data)
+  }),
+  revokeApiKey: (id: string) => api.request<any>(`/admin/api-keys/${id}`, { method: "DELETE" }),
+  getDataQualityIssues: () => api.request<any[]>("/data/quality-issues"),
+  getSystemHealth: () => api.request<any>("/admin/health"),
+  getJobs: () => api.request<any[]>("/admin/jobs"),
+  updateUser: (id: string, data: any) => api.request<any>(`/users/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data)
+  }),
+  submitGlobalEdit: (data: any) =>
+    api.request<any>(`/global/edits`, {
+      method: "POST",
+      body: JSON.stringify(data)
+    }),
+  getPendingGlobalEdits: () => api.request<any[]>("/admin/global-edits"),
+  resolveGlobalEdit: (id: string, action: "APPROVE" | "REJECT") =>
+    api.request<any>(`/admin/global-edits/${id}/resolve`, {
+      method: "POST",
+      body: JSON.stringify({ action })
+    }),
   summarizeLeadAI: (id: string) => api.request<any>(`/ai/leads/${id}/summary`),
   recommendNextActionAI: (id: string) => api.request<any>(`/ai/leads/${id}/recommendation`),
 
@@ -970,5 +987,103 @@ export interface RecycleBinItem {
   deleted_by?: string;
   deletion_reason?: string;
   [key: string]: any;
+}
+
+// --- Phase 4 & 5: Data Governance & Operations ---
+export interface DataQualityIssue {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  issue_type: string;
+  severity: string;
+  description: string;
+  status: string;
+  created_at: string;
+}
+
+export interface JobRun {
+  id: string;
+  job_id: string;
+  job_type: string;
+  status: string;
+  attempt: number;
+  started_at: string;
+  completed_at?: string;
+  duration_seconds?: number;
+  error_message?: string;
+}
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  key_prefix: string;
+  scopes: string[];
+  expires_at?: string;
+  last_used_at?: string;
+  status: string;
+  created_at: string;
+}
+
+export interface AdminAlert {
+  id: string;
+  alert_type: string;
+  severity: string;
+  title: string;
+  message: string;
+  status: string;
+  created_at: string;
+}
+
+// Extending the api object
+Object.assign(api, {
+  // Phase 4: Data Governance
+  getDataQualityIssues: () => api.request<DataQualityIssue[]>("/data-quality/issues"),
+  
+  // Phase 5: Operations
+  getSystemHealth: () => api.request<any>("/health"),
+  getJobs: (statusFilter?: string) => {
+    const qs = statusFilter ? `?status_filter=${statusFilter}` : "";
+    return api.request<JobRun[]>(`/jobs/${qs}`);
+  },
+  getFailedJobs: () => api.request<JobRun[]>("/jobs/failed"),
+  
+  // API Keys
+  getApiKeys: () => api.request<ApiKey[]>("/api-keys/"),
+  createApiKey: (data: { name: string; scopes: string[]; expires_in_days?: number }) => 
+    api.request<ApiKey & { raw_key: string }>("/api-keys/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  revokeApiKey: (id: string) => 
+    api.request<any>(`/api-keys/${id}/revoke`, { method: "POST" }),
+    
+  // Action Center
+  getAdminAlerts: () => api.request<AdminAlert[]>("/action-center/alerts"),
+  dismissAdminAlert: (id: string) => api.request<any>(`/action-center/alerts/${id}/dismiss`, { method: "POST" }),
+  
+  // Global Edits
+  submitGlobalEdit: (data: { entity_type: string; entity_id: string; changes_json: any }) =>
+    api.request<any>("/global-edits/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  getPendingGlobalEdits: () => api.request<any[]>("/global-edits/admin"),
+  resolveGlobalEdit: (id: string, status: string) =>
+    api.request<any>(`/global-edits/${id}/resolve`, {
+      method: "POST",
+      body: JSON.stringify({ status }),
+    }),
+});
+
+export interface GlobalEditRequest {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  requested_by: string;
+  changes_json: any;
+  status: string;
+  created_at: string;
+  resolved_at?: string;
+  resolved_by?: string;
 }
 

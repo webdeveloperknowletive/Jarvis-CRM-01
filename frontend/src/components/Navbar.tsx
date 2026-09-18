@@ -14,10 +14,12 @@ import {
   Menu,
   X,
   ShieldCheck,
-  Plus,
   UserCheck,
-  BrainCircuit
+  BrainCircuit,
+  Shield,
+  Key
 } from "lucide-react";
+import { ActionCenterDropdown } from "./ActionCenterDropdown";
 
 interface NavbarProps {
   user: User;
@@ -200,6 +202,21 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
                 <ActivitySquare style={{ width: "14px", height: "14px", color: "var(--primary)" }} />
                 Templates
               </button>
+              <button
+                onClick={() => handleTabClick("governance")}
+                className={`nav-tab-btn ${activeTab === "governance" ? "active" : ""}`}
+              >
+                <Shield style={{ width: "14px", height: "14px", color: "var(--primary)" }} />
+                Data Governance
+              </button>
+
+              <button
+                onClick={() => handleTabClick("api_keys")}
+                className={`nav-tab-btn ${activeTab === "api_keys" ? "active" : ""}`}
+              >
+                <Key style={{ width: "14px", height: "14px", color: "var(--amber)" }} />
+                Developer Settings
+              </button>
             </>
           )}
 
@@ -229,6 +246,14 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               >
                 <BrainCircuit style={{ width: "15px", height: "15px", color: "var(--primary)" }} />
                 Global Intelligence
+              </button>
+
+              <button
+                onClick={() => handleTabClick("global_edits")}
+                className={`nav-tab-btn ${activeTab === "global_edits" ? "active" : ""}`}
+              >
+                <ActivitySquare style={{ width: "15px", height: "15px", color: "var(--amber)" }} />
+                Global Edits
               </button>
 
               <button
@@ -295,6 +320,8 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               )}
             </div>
           </div>
+
+          <ActionCenterDropdown />
 
           <button
             onClick={onLogout}
@@ -471,6 +498,23 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               >
                 <ActivitySquare style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
                 Templates
+              </button>
+              <button
+                onClick={() => handleTabClick("governance")}
+                className={`nav-tab-btn ${activeTab === "governance" ? "active" : ""}`}
+                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
+              >
+                <Shield style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
+                Data Governance
+              </button>
+
+              <button
+                onClick={() => handleTabClick("api_keys")}
+                className={`nav-tab-btn ${activeTab === "api_keys" ? "active" : ""}`}
+                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
+              >
+                <Key style={{ width: "16px", height: "16px", color: "var(--amber)" }} />
+                Developer Settings
               </button>
             </>
           )}

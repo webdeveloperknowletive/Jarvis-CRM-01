@@ -18,7 +18,7 @@ from app.models.session import TelecallerSession
 from app.models.eod_report import EODReport
 from app.models.masking import MaskingPolicy, MaskingException
 from app.models.import_job import ImportJob, ImportRowError
-from app.models.global_registry import GlobalCompany, GlobalContact, GlobalCompanyContactMap, GlobalDataPullLog
+from app.models.global_registry import GlobalCompany, GlobalContact, GlobalCompanyContactMap
 from app.models.global_people import GlobalPerson
 from app.models.audit import AuditLog, RadarEvent
 from app.models.ai import AIRun, AIInsight
@@ -32,6 +32,13 @@ from app.models.support import SupportSession
 from app.models.revocation import RevokedToken
 from app.models.idempotency import IdempotencyRecord
 from app.models.billing import BillingEvent, PaymentTransaction
+from app.models.data_quality import DataQualityJob, DataQualityIssue, DataQualityResolution
+from app.models.data_governance import GlobalDataChangeRequest
+from app.models.jobs import JobRun
+from app.models.api_management import ApiKey, ApiUsageEvent, ApiRateLimit
+from app.models.integrations import Integration, IntegrationCredential, IntegrationEvent
+from app.models.notifications import NotificationRule, Notification, NotificationDelivery
+from app.models.action_center import AdminAlert, AdminActionItem
 __all__ = [
     "Base",
     "generate_uuid",
@@ -66,7 +73,6 @@ __all__ = [
     "GlobalCompany",
     "GlobalContact",
     "GlobalCompanyContactMap",
-    "GlobalDataPullLog",
     "GlobalPerson",
     "AuditLog",
     "RadarEvent",
@@ -80,4 +86,20 @@ __all__ = [
     "CommunicationLog",
     "BillingEvent",
     "PaymentTransaction",
+    "DataQualityJob",
+    "DataQualityIssue",
+    "DataQualityResolution",
+    "GlobalDataChangeRequest",
+    "JobRun",
+    "ApiKey",
+    "ApiUsageEvent",
+    "ApiRateLimit",
+    "Integration",
+    "IntegrationCredential",
+    "IntegrationEvent",
+    "NotificationRule",
+    "Notification",
+    "NotificationDelivery",
+    "AdminAlert",
+    "AdminActionItem",
 ]

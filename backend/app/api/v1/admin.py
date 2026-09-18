@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from app.core.deps import get_db, get_current_user
 from app.models.user import User
 from app.models.organization import Organization
-from app.models.global_registry import GlobalCompany, GlobalDataPullLog
+from app.models.global_registry import GlobalCompany
 from app.models.global_people import GlobalPerson
 from app.schemas.user import UserOut, UserCreate
 from app.core.security import get_password_hash
@@ -48,7 +48,7 @@ def get_kpis(
     total_admins = db.query(User).filter(User.tenant_role == "ORG_ADMIN").count()
     total_companies = db.query(GlobalCompany).filter(GlobalCompany.status == "ACTIVE").count()
     total_people = db.query(GlobalPerson).filter(GlobalPerson.status == "ACTIVE").count()
-    total_pulls = db.query(GlobalDataPullLog).count()
+    total_pulls = 0
 
     today = datetime.now(timezone.utc).date()
     
@@ -515,6 +515,37 @@ def start_organization_trial(
         return {
             "success": True, 
             "message": f"{days}-day trial started for {org.name}.",
+            "subscription": {
+                "id": sub.id,
+                "status": sub.status,
+                "current_period_start": sub.current_period_start,
+                "current_period_end": sub.current_period_end
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/organizations/{id}/full-access")
+def grant_full_access_to_organization(
+    id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """
+    Grants 10-year full enterprise access to the organization.
+    """
+    from app.services.billing_service import grant_full_access
+    
+    org = db.query(Organization).filter(Organization.id == id).first()
+    if not org:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+        
+    try:
+        sub = grant_full_access(db, organization_id=id)
+        return {
+            "success": True, 
+            "message": f"Full 10-year enterprise access granted for {org.name}.",
             "subscription": {
                 "id": sub.id,
                 "status": sub.status,

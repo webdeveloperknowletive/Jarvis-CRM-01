@@ -32,7 +32,7 @@ export const NewLeadModal: React.FC<NewLeadModalProps> = ({ stages, onClose, onS
         title,
         company_name: companyName || null,
         contact_name: contactName || null,
-        contact_phone: contactPhone || null,
+        contact_phone: contactPhone ? contactPhone.replace(/\D/g, "") : null,
         contact_email: contactEmail || null,
         value: Number(value),
         pipeline_stage_id: stageId || null,

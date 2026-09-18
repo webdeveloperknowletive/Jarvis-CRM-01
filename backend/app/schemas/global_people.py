@@ -64,11 +64,6 @@ class GlobalPersonOut(BaseModel):
     country: str
     estimated_value: float = 0.0
     status: str
-    pull_status: str = "AVAILABLE"
-    pulled_by_org_id: Optional[str] = None
-    pulled_by_org_name: Optional[str] = None
-    pulled_at: Optional[datetime] = None
-    pull_history: Optional[List[Dict[str, Any]]] = []
     source: str
     notes: Optional[str] = None
     first_seen_at: datetime

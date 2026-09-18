@@ -223,6 +223,11 @@ def dynamic_cleanup_and_deduplication():
         for org in orgs:
             try:
                 run_organization_dedupe_scan(org.id, db)
+                
+                # Run Data Quality Scan (Phase 4)
+                from app.services.data_quality_service import scan_organization_data_quality
+                scan_organization_data_quality(db, org.id)
+                
             except Exception as org_e:
                 logger.error(f"Error scanning org {org.id}: {org_e}")
                 db.rollback()

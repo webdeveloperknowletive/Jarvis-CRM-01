@@ -172,7 +172,44 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
       alert(e.message || "Failed to grant trial.");
     }
   };
+  const handleGrantFullAccess = async (org: any) => {
+    const confirmation = window.confirm(`Are you sure you want to grant 10-year enterprise access to ${org.name}?`);
+    if (!confirmation) return;
+    
+    try {
+      await api.grantFullAccess(org.id);
+      setMsg(`Successfully granted full access to ${org.name}`);
+      const orgs = await api.getOrganizations();
+      setOrganizations(orgs);
+      setTimeout(() => setMsg(""), 3000);
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || "Failed to grant full access.");
+    }
+  };
 
+  const handleToggleSuspend = async (org: any) => {
+    if (org.status !== "SUSPENDED") {
+      const confirmation = window.prompt(`To suspend ${org.name}, please type SUSPEND in caps:`);
+      if (confirmation === "SUSPEND") {
+        try {
+          const reason = "Suspended by Super Admin via toggle";
+          const idempotencyKey = `suspend-org-${org.id}-${Date.now()}`;
+          await api.suspendOrganization(org.id, reason, idempotencyKey);
+          setMsg(`Successfully suspended ${org.name}`);
+          setTimeout(() => setMsg(""), 3000);
+          loadPlatformData();
+        } catch (err: any) {
+          alert(err.message || "Failed to suspend organization.");
+        }
+      } else {
+        alert("Confirmation failed. Suspension cancelled.");
+      }
+    } else {
+      alert("Organization is already suspended.");
+      // Reactivation can be done via another endpoint if needed, but not requested here.
+    }
+  };
   const loadPlatformData = async () => {
     setLoading(true);
     try {
@@ -759,16 +796,7 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
              <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>Quick Actions</h3>
                 
-                <button onClick={() => { resetUserForm(); setNewUserRole("ORG_ADMIN"); setShowCreateUserModal(true); }} className="btn-primary" style={{ width: '100%', justifyContent: 'flex-start', padding: '16px', background: "#6366f1", borderRadius: "12px", gap: "16px" }}>
-                   <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                     <Plus style={{ width: '20px', height: '20px', color: "white" }} />
-                   </div>
-                   <div style={{ textAlign: "left" }}>
-                     <p style={{ fontSize: "0.875rem", fontWeight: 700, color: "white" }}>Provision New Tenant</p>
-                     <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.8)" }}>Create a new organization</p>
-                   </div>
-                </button>
-                
+
                 <button onClick={() => { resetUserForm(); setNewUserRole("DATA_ENTRY"); setShowCreateUserModal(true); }} className="btn-primary" style={{ width: '100%', justifyContent: 'flex-start', padding: '16px', background: "#3b82f6", borderRadius: "12px", gap: "16px" }}>
                    <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                      <UserCheck style={{ width: '20px', height: '20px', color: "white" }} />
@@ -811,10 +839,6 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
               </p>
             </div>
 
-            <button onClick={() => setShowCreateModal(true)} className="btn-primary">
-              <Plus style={{ width: "16px", height: "16px" }} />
-              Provision New Tenant
-            </button>
           </div>
 
           {msg && (
@@ -971,30 +995,64 @@ export const SuperAdminView: React.FC<SuperAdminViewProps> = ({ viewMode = "dash
                             Grant Trial
                           </button>
 
-                          {org.status !== "SUSPENDED" ? (
-                            <button
-                              onClick={() => setSuspendOrgModal(org)}
-                              className="btn-secondary"
-                              style={{
-                                fontSize: "0.6875rem",
-                                padding: "5px 10px",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                color: "#dc2626",
-                                borderColor: "#fecaca",
-                                background: "#fee2e2",
-                                fontWeight: 700,
-                              }}
-                              title="Suspend organization and invalidate all user tokens"
-                            >
-                              <PauseCircle style={{ width: "12px", height: "12px" }} /> Suspend
-                            </button>
-                          ) : (
-                            <span style={{ fontSize: "0.6875rem", color: "#dc2626", fontWeight: 700 }}>
-                              SUSPENDED
+                          <button
+                            onClick={() => handleGrantFullAccess(org)}
+                            className="btn-secondary"
+                            style={{
+                              fontSize: "0.6875rem",
+                              padding: "5px 10px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              color: "var(--emerald)",
+                              borderColor: "var(--emerald)",
+                              background: "transparent",
+                              fontWeight: 700,
+                            }}
+                            title="Grant 10-year enterprise access"
+                          >
+                            Grant Full
+                          </button>
+
+                          <div 
+                            style={{ 
+                              display: "flex", 
+                              alignItems: "center", 
+                              gap: "8px", 
+                              marginLeft: "8px",
+                              paddingLeft: "8px",
+                              borderLeft: "1px solid var(--border-subtle)"
+                            }}
+                          >
+                            <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: org.status === "SUSPENDED" ? "#dc2626" : "var(--text-secondary)" }}>
+                              {org.status === "SUSPENDED" ? "SUSPENDED" : "Active"}
                             </span>
-                          )}
+                            <div 
+                              className={`toggle-switch ${org.status === "SUSPENDED" ? "active" : ""}`}
+                              onClick={() => handleToggleSuspend(org)}
+                              style={{ 
+                                width: "32px", 
+                                height: "18px", 
+                                borderRadius: "10px", 
+                                background: org.status === "SUSPENDED" ? "#dc2626" : "#cbd5e1",
+                                position: "relative",
+                                cursor: org.status === "SUSPENDED" ? "not-allowed" : "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                transition: "background 0.2s"
+                              }}
+                            >
+                              <div style={{
+                                width: "14px",
+                                height: "14px",
+                                borderRadius: "50%",
+                                background: "white",
+                                position: "absolute",
+                                left: org.status === "SUSPENDED" ? "16px" : "2px",
+                                transition: "left 0.2s"
+                              }} />
+                            </div>
+                          </div>
                         </div>
                       </td>
                     </tr>

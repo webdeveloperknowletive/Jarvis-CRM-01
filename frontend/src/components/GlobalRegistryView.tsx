@@ -477,33 +477,9 @@ export const GlobalRegistryView: React.FC<GlobalRegistryViewProps> = ({ currentU
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", flexShrink: 0 }}>
-                    {isSuperAdmin && comp.pull_history && comp.pull_history.length > 0 ? (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
-                        <span className="badge badge-hot" style={{ fontSize: "0.6875rem", background: "rgba(225, 29, 72, 0.12)", color: "var(--rose-dark)", border: "1px solid rgba(225, 29, 72, 0.3)" }}>
-                          PULLED ({comp.pull_history.length})
-                        </span>
-                        <select
-                          className="select-dropdown"
-                          style={{ fontSize: "0.625rem", padding: "2px 16px 2px 6px", minWidth: "120px", maxWidth: "160px", background: "var(--bg-surface)" }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <option>View Pull History...</option>
-                          {comp.pull_history.map((h: any, i: number) => (
-                            <option key={i} disabled>
-                              {h.org_name} ({new Date(h.pulled_at).toLocaleDateString()})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : comp.pull_status === "PULLED" ? (
-                      <span className="badge badge-hot" style={{ fontSize: "0.6875rem", background: "rgba(225, 29, 72, 0.12)", color: "var(--rose-dark)", border: "1px solid rgba(225, 29, 72, 0.3)" }}>
-                        TAKEN • Pulled by {comp.pulled_by_org_name || "Enterprise"}
-                      </span>
-                    ) : (
-                      <span className="badge badge-open" style={{ fontSize: "0.6875rem" }}>
-                        VERIFIED PROFILE
-                      </span>
-                    )}
+                    <span className="badge badge-open" style={{ fontSize: "0.6875rem" }}>
+                      VERIFIED PROFILE
+                    </span>
                     {canManage && (
                       <button
                         onClick={(e) => {

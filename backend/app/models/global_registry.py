@@ -28,11 +28,6 @@ class GlobalCompany(Base):
     email = Column(String(255), nullable=True, index=True)
     phone = Column(String(50), nullable=True, index=True)
     status = Column(String(30), nullable=False, default="ACTIVE")  # ACTIVE, DEACTIVATED
-    pull_status = Column(String(30), nullable=False, default="AVAILABLE")  # AVAILABLE, PULLED, TAKEN
-    pulled_by_org_id = Column(String(36), ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True, index=True)
-    pulled_by_org_name = Column(String(255), nullable=True)
-    pulled_at = Column(DateTime, nullable=True)
-    pull_history = Column(JSON, nullable=False, default=list)  # [{"org_id": "...", "org_name": "...", "pulled_by": "...", "pulled_at": "..."}]
 
     first_seen_at = Column(DateTime, default=utc_now, nullable=False)
     last_updated_at = Column(DateTime, default=utc_now, nullable=False)
@@ -80,16 +75,4 @@ class GlobalCompanyContactMap(Base):
     contact = relationship("GlobalContact", back_populates="companies")
 
 
-class GlobalDataPullLog(Base):
-    __tablename__ = "global_data_pull_logs"
 
-    id = Column(String(36), primary_key=True, default=generate_uuid)
-    organization_id = Column(String(36), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
-    pulled_by = Column(String(36), ForeignKey("users.id"), nullable=False)
-    global_company_id = Column(String(36), ForeignKey("global_companies.id"), nullable=True)
-    global_contact_id = Column(String(36), ForeignKey("global_contacts.id"), nullable=True)
-    resulting_company_id = Column(String(36), nullable=True)
-    resulting_contact_id = Column(String(36), nullable=True)
-    resulting_lead_id = Column(String(36), nullable=True)
-    snapshot_json = Column(JSON, nullable=False, default=dict)
-    pulled_at = Column(DateTime, default=utc_now, nullable=False, index=True)

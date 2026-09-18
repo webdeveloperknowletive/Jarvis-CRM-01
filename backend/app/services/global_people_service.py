@@ -46,8 +46,6 @@ def search_global_people(
     results = []
     for p in people:
         p_dict = {k: v for k, v in p.__dict__.items() if not k.startswith("_")}
-        if not (current_user and current_user.is_super_admin):
-            p_dict["pull_history"] = []
         results.append(GlobalPersonOut(**p_dict))
     return results
 
@@ -185,16 +183,6 @@ def pull_global_people_to_crm(
             continue
 
         pulled_people += 1
-        # Append to pull_history instead of marking as PULLED for everyone
-        current_history = list(person.pull_history) if person.pull_history else []
-        current_history.append({
-            "org_id": organization_id,
-            "org_name": org_name,
-            "pulled_by": user.id,
-            "pulled_at": now_utc.isoformat()
-        })
-        person.pull_history = current_history
-        person.pull_status = "AVAILABLE"
 
         # 3. Company resolution & creation
         company = None

@@ -7,7 +7,8 @@ interface EditPersonModalProps {
   person: any | null;
   isOpen: boolean;
   onClose: () => void;
-  onSaved: (updatedPerson: any) => void;
+  onSaved: (updatedPerson: any, pendingApproval?: boolean) => void;
+  currentUser?: any;
 }
 
 export const EditPersonModal: React.FC<EditPersonModalProps> = ({
@@ -15,6 +16,7 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
   isOpen,
   onClose,
   onSaved,
+  currentUser,
 }) => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -104,7 +106,7 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
       const payload: Partial<GlobalPerson> = {
         full_name: fullName.trim(),
         email: email.trim() || undefined,
-        phone: phone.trim() || undefined,
+        phone: phone ? phone.replace(/\D/g, "") : undefined,
         designation: designation.trim() || undefined,
         company_name: companyName.trim() || undefined,
         seniority: seniority || undefined,
@@ -120,8 +122,18 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
         associated_companies: cleanAssoc,
       };
 
-      const res = await api.updateGlobalPerson(person.id, payload);
-      onSaved(res);
+      const isDataEntry = currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY" || currentUser?.tenant_role === "DATA_ENTRY";
+      if (isDataEntry) {
+        await api.submitGlobalEdit({
+          entity_type: "PERSON",
+          entity_id: person.id,
+          changes_json: payload,
+        });
+        onSaved(person, true);
+      } else {
+        const res = await api.updateGlobalPerson(person.id, payload);
+        onSaved(res, false);
+      }
       onClose();
     } catch (err: any) {
       setFormError(err.message || "Failed to update person lead.");
@@ -586,7 +598,7 @@ export const EditPersonModal: React.FC<EditPersonModalProps> = ({
               id="save-person-btn"
             >
               <Check style={{ width: "16px", height: "16px" }} />
-              {saving ? "Saving Changes..." : "Update Profile"}
+              {saving ? "Saving..." : ((currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY" || currentUser?.tenant_role === "DATA_ENTRY") ? "Submit for Approval" : "Update Profile")}
             </button>
           </div>
         </form>

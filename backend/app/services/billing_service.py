@@ -56,6 +56,43 @@ def start_trial(db: Session, organization_id: str, plan_code: str = "TRIAL", day
     db.refresh(sub)
     return sub
 
+def grant_full_access(db: Session, organization_id: str) -> Subscription:
+    """
+    Grant 10-year enterprise access for an organization.
+    """
+    plan = db.query(Plan).filter(Plan.code == "ENTERPRISE").first()
+    if not plan:
+        plan = db.query(Plan).first()
+        if not plan:
+            raise ValueError("No plans configured in the system.")
+            
+    now = utc_now()
+    end_date = now + timedelta(days=365 * 10)
+    
+    sub = db.query(Subscription).filter(Subscription.organization_id == organization_id).first()
+    if not sub:
+        sub = Subscription(
+            organization_id=organization_id,
+            plan_id=plan.id,
+            status="ACTIVE",
+            current_period_start=now,
+            current_period_end=end_date,
+            seats_purchased=1000,
+            pull_quota_monthly=1000000
+        )
+        db.add(sub)
+    else:
+        sub.status = "ACTIVE"
+        sub.plan_id = plan.id
+        sub.current_period_start = now
+        sub.current_period_end = end_date
+        sub.seats_purchased = 1000
+        sub.pull_quota_monthly = 1000000
+        
+    db.commit()
+    db.refresh(sub)
+    return sub
+
 def transition_subscription(db: Session, subscription: Subscription, new_status: str) -> Subscription:
     """
     Safely transition a subscription to a new status.

@@ -48,6 +48,7 @@ def list_organization_telecallers(
             "phone": t.phone,
             "status": t.status,
             "assigned_leads_count": assigned_count,
+            "telecaller_targets": t.telecaller_targets or {"calls": 0, "connects": 0, "conversions": 0},
             "created_at": t.created_at.isoformat() if t.created_at else None
         })
     return result
@@ -151,6 +152,8 @@ def update_user(
         user.status = data.status
     if data.permission_overrides is not None:
         user.permission_overrides = data.permission_overrides
+    if data.telecaller_targets is not None:
+        user.telecaller_targets = data.telecaller_targets
 
     audit = AuditLog(
         organization_id=tenant_id,

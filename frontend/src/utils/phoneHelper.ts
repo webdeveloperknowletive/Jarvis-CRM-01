@@ -60,6 +60,23 @@ export const getWhatsAppDigits = (phone?: string | null): string => {
 
 export const cleanPhoneInput = (val: string): string => {
   if (!val) return "";
-  // Keep only digits and restrict to exactly 10 digits
-  return val.replace(/\D/g, "").slice(0, 10);
+  // Strip any characters that aren't digits, spaces, or hyphens
+  const allowed = val.replace(/[^\d\s\-]/g, "");
+  // Count digits in the allowed string
+  const digits = allowed.replace(/\D/g, "");
+  // If we have more than 10 digits, truncate to the 10th digit
+  if (digits.length > 10) {
+    let digitCount = 0;
+    let result = "";
+    for (let i = 0; i < allowed.length; i++) {
+      const char = allowed[i];
+      if (/\d/.test(char)) {
+        digitCount++;
+        if (digitCount > 10) break;
+      }
+      result += char;
+    }
+    return result;
+  }
+  return allowed;
 };

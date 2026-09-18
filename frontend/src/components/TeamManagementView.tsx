@@ -15,9 +15,14 @@ import {
   ArrowRight,
   Shield,
   Phone,
-  Mail
+  Mail,
+  Edit2,
+  FileText,
+  Save
 } from "lucide-react";
 import { format10DigitPhone, cleanPhoneInput } from "../utils/phoneHelper";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface TeamManagementViewProps {
   onNavigateToLeads?: () => void;
@@ -55,6 +60,59 @@ export const TeamManagementView: React.FC<TeamManagementViewProps> = ({ onNaviga
   const [leadsSearch, setLeadsSearch] = useState("");
   const [assigning, setAssigning] = useState(false);
 
+  // Targets Editing State
+  const [editingTargetId, setEditingTargetId] = useState<string | null>(null);
+  const [tempTargets, setTempTargets] = useState<{ calls: number; connects: number; conversions: number }>({ calls: 0, connects: 0, conversions: 0 });
+
+  const handleEditTargets = (tc: TelecallerUser) => {
+    setEditingTargetId(tc.id);
+    const tg = tc.telecaller_targets || { calls: 0, connects: 0, conversions: 0 };
+    setTempTargets({ calls: tg.calls || 0, connects: tg.connects || 0, conversions: tg.conversions || 0 });
+  };
+
+  const handleSaveTargets = async (tc: TelecallerUser) => {
+    try {
+      await api.updateUser(tc.id, { telecaller_targets: tempTargets });
+      setSuccessBanner(`Updated targets for ${tc.full_name}`);
+      setTimeout(() => setSuccessBanner(null), 3000);
+      setEditingTargetId(null);
+      loadTelecallers();
+    } catch (err: any) {
+      alert(err.message || "Failed to update targets.");
+    }
+  };
+
+  const generatePDFReport = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Telecaller Performance Report", 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+
+    const tableData = telecallers.map(tc => {
+      const tg = tc.telecaller_targets || { calls: 0, connects: 0, conversions: 0 };
+      return [
+        tc.full_name,
+        tc.email,
+        tc.assigned_leads_count,
+        tg.calls,
+        tg.connects,
+        tg.conversions,
+        tc.status
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 35,
+      head: [["Telecaller", "Email", "Assigned Leads", "Target Calls", "Target Connects", "Target Conversions", "Status"]],
+      body: tableData,
+      theme: "grid",
+      headStyles: { fillColor: [79, 70, 229] }
+    });
+
+    doc.save(`telecaller-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   useEffect(() => {
     loadTelecallers();
   }, []);
@@ -85,7 +143,7 @@ export const TeamManagementView: React.FC<TeamManagementViewProps> = ({ onNaviga
         full_name: fullName.trim(),
         email: email.trim().toLowerCase(),
         password: password.trim(),
-        phone: phone.trim() || undefined,
+        phone: phone ? phone.replace(/\D/g, "") : undefined,
         tenant_role: "TELECALLER",
       });
 
@@ -209,6 +267,16 @@ export const TeamManagementView: React.FC<TeamManagementViewProps> = ({ onNaviga
           )}
 
           <button
+            onClick={generatePDFReport}
+            className="btn-secondary"
+            style={{ fontSize: "0.8125rem", color: "var(--indigo)" }}
+            title="Download PDF Report"
+          >
+            <FileText style={{ width: "15px", height: "15px" }} />
+            Download Report
+          </button>
+
+          <button
             onClick={() => setShowAddModal(true)}
             className="btn-primary"
             style={{ fontSize: "0.8125rem" }}
@@ -315,6 +383,7 @@ export const TeamManagementView: React.FC<TeamManagementViewProps> = ({ onNaviga
                 <th style={{ paddingLeft: "20px" }}>Telecaller Member</th>
                 <th>Contact Details</th>
                 <th>Role & Scope</th>
+                <th>Daily Targets</th>
                 <th>Assigned Leads Count</th>
                 <th>Status</th>
                 <th style={{ textAlign: "right", paddingRight: "20px" }}>Actions</th>
@@ -404,6 +473,65 @@ export const TeamManagementView: React.FC<TeamManagementViewProps> = ({ onNaviga
                         <Shield style={{ width: "11px", height: "11px" }} />
                         TELECALLER (SCOPED)
                       </span>
+                    </td>
+
+                    <td>
+                      {editingTargetId === tc.id ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.75rem" }}>
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            <span>Calls:</span>
+                            <input 
+                              type="number" 
+                              value={tempTargets.calls} 
+                              onChange={(e) => setTempTargets({...tempTargets, calls: parseInt(e.target.value) || 0})}
+                              style={{ width: "40px", padding: "2px" }}
+                            />
+                          </div>
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            <span>Conn:</span>
+                            <input 
+                              type="number" 
+                              value={tempTargets.connects} 
+                              onChange={(e) => setTempTargets({...tempTargets, connects: parseInt(e.target.value) || 0})}
+                              style={{ width: "40px", padding: "2px" }}
+                            />
+                          </div>
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            <span>Conv:</span>
+                            <input 
+                              type="number" 
+                              value={tempTargets.conversions} 
+                              onChange={(e) => setTempTargets({...tempTargets, conversions: parseInt(e.target.value) || 0})}
+                              style={{ width: "40px", padding: "2px" }}
+                            />
+                          </div>
+                          <div style={{ display: "flex", gap: "4px" }}>
+                            <button onClick={() => handleSaveTargets(tc)} style={{ color: "var(--emerald)", cursor: "pointer", background: "none", border: "none" }} title="Save Targets">
+                              <Save style={{ width: "14px", height: "14px" }} />
+                            </button>
+                            <button onClick={() => setEditingTargetId(null)} style={{ color: "var(--text-muted)", cursor: "pointer", background: "none", border: "none" }} title="Cancel">
+                              <X style={{ width: "14px", height: "14px" }} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                          <div style={{ display: "flex", flexDirection: "column" }}>
+                            <span>📞 Calls: <strong>{tc.telecaller_targets?.calls || 0}</strong></span>
+                            <span>✅ Conn: <strong>{tc.telecaller_targets?.connects || 0}</strong></span>
+                            <span>🎯 Conv: <strong>{tc.telecaller_targets?.conversions || 0}</strong></span>
+                            {/* Missing target reminder if they haven't made calls today */}
+                            {(!tc.telecaller_targets?.calls || tc.telecaller_targets?.calls === 0) && (
+                              <span style={{ color: "var(--amber-dark)", fontSize: "0.6875rem", display: "flex", alignItems: "center", gap: "2px", marginTop: "2px" }}>
+                                <AlertCircle style={{ width: "10px", height: "10px" }} /> No Target
+                              </span>
+                            )}
+                          </div>
+                          <button onClick={() => handleEditTargets(tc)} style={{ color: "var(--indigo)", cursor: "pointer", background: "none", border: "none", padding: "4px" }} title="Edit Targets">
+                            <Edit2 style={{ width: "14px", height: "14px" }} />
+                          </button>
+                        </div>
+                      )}
                     </td>
 
                     <td>

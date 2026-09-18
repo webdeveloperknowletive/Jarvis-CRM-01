@@ -758,60 +758,18 @@ export const PeopleIntelligenceView: React.FC<PeopleIntelligenceViewProps> = ({ 
                       {/* Status & Actions */}
                       <td style={{ padding: "12px 16px", textAlign: "center" }}>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
-                          {isSuperAdmin && person.pull_history && person.pull_history.length > 0 ? (
-                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-                              <span style={{
-                                fontSize: "0.625rem",
-                                fontWeight: 700,
-                                padding: "2px 8px",
-                                borderRadius: "999px",
-                                background: "rgba(225, 29, 72, 0.12)",
-                                color: "var(--rose-dark)",
-                                border: "1px solid rgba(225, 29, 72, 0.3)",
-                                textTransform: "uppercase"
-                              }}>
-                                PULLED ({person.pull_history.length})
-                              </span>
-                              <select
-                                className="select-dropdown"
-                                style={{ fontSize: "0.625rem", padding: "2px 16px 2px 6px", minWidth: "120px", maxWidth: "160px", background: "var(--bg-surface)" }}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <option>View Pull History...</option>
-                                {person.pull_history.map((h: any, i: number) => (
-                                  <option key={i} disabled>
-                                    {h.org_name} ({new Date(h.pulled_at).toLocaleDateString()})
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          ) : person.pull_status === "PULLED" ? (
-                            <span style={{
-                              fontSize: "0.625rem",
-                              fontWeight: 700,
-                              padding: "2px 8px",
-                              borderRadius: "999px",
-                              background: "rgba(225, 29, 72, 0.12)",
-                              color: "var(--rose-dark)",
-                              border: "1px solid rgba(225, 29, 72, 0.3)",
-                              textTransform: "uppercase"
-                            }}>
-                              TAKEN • {person.pulled_by_org_name || "Pulled"}
-                            </span>
-                          ) : (
-                            <span style={{
-                              fontSize: "0.625rem",
-                              fontWeight: 700,
-                              padding: "2px 8px",
-                              borderRadius: "999px",
-                              background: "var(--emerald-light)",
-                              color: "var(--emerald-dark)",
-                              border: "1px solid var(--emerald-border)",
-                              textTransform: "uppercase"
-                            }}>
-                              {person.status}
-                            </span>
-                          )}
+                          <span style={{
+                            fontSize: "0.625rem",
+                            fontWeight: 700,
+                            padding: "2px 8px",
+                            borderRadius: "999px",
+                            background: "var(--emerald-light)",
+                            color: "var(--emerald-dark)",
+                            border: "1px solid var(--emerald-border)",
+                            textTransform: "uppercase"
+                          }}>
+                            VERIFIED PROFILE
+                          </span>
                           {canManage && (
                             <button
                               onClick={() => setEditingPerson(person)}

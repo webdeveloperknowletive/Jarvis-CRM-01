@@ -13,7 +13,11 @@ import { RadarView } from "./components/RadarView";
 import { SuperAdminView } from "./components/SuperAdminView";
 import { PeopleIntelligenceView } from "./components/PeopleIntelligenceView";
 import { GlobalIntelligenceView } from "./components/GlobalIntelligenceView";
+import { GlobalEditsView } from "./components/GlobalEditsView";
 import { TeamManagementView } from "./components/TeamManagementView";
+import { DataGovernanceView } from "./components/DataGovernanceView";
+import { OperationsView } from "./components/OperationsView";
+import { ApiKeysManagement } from "./components/ApiKeysManagement";
 import { NewLeadModal } from "./components/NewLeadModal";
 import { TemplatesView } from "./components/TemplatesView";
 import { ExpiredScreen } from "./components/ExpiredScreen";
@@ -36,6 +40,9 @@ export const TAB_TO_ROUTE: Record<string, string> = {
   recovery: "/super_admin_recovery",
   dashboard: "/super_admin_dashboard",
   users: "/super_admin_users",
+  operations: "/super_admin_operations",
+  governance: "/data_governance",
+  api_keys: "/api_keys",
 };
 
 export const ROUTE_TO_TAB: Record<string, string> = {
@@ -62,6 +69,11 @@ export const ROUTE_TO_TAB: Record<string, string> = {
   "/super_admin_security": "security",
   "/recovery": "recovery",
   "/super_admin_recovery": "recovery",
+  "/super_admin_operations": "operations",
+  "/operations": "operations",
+  "/data_governance": "governance",
+  "/governance": "governance",
+  "/api_keys": "api_keys",
 };
 
 export const App: React.FC = () => {
@@ -108,7 +120,8 @@ export const App: React.FC = () => {
     
     // --- SECURITY ROUTE GUARD ---
     if (matchedTab) {
-      const superAdminTabs = ['dashboard', 'organizations', 'users', 'security', 'audit', 'recovery'];
+      const superAdminTabs = ['dashboard', 'organizations', 'users', 'security', 'audit', 'recovery', 'operations', 'global_edits'];
+      const orgAdminTabs = ['team', 'governance', 'api_keys', 'templates', 'organizations', 'security', 'audit', 'recovery'];
       const dataEntryTabs = ['global_intelligence', 'global', 'people', 'import'];
       const isDataEntry = Boolean(currentUser.is_data_entry || currentUser.platform_role === 'DATA_ENTRY' || currentUser.tenant_role === 'DATA_ENTRY');
 
@@ -152,7 +165,8 @@ export const App: React.FC = () => {
       
       // --- SECURITY ROUTE GUARD ---
       if (matchedTab) {
-        const superAdminTabs = ['dashboard', 'organizations', 'users', 'security', 'audit', 'recovery'];
+        const superAdminTabs = ['dashboard', 'organizations', 'users', 'security', 'audit', 'recovery', 'operations', 'global_edits'];
+        const orgAdminTabs = ['team', 'governance', 'api_keys', 'templates', 'organizations', 'security', 'audit', 'recovery'];
         const dataEntryTabs = ['global_intelligence', 'global', 'people', 'import'];
         const isDataEntry = Boolean(user.is_data_entry || user.platform_role === 'DATA_ENTRY' || user.tenant_role === 'DATA_ENTRY');
 
@@ -331,6 +345,9 @@ export const App: React.FC = () => {
               <button onClick={() => handleTabChange('audit')} className={`nav-tab-btn ${activeTab === 'audit' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'audit' ? '#fff' : '#94a3b8', background: activeTab === 'audit' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
                  <ActivitySquare style={{ width: '16px', height: '16px' }} /> Audit Logs
               </button>
+              <button onClick={() => handleTabChange('operations')} className={`nav-tab-btn ${activeTab === 'operations' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'operations' ? '#fff' : '#94a3b8', background: activeTab === 'operations' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
+                 <ActivitySquare style={{ width: '16px', height: '16px', color: activeTab === 'operations' ? '#10b981' : '#059669' }} /> System Operations
+              </button>
               <button onClick={() => handleTabChange('recovery')} className={`nav-tab-btn ${activeTab === 'recovery' ? 'active' : ''}`} style={{ justifyContent: 'flex-start', padding: '10px 12px', width: '100%', color: activeTab === 'recovery' ? '#fff' : '#94a3b8', background: activeTab === 'recovery' ? 'rgba(255,255,255,0.1)' : 'transparent' }}>
                  <Trash2 style={{ width: '16px', height: '16px', color: activeTab === 'recovery' ? '#ef4444' : '#dc2626' }} /> Recycle Bin
               </button>
@@ -464,6 +481,12 @@ export const App: React.FC = () => {
         {/* Global People Intelligence (Super Admin & Data Entry) */}
         {activeTab === "people" && <PeopleIntelligenceView currentUser={currentUser} />}
 
+        {/* Data Governance & Data Quality */}
+        {activeTab === "governance" && <DataGovernanceView />}
+
+        {/* API Keys */}
+        {activeTab === "api_keys" && <ApiKeysManagement />}
+
         {/* Super Admin Control */}
         {activeTab === "dashboard" && <SuperAdminView viewMode="dashboard" />}
         {activeTab === "organizations" && <SuperAdminView viewMode="organizations" />}
@@ -471,6 +494,8 @@ export const App: React.FC = () => {
         {activeTab === "security" && <SuperAdminView viewMode="security" />}
         {activeTab === "audit" && <SuperAdminView viewMode="audit" />}
         {activeTab === "recovery" && <SuperAdminView viewMode="recovery" />}
+        {activeTab === "global_edits" && <GlobalEditsView />}
+        {activeTab === "operations" && <OperationsView />}
         </main>
       </div>
 

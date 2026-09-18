@@ -73,12 +73,6 @@ class GlobalCompanyOut(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     status: str
-    pull_status: str = "AVAILABLE"
-    pulled_by_org_id: Optional[str] = None
-    pulled_by_org_name: Optional[str] = None
-    pulled_at: Optional[datetime] = None
-    pull_history: Optional[List[Dict[str, Any]]] = []
-    contacts_count: int = 0
     first_seen_at: datetime
     last_updated_at: datetime
 
@@ -112,10 +106,6 @@ class LinkedPersonOut(BaseModel):
     state: Optional[str] = None
     linkedin_url: Optional[str] = None
     status: str = "ACTIVE"
-    pull_status: str = "AVAILABLE"
-    pulled_by_org_id: Optional[str] = None
-    pulled_by_org_name: Optional[str] = None
-    pulled_at: Optional[datetime] = None
     is_primary: bool = True
     estimated_value: float = 0.0
 
@@ -142,11 +132,6 @@ class CompanyWithPeopleOut(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     status: str = "ACTIVE"
-    pull_status: str = "AVAILABLE"
-    pulled_by_org_id: Optional[str] = None
-    pulled_by_org_name: Optional[str] = None
-    pulled_at: Optional[datetime] = None
-    pull_history: Optional[List[Dict[str, Any]]] = []
     contacts_count: int = 0
     associated_people: List[LinkedPersonOut] = []
     people_count: int = 0

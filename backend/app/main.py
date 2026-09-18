@@ -9,6 +9,8 @@ from app.core.database import Base, engine
 from app.api.v1.api import api_router
 from app.api.v1 import admin
 from app.api.v1 import billing
+from app.api.v1 import data_quality
+from app.api.v1 import jobs, api_keys, action_center, global_edits
 import app.models  # Ensure all models are registered
 
 # Configure logging
@@ -70,6 +72,11 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(admin.router, prefix=settings.API_V1_STR)
 app.include_router(billing.router, prefix=settings.API_V1_STR)
+app.include_router(data_quality.router, prefix=settings.API_V1_STR)
+app.include_router(jobs.router, prefix=settings.API_V1_STR)
+app.include_router(api_keys.router, prefix=settings.API_V1_STR)
+app.include_router(action_center.router, prefix=settings.API_V1_STR)
+app.include_router(global_edits.router, prefix=settings.API_V1_STR)
 
 
 @app.on_event("startup")

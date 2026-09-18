@@ -7,7 +7,8 @@ interface EditCompanyModalProps {
   company: GlobalCompany | null;
   isOpen: boolean;
   onClose: () => void;
-  onSaved: (updatedCompany: GlobalCompany) => void;
+  onSaved: (updatedCompany: GlobalCompany, pendingApproval?: boolean) => void;
+  currentUser?: any;
 }
 
 export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
@@ -15,6 +16,7 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
   isOpen,
   onClose,
   onSaved,
+  currentUser,
 }) => {
   const [formData, setFormData] = useState<Partial<GlobalCompanyCreatePayload>>({});
   const [statusVal, setStatusVal] = useState("ACTIVE");
@@ -59,10 +61,22 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
       const payload: Partial<GlobalCompanyCreatePayload> & { status?: string } = {
         ...formData,
         legal_name: formData.legal_name.trim(),
+        phone: formData.phone ? formData.phone.replace(/\D/g, "") : undefined,
         status: statusVal,
       };
-      const res = await api.updateGlobalCompany(company.id, payload);
-      onSaved(res);
+
+      const isDataEntry = currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY" || currentUser?.tenant_role === "DATA_ENTRY";
+      if (isDataEntry) {
+        await api.submitGlobalEdit({
+          entity_type: "COMPANY",
+          entity_id: company.id,
+          changes_json: payload,
+        });
+        onSaved(company, true);
+      } else {
+        const res = await api.updateGlobalCompany(company.id, payload);
+        onSaved(res, false);
+      }
       onClose();
     } catch (err: any) {
       setFormError(err.message || "Failed to update company record.");
@@ -432,7 +446,7 @@ export const EditCompanyModal: React.FC<EditCompanyModalProps> = ({
               id="save-company-btn"
             >
               <Check style={{ width: "16px", height: "16px" }} />
-              {saving ? "Saving Changes..." : "Update Enterprise"}
+              {saving ? "Saving..." : ((currentUser?.is_data_entry || currentUser?.platform_role === "DATA_ENTRY" || currentUser?.tenant_role === "DATA_ENTRY") ? "Submit for Approval" : "Update Enterprise")}
             </button>
           </div>
         </form>

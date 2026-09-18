@@ -37,8 +37,8 @@ def get_global_intelligence(
         all_companies = db.query(GlobalCompany).filter(GlobalCompany.status == "ACTIVE").all()
         all_people = db.query(GlobalPerson).filter(GlobalPerson.status == "ACTIVE").all()
     else:
-        all_companies = db.query(GlobalCompany).filter(GlobalCompany.status == "ACTIVE", GlobalCompany.pull_status != "PULLED").all()
-        all_people = db.query(GlobalPerson).filter(GlobalPerson.status == "ACTIVE", GlobalPerson.pull_status != "PULLED").all()
+        all_companies = db.query(GlobalCompany).filter(GlobalCompany.status == "ACTIVE").all()
+        all_people = db.query(GlobalPerson).filter(GlobalPerson.status == "ACTIVE").all()
 
     total_companies = len(all_companies)
     total_people = len(all_people)
@@ -116,10 +116,6 @@ def get_global_intelligence(
                     state=person.state,
                     linkedin_url=person.linkedin_url,
                     status=person.status,
-                    pull_status=person.pull_status or "AVAILABLE",
-                    pulled_by_org_id=person.pulled_by_org_id,
-                    pulled_by_org_name=person.pulled_by_org_name,
-                    pulled_at=person.pulled_at,
                     is_primary=True,
                     estimated_value=float(person.estimated_value or 0.0)
                 ))
@@ -152,10 +148,6 @@ def get_global_intelligence(
                             state=person.state,
                             linkedin_url=person.linkedin_url,
                             status=person.status,
-                            pull_status=person.pull_status or "AVAILABLE",
-                            pulled_by_org_id=person.pulled_by_org_id,
-                            pulled_by_org_name=person.pulled_by_org_name,
-                            pulled_at=person.pulled_at,
                             is_primary=False,
                             estimated_value=float(person.estimated_value or 0.0)
                         ))
@@ -198,10 +190,6 @@ def get_global_intelligence(
             email=c.email,
             phone=c.phone,
             status=c.status,
-            pull_status=c.pull_status or "AVAILABLE",
-            pulled_by_org_id=c.pulled_by_org_id,
-            pulled_by_org_name=c.pulled_by_org_name,
-            pulled_at=c.pulled_at,
             contacts_count=len(c.contacts) if hasattr(c, "contacts") and c.contacts else 0,
             associated_people=c_people,
             people_count=p_count
@@ -271,10 +259,6 @@ def get_global_intelligence(
                 state=person.state,
                 linkedin_url=person.linkedin_url,
                 status=person.status,
-                pull_status=person.pull_status or "AVAILABLE",
-                pulled_by_org_id=person.pulled_by_org_id,
-                pulled_by_org_name=person.pulled_by_org_name,
-                pulled_at=person.pulled_at,
                 is_primary=True,
                 estimated_value=float(person.estimated_value or 0.0)
             ))

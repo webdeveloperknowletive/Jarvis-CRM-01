@@ -21,11 +21,6 @@ class GlobalPerson(Base):
     country = Column(String(100), nullable=False, default="India")
     estimated_value = Column(Float, nullable=False, default=0.0)  # Estimated Deal Value / Budget in INR
     status = Column(String(30), nullable=False, default="ACTIVE")  # ACTIVE, CONTACTED, ARCHIVED
-    pull_status = Column(String(30), nullable=False, default="AVAILABLE")  # AVAILABLE, PULLED, TAKEN
-    pulled_by_org_id = Column(String(36), ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True, index=True)
-    pulled_by_org_name = Column(String(255), nullable=True)
-    pulled_at = Column(DateTime, nullable=True)
-    pull_history = Column(JSON, nullable=False, default=list)  # [{"org_id": "...", "org_name": "...", "pulled_by": "...", "pulled_at": "..."}]
     source = Column(String(50), nullable=False, default="MANUAL")  # MANUAL, IMPORT, DIRECTORY
     notes = Column(Text, nullable=True)
     associated_companies = Column(JSON, nullable=False, default=list)  # [{"company_name": "...", "designation": "..."}]
