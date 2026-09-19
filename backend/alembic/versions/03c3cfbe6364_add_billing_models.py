@@ -54,43 +54,48 @@ def upgrade() -> None:
         batch_op.create_index(batch_op.f('ix_payment_transactions_subscription_id'), ['subscription_id'], unique=False)
 
     with op.batch_alter_table('audit_logs', schema=None) as batch_op:
-        batch_op.alter_column('context_type',
-               existing_type=sa.VARCHAR(length=30),
-               nullable=False,
-               existing_server_default=sa.text("'PLATFORM_CONTEXT'::character varying"))
+        # batch_op.alter_column('context_type',
+        #        existing_type=sa.VARCHAR(length=30),
+        #        nullable=False,
+        #        existing_server_default=sa.text("'PLATFORM_CONTEXT'::character varying"))
         batch_op.create_index('ix_audit_logs_action_created', ['action', 'created_at'], unique=False)
-        batch_op.create_index(batch_op.f('ix_audit_logs_actor_user_id'), ['actor_user_id'], unique=False)
-        batch_op.create_index(batch_op.f('ix_audit_logs_context_type'), ['context_type'], unique=False)
+        # batch_op.create_index(batch_op.f('ix_audit_logs_actor_user_id'), ['actor_user_id'], unique=False)
+        # batch_op.create_index(batch_op.f('ix_audit_logs_context_type'), ['context_type'], unique=False)
         batch_op.create_index('ix_audit_logs_entity_type_id', ['entity_type', 'entity_id'], unique=False)
-        batch_op.create_index(batch_op.f('ix_audit_logs_event_hash'), ['event_hash'], unique=False)
+        # batch_op.create_index(batch_op.f('ix_audit_logs_event_hash'), ['event_hash'], unique=False)
         batch_op.create_index('ix_audit_logs_org_created', ['organization_id', 'created_at'], unique=False)
-        batch_op.create_index(batch_op.f('ix_audit_logs_sequence_number'), ['sequence_number'], unique=False)
-        batch_op.create_index(batch_op.f('ix_audit_logs_support_session_id'), ['support_session_id'], unique=False)
-        batch_op.create_index(batch_op.f('ix_audit_logs_target_user_id'), ['target_user_id'], unique=False)
+        # batch_op.create_index(batch_op.f('ix_audit_logs_sequence_number'), ['sequence_number'], unique=False)
+        # batch_op.create_index(batch_op.f('ix_audit_logs_support_session_id'), ['support_session_id'], unique=False)
+        # batch_op.create_index(batch_op.f('ix_audit_logs_target_user_id'), ['target_user_id'], unique=False)
         batch_op.create_index('ix_audit_logs_user_created', ['user_id', 'created_at'], unique=False)
-        batch_op.create_foreign_key(None, 'users', ['target_user_id'], ['id'], ondelete='SET NULL')
-        batch_op.create_foreign_key(None, 'support_sessions', ['support_session_id'], ['id'], ondelete='SET NULL')
-        batch_op.create_foreign_key(None, 'users', ['actor_user_id'], ['id'], ondelete='SET NULL')
+        # batch_op.create_foreign_key(None, 'users', ['target_user_id'], ['id'], ondelete='SET NULL')
+        # batch_op.create_foreign_key(None, 'support_sessions', ['support_session_id'], ['id'], ondelete='SET NULL')
+        # batch_op.create_foreign_key(None, 'users', ['actor_user_id'], ['id'], ondelete='SET NULL')
 
     with op.batch_alter_table('companies', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_companies_deleted_at'), ['deleted_at'], unique=False)
+        pass
+        # batch_op.create_index(batch_op.f('ix_companies_deleted_at'), ['deleted_at'], unique=False)
 
     with op.batch_alter_table('contacts', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_contacts_deleted_at'), ['deleted_at'], unique=False)
+        pass
+        # batch_op.create_index(batch_op.f('ix_contacts_deleted_at'), ['deleted_at'], unique=False)
 
 
     with op.batch_alter_table('leads', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_leads_deleted_at'), ['deleted_at'], unique=False)
+        pass
+        # batch_op.create_index(batch_op.f('ix_leads_deleted_at'), ['deleted_at'], unique=False)
 
     with op.batch_alter_table('organizations', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_organizations_deleted_at'), ['deleted_at'], unique=False)
+        pass
+        # batch_op.create_index(batch_op.f('ix_organizations_deleted_at'), ['deleted_at'], unique=False)
 
     with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.alter_column('token_version',
-               existing_type=sa.INTEGER(),
-               nullable=False,
-               existing_server_default=sa.text('1'))
-        batch_op.create_index(batch_op.f('ix_users_deleted_at'), ['deleted_at'], unique=False)
+        pass
+        # batch_op.alter_column('token_version',
+        #        existing_type=sa.INTEGER(),
+        #        nullable=False,
+        #        existing_server_default=sa.text('1'))
+        # batch_op.create_index(batch_op.f('ix_users_deleted_at'), ['deleted_at'], unique=False)
 
     # ### end Alembic commands ###
 

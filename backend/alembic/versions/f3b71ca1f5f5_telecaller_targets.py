@@ -26,22 +26,24 @@ def upgrade() -> None:
 
     op.drop_table('global_data_pull_logs')
     with op.batch_alter_table('global_companies', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_global_companies_pulled_by_org_id'))
-        batch_op.drop_constraint(batch_op.f('global_companies_pulled_by_org_id_fkey'), type_='foreignkey')
-        batch_op.drop_column('pulled_by_org_id')
-        batch_op.drop_column('pulled_at')
-        batch_op.drop_column('pull_history')
-        batch_op.drop_column('pull_status')
-        batch_op.drop_column('pulled_by_org_name')
+        pass
+        # batch_op.drop_index(batch_op.f('ix_global_companies_pulled_by_org_id'))
+        # batch_op.drop_constraint(batch_op.f('global_companies_pulled_by_org_id_fkey'), type_='foreignkey')
+        # batch_op.drop_column('pulled_by_org_id')
+        # batch_op.drop_column('pulled_at')
+        # batch_op.drop_column('pull_history')
+        # batch_op.drop_column('pull_status')
+        # batch_op.drop_column('pulled_by_org_name')
 
     with op.batch_alter_table('global_people', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_global_people_pulled_by_org_id'))
-        batch_op.drop_constraint(batch_op.f('global_people_pulled_by_org_id_fkey'), type_='foreignkey')
-        batch_op.drop_column('pulled_by_org_id')
-        batch_op.drop_column('pulled_at')
-        batch_op.drop_column('pull_history')
-        batch_op.drop_column('pull_status')
-        batch_op.drop_column('pulled_by_org_name')
+        pass
+        # batch_op.drop_index(batch_op.f('ix_global_people_pulled_by_org_id'))
+        # batch_op.drop_constraint(batch_op.f('global_people_pulled_by_org_id_fkey'), type_='foreignkey')
+        # batch_op.drop_column('pulled_by_org_id')
+        # batch_op.drop_column('pulled_at')
+        # batch_op.drop_column('pull_history')
+        # batch_op.drop_column('pull_status')
+        # batch_op.drop_column('pulled_by_org_name')
 
     with op.batch_alter_table('users', schema=None) as batch_op:
         batch_op.add_column(sa.Column('telecaller_targets', sa.JSON(), nullable=True))

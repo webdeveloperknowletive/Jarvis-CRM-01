@@ -1,0 +1,51 @@
+services:
+  # FastAPI Web Service
+  - type: web
+    name: jarvis-crm-backend
+    env: python
+    rootDir: .
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+
+  # Celery Worker Service
+  - type: worker
+    name: jarvis-crm-celery-worker
+    env: python
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A app.worker.celery_app worker --loglevel=info
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+  # Celery Beat Service
+  - type: worker
+    name: jarvis-crm-celery-beat
+    env: python
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A app.worker.celery_app beat --loglevel=info
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
