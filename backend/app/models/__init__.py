@@ -1,6 +1,7 @@
 from app.core.database import Base
 from app.models.base import generate_uuid, utc_now, TimestampMixin, SoftDeleteMixin
 from app.models.organization import Organization, Plan, Subscription
+from app.models.product_service import ProductService
 from app.models.user import User
 from app.models.company import Company
 from app.models.contact import Contact
@@ -47,6 +48,7 @@ __all__ = [
     "Organization",
     "Plan",
     "Subscription",
+    "ProductService",
     "User",
     "Company",
     "Contact",

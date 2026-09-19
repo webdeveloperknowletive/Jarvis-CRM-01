@@ -33,6 +33,22 @@ def execute_followup_policy(db: Session, activity: Activity, tenant_id: str, cur
     if existing_tasks >= policy.max_attempts:
         return
         
+    # Deduplication check: Cancel old PENDING follow-ups for this lead
+    pending_tasks = db.query(Task).filter(
+        Task.lead_id == activity.lead_id,
+        Task.task_type == "FOLLOW_UP",
+        Task.status == "PENDING"
+    ).all()
+
+    for pt in pending_tasks:
+        pt.status = "CANCELLED"
+    db.commit()
+
+    # Get lead to assign to its owner
+    from app.models.lead import Lead
+    lead = db.query(Lead).filter(Lead.id == activity.lead_id).first()
+    owner_id = lead.owner_id if lead else current_user.id
+
     due_date = datetime.now(timezone.utc) + timedelta(minutes=policy.interval_minutes)
     
     new_task = Task(
@@ -44,7 +60,7 @@ def execute_followup_policy(db: Session, activity: Activity, tenant_id: str, cur
         priority="HIGH" if activity.status in ["INTERESTED", "CALLBACK"] else "MEDIUM",
         status="PENDING",
         due_at=due_date,
-        assigned_to_id=current_user.id
+        assigned_to=owner_id
     )
     
     db.add(new_task)

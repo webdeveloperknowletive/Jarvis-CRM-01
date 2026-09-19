@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1"; 
 
 export interface User {
   id: string;
@@ -68,6 +68,8 @@ export interface Lead {
   segment?: string | null;
   lead_type?: string | null;
   phone_type?: string | null;
+  product_service_id?: string | null;
+  product_service_name?: string | null;
   is_whatsapp?: boolean;
   is_sms_capable?: boolean;
   is_callable?: boolean;
@@ -145,6 +147,18 @@ export interface RadarOverview {
   total_active_pipeline_value: number;
   radar_activity_today: number;
   data_access_anomalies: any[];
+}
+
+export interface ProductService {
+  id: string;
+  name: string;
+  code?: string | null;
+  type: string;
+  description?: string | null;
+  price?: number | null;
+  currency: string;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface GlobalCompany {
@@ -508,6 +522,20 @@ export const api = {
   getCompanies: () => api.request<any[]>("/companies/"),
   getContacts: () => api.request<any[]>("/contacts/"),
 
+  // Products & Services
+  getProductServices: (activeOnly: boolean = false) => 
+    api.request<ProductService[]>(`/product-services/${activeOnly ? '?active_only=true' : ''}`),
+  createProductService: (data: Partial<ProductService>) =>
+    api.request<ProductService>("/product-services/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateProductService: (id: string, data: Partial<ProductService>) =>
+    api.request<ProductService>(`/product-services/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
   // Imports
   uploadImportFile: async (file: File) => {
     const formData = new FormData();
@@ -732,7 +760,6 @@ export const api = {
 
   // Telecaller Targets (Problem 2)
   getTelecallerTargetsToday: () => api.request<TelecallerTargetToday>("/telecaller/targets/today"),
-  setTelecallerTarget: (data: any) => api.request<any>("/telecaller/targets", { method: "POST", body: JSON.stringify(data) }),
   getTelecallerPerformanceToday: () => api.request<any>("/telecaller/performance/today"),
 
   // Telecaller Execution Queues & Next Best Action (Problems 12, 16, 17, 18)
@@ -762,6 +789,7 @@ export const api = {
   bulkReassignLeads: (fromUserId: string, toUserId: string, reason?: string) => api.request<any>("/leads/bulk-reassign", { method: "PATCH", body: JSON.stringify({ from_user_id: fromUserId, to_user_id: toUserId, reason }) }),
 
   // Shifts (Problem 11)
+  getShiftStatus: () => api.request<{is_active: boolean, is_on_break: boolean, shift_started_at: string | null, break_started_at: string | null}>("/shift/status", { method: "GET" }),
   startShift: () => api.request<any>("/shift/start", { method: "POST" }),
   endShift: () => api.request<any>("/shift/end", { method: "POST" }),
   startBreak: () => api.request<any>("/shift/break-start", { method: "POST" }),
@@ -859,6 +887,7 @@ export interface TelecallerTargetToday {
   connects_progress_pct: number;
   talk_time_progress_pct: number;
   conversions_progress_pct: number;
+  is_configured: boolean;
 }
 
 export interface NextActionItem {

@@ -26,6 +26,16 @@ def search_global_companies(
     current_user: Optional[User] = None
 ) -> List[GlobalCompanyOut]:
     query = db.query(GlobalCompany).filter(GlobalCompany.status == "ACTIVE")
+    
+    tenant_id = getattr(current_user, "organization_id", None)
+    pulled_company_ids = set()
+    
+    if tenant_id:
+        pulled_comps = db.query(Company.source_global_company_id).filter(
+            Company.organization_id == tenant_id,
+            Company.source_global_company_id.isnot(None)
+        ).all()
+        pulled_company_ids = {c[0] for c in pulled_comps}
 
     if search:
         s = f"%{search}%"
@@ -65,7 +75,7 @@ def search_global_companies(
             city=c.city,
             state=c.state,
             country=c.country,
-            status=c.status,
+            status="PULLED" if c.id in pulled_company_ids else c.status,
             contacts_count=cnt,
             first_seen_at=c.first_seen_at,
             last_updated_at=c.last_updated_at

@@ -14,7 +14,8 @@ import {
   History,
   Shield, 
   Send,
-  ActivitySquare
+  ActivitySquare,
+  Download
 } from "lucide-react";
 
 interface LeadDetailModalProps {
@@ -348,6 +349,35 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
             >
               <Mail style={{ width: "13px", height: "13px", color: "#dc2626" }} />
               {copiedEmail === currentLead.contact_email ? "Copied!" : "Copy Email"}
+            </button>
+
+            <button
+              onClick={() => {
+                const token = api.getToken();
+                const url = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1"}/leads/${currentLead.id}/vcard?token=${token}`;
+                // Using fetch and blob to pass the Bearer token
+                fetch(url, { headers: { "Authorization": `Bearer ${token}` } })
+                  .then(res => {
+                    if (!res.ok) throw new Error("Failed to download vCard");
+                    return res.blob();
+                  })
+                  .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${currentLead.contact_name || currentLead.title || 'Contact'}.vcf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                  })
+                  .catch(e => alert(e.message));
+              }}
+              className="btn-secondary"
+              style={{ fontSize: "0.75rem", padding: "5px 10px" }}
+              title="Download vCard"
+            >
+              <Download style={{ width: "13px", height: "13px", color: "var(--primary)" }} />
+              vCard
             </button>
           </div>
         </div>

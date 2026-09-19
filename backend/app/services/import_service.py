@@ -47,6 +47,8 @@ COLUMN_PATTERNS = {
     "department": [r"department", r"dept", r"function", r"division"],
     "linkedin_url": [r"linkedin", r"profile", r"social"],
     "notes": [r"notes", r"bio", r"summary", r"description", r"comments"],
+    "product_service": [r"product", r"product_name", r"service", r"service_name", r"offering", r"solution", r"product_service", r"product_or_service"],
+    "purpose": [r"purpose", r"call_purpose", r"lead_purpose", r"requirement", r"interest"]
 }
 
 
@@ -265,6 +267,7 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
     target_stage_id = job.target_stage_id
     uploaded_by = job.uploaded_by
     target_owner_id = job.target_owner_id
+    default_product_service_id = job.default_product_service_id
     job_type = (job.job_type or "").upper()
 
     # Update status to PROCESSING and expunge BEFORE switching search_path
@@ -287,8 +290,8 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
             try:
                 db.execute(text(f'''
                     INSERT INTO "{tenant_schema}".import_jobs 
-                    (id, organization_id, uploaded_by, job_type, file_name, file_type, file_path, column_mapping, target_stage_id, target_owner_id, status, total_rows, processed_rows, successful_rows, duplicate_rows, error_rows, created_at, started_at, error_summary)
-                    SELECT id, organization_id, uploaded_by, job_type, file_name, file_type, file_path, column_mapping, target_stage_id, target_owner_id, status, total_rows, processed_rows, successful_rows, duplicate_rows, error_rows, created_at, started_at, COALESCE(error_summary, '{{}}'::json)
+                    (id, organization_id, uploaded_by, job_type, file_name, file_type, file_path, column_mapping, target_stage_id, target_owner_id, default_product_service_id, status, total_rows, processed_rows, successful_rows, duplicate_rows, error_rows, created_at, started_at, error_summary)
+                    SELECT id, organization_id, uploaded_by, job_type, file_name, file_type, file_path, column_mapping, target_stage_id, target_owner_id, default_product_service_id, status, total_rows, processed_rows, successful_rows, duplicate_rows, error_rows, created_at, started_at, COALESCE(error_summary, '{{}}'::json)
                     FROM public.import_jobs WHERE id = :jid
                     ON CONFLICT (id) DO UPDATE SET status = 'PROCESSING', started_at = EXCLUDED.started_at
                 '''), {"jid": job_id})
@@ -364,6 +367,8 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                 department = str(row[reverse_map["department"]]).strip() if "department" in reverse_map and not pd.isna(row[reverse_map["department"]]) else None
                 linkedin_url = str(row[reverse_map["linkedin_url"]]).strip() if "linkedin_url" in reverse_map and not pd.isna(row[reverse_map["linkedin_url"]]) else None
                 notes = str(row[reverse_map["notes"]]).strip() if "notes" in reverse_map and not pd.isna(row[reverse_map["notes"]]) else None
+                raw_product_service = str(row[reverse_map["product_service"]]).strip() if "product_service" in reverse_map and not pd.isna(row[reverse_map["product_service"]]) else None
+                purpose = str(row[reverse_map["purpose"]]).strip() if "purpose" in reverse_map and not pd.isna(row[reverse_map["purpose"]]) else None
                 raw_val = row[reverse_map["value"]] if "value" in reverse_map and not pd.isna(row[reverse_map["value"]]) else 0.0
 
                 # Normalization
@@ -644,6 +649,37 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                                 is_callable=True
                             )
                             db.add(cp)
+                            
+                    # 5. Product/Service Resolution
+                    resolved_product_service_id = default_product_service_id
+                    resolved_product_service_name = None
+                    if raw_product_service:
+                        from app.models.product_service import ProductService
+                        ps = db.query(ProductService).filter(
+                            ProductService.organization_id == organization_id,
+                            ProductService.name.ilike(raw_product_service)
+                        ).first()
+                        if ps:
+                            resolved_product_service_id = ps.id
+                            resolved_product_service_name = ps.name
+                        else:
+                            error = ImportRowError(
+                                job_id=job_id,
+                                row_number=row_num,
+                                raw_data=raw_dict,
+                                error_code="UNRESOLVABLE_PRODUCT_SERVICE",
+                                error_message=f"Product/Service '{raw_product_service}' not found in organization catalog"
+                            )
+                            db.add(error)
+                            errors += 1
+                            continue
+                    elif default_product_service_id:
+                        from app.models.product_service import ProductService
+                        ps = db.query(ProductService).filter(
+                            ProductService.id == default_product_service_id
+                        ).first()
+                        if ps:
+                            resolved_product_service_name = ps.name
 
                     # Create Lead Record referencing target stage
                     new_lead = Lead(
@@ -659,6 +695,9 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                         contact_phone=phone,
                         segment=detected_segment,
                         lead_type=inferred_lead_type,
+                        product_service_id=resolved_product_service_id,
+                        product_service_name=resolved_product_service_name,
+                        purpose=purpose,
                         source="IMPORT",
                         status="OPEN",
                         priority="MEDIUM",

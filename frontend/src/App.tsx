@@ -18,10 +18,11 @@ import { TeamManagementView } from "./components/TeamManagementView";
 import { DataGovernanceView } from "./components/DataGovernanceView";
 import { OperationsView } from "./components/OperationsView";
 import { ApiKeysManagement } from "./components/ApiKeysManagement";
+import { ProductsServicesView } from "./components/ProductsServicesView";
 import { NewLeadModal } from "./components/NewLeadModal";
 import { TemplatesView } from "./components/TemplatesView";
 import { ExpiredScreen } from "./components/ExpiredScreen";
-import { UploadCloud, FileSpreadsheet, Plus, Check, ActivitySquare, Building2, Users, BrainCircuit, Globe2, UserCheck, LogOut, ShieldAlert, Trash2 } from "lucide-react";
+import { Building2, Search, DownloadCloud, Key, UserCheck, ShieldAlert, FileText, ArrowRightCircle, RefreshCcw, Bell, LogOut, ChevronRight, ActivitySquare, LayoutGrid, CheckCircle2, AlertCircle, FileSpreadsheet, ListTodo, Users, Mail, Phone, Calendar, Clock, BarChart3, Settings, MoreVertical, SearchCode, Database, Layers, ArrowUpRight, FolderOpen, PieChart, Shield, Target, Plus, UploadCloud, Download, MessageSquare, Briefcase, Zap, Star, Filter, Share2, Trash2, BrainCircuit, Globe2 } from "lucide-react";
 
 export const TAB_TO_ROUTE: Record<string, string> = {
   radar: "/radar_insights",
@@ -486,6 +487,9 @@ export const App: React.FC = () => {
 
         {/* API Keys */}
         {activeTab === "api_keys" && <ApiKeysManagement />}
+
+        {/* Products & Services */}
+        {activeTab === "products" && <ProductsServicesView />}
 
         {/* Super Admin Control */}
         {activeTab === "dashboard" && <SuperAdminView viewMode="dashboard" />}

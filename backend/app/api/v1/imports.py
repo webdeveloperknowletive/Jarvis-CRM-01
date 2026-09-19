@@ -195,6 +195,7 @@ def execute_import(
         column_mapping=col_map,
         target_stage_id=data.target_stage_id,
         target_owner_id=data.target_owner_id or current_user.id,
+        default_product_service_id=data.default_product_service_id,
         status="PENDING",
         total_rows=0,
         processed_rows=0,
@@ -211,8 +212,8 @@ def execute_import(
         try:
             db.execute(text("""
                 INSERT INTO public.import_jobs 
-                (id, organization_id, uploaded_by, job_type, file_name, file_type, file_path, column_mapping, target_stage_id, target_owner_id, status, total_rows, processed_rows, successful_rows, duplicate_rows, error_rows, created_at, error_summary)
-                VALUES (:id, :org_id, :user_id, :job_type, :file_name, :file_type, :file_path, :column_mapping, :target_stage_id, :target_owner_id, :status, :total_rows, :processed_rows, :successful_rows, :duplicate_rows, :error_rows, :created_at, :error_summary)
+                (id, organization_id, uploaded_by, job_type, file_name, file_type, file_path, column_mapping, target_stage_id, target_owner_id, default_product_service_id, status, total_rows, processed_rows, successful_rows, duplicate_rows, error_rows, created_at, error_summary)
+                VALUES (:id, :org_id, :user_id, :job_type, :file_name, :file_type, :file_path, :column_mapping, :target_stage_id, :target_owner_id, :default_product_service_id, :status, :total_rows, :processed_rows, :successful_rows, :duplicate_rows, :error_rows, :created_at, :error_summary)
                 ON CONFLICT (id) DO NOTHING
             """), {
                 "id": job_id,
@@ -225,6 +226,7 @@ def execute_import(
                 "column_mapping": py_json.dumps(col_map),
                 "target_stage_id": data.target_stage_id,
                 "target_owner_id": data.target_owner_id or current_user.id,
+                "default_product_service_id": data.default_product_service_id,
                 "status": "PENDING",
                 "total_rows": 0,
                 "processed_rows": 0,

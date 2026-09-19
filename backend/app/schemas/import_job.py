@@ -24,6 +24,7 @@ class ImportJobExecuteRequest(BaseModel):
     column_mapping: Dict[str, str]  # file_column -> system_field
     target_stage_id: Optional[str] = None
     target_owner_id: Optional[str] = None
+    default_product_service_id: Optional[str] = None
 
 
 class ImportRowErrorOut(BaseModel):

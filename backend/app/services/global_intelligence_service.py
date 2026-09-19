@@ -9,7 +9,8 @@ from app.schemas.global_registry import (
     CompanyWithPeopleOut,
     GlobalIntelligenceResponse
 )
-
+from app.models.company import Company
+from app.models.contact import Contact
 
 def _normalize_name(name: Optional[str]) -> str:
     if not name:
@@ -42,6 +43,23 @@ def get_global_intelligence(
 
     total_companies = len(all_companies)
     total_people = len(all_people)
+    
+    tenant_id = getattr(current_user, "organization_id", None)
+    pulled_company_ids = set()
+    pulled_contact_ids = set()
+    
+    if tenant_id:
+        pulled_comps = db.query(Company.source_global_company_id).filter(
+            Company.organization_id == tenant_id,
+            Company.source_global_company_id.isnot(None)
+        ).all()
+        pulled_company_ids = {c[0] for c in pulled_comps}
+        
+        pulled_conts = db.query(Contact.source_global_contact_id).filter(
+            Contact.organization_id == tenant_id,
+            Contact.source_global_contact_id.isnot(None)
+        ).all()
+        pulled_contact_ids = {c[0] for c in pulled_conts}
 
     # 2. Store list of LinkedPersonOut per company_id
     linked_people_by_comp: Dict[str, List[LinkedPersonOut]] = {c.id: [] for c in all_companies}
@@ -115,7 +133,7 @@ def get_global_intelligence(
                     city=person.city,
                     state=person.state,
                     linkedin_url=person.linkedin_url,
-                    status=person.status,
+                    status="PULLED" if person.id in pulled_contact_ids else person.status,
                     is_primary=True,
                     estimated_value=float(person.estimated_value or 0.0)
                 ))
@@ -147,7 +165,7 @@ def get_global_intelligence(
                             city=person.city,
                             state=person.state,
                             linkedin_url=person.linkedin_url,
-                            status=person.status,
+                            status="PULLED" if person.id in pulled_contact_ids else person.status,
                             is_primary=False,
                             estimated_value=float(person.estimated_value or 0.0)
                         ))
@@ -189,7 +207,7 @@ def get_global_intelligence(
             website=c.website,
             email=c.email,
             phone=c.phone,
-            status=c.status,
+            status="PULLED" if c.id in pulled_company_ids else c.status,
             contacts_count=len(c.contacts) if hasattr(c, "contacts") and c.contacts else 0,
             associated_people=c_people,
             people_count=p_count
@@ -258,7 +276,7 @@ def get_global_intelligence(
                 city=person.city,
                 state=person.state,
                 linkedin_url=person.linkedin_url,
-                status=person.status,
+                status="PULLED" if person.id in pulled_contact_ids else person.status,
                 is_primary=True,
                 estimated_value=float(person.estimated_value or 0.0)
             ))

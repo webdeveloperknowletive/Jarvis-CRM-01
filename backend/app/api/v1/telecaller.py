@@ -77,6 +77,7 @@ class TelecallerTargetTodayOut(BaseModel):
     connects_progress_pct: float
     talk_time_progress_pct: float
     conversions_progress_pct: float
+    is_configured: bool = True
 
 
 @router.get("/targets/today", response_model=TelecallerTargetTodayOut)
@@ -90,22 +91,33 @@ def get_today_target(
     Computes today's target vs. actuals for the telecaller.
     Queries verified activity and lead progression records.
     """
+    from app.models.organization import Organization
+    import zoneinfo
+
     target_user_id = user_id if (user_id and current_user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER", "SUPER_ADMIN")) else current_user.id
-    today = datetime.now(timezone.utc).date()
-    today_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc)
-    today_end = datetime.combine(today, datetime.max.time()).replace(tzinfo=timezone.utc)
+    
+    org = db.query(Organization).filter(Organization.id == tenant_id).first()
+    tz_name = org.timezone if org and org.timezone else "Asia/Kolkata"
+    tz = zoneinfo.ZoneInfo(tz_name)
+    now_local = datetime.now(timezone.utc).astimezone(tz)
+    today = now_local.date()
+    
+    local_start = datetime.combine(today, datetime.min.time(), tzinfo=tz)
+    local_end = datetime.combine(today, datetime.max.time(), tzinfo=tz)
+    today_start = local_start.astimezone(timezone.utc)
+    today_end = local_end.astimezone(timezone.utc)
 
-    # Fetch configured target or defaults
-    target = db.query(TelecallerTarget).filter(
-        TelecallerTarget.organization_id == tenant_id,
-        TelecallerTarget.user_id == target_user_id,
-        TelecallerTarget.target_date == today
-    ).first()
+    target_user = db.query(User).filter(User.id == target_user_id, User.organization_id == tenant_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    target_calls = target.target_calls if target else 80
-    target_connects = target.target_connects if target else 30
-    target_talk_time = target.target_talk_time_minutes if target else 120
-    target_conversions = target.target_conversions if target else 2
+    targets = target_user.telecaller_targets or {}
+    is_configured = bool(targets)
+    
+    target_calls = targets.get("calls", 0)
+    target_connects = targets.get("connects", 0)
+    target_talk_time = targets.get("talk_time", 120)  # Defaulting talk time if not set via UI
+    target_conversions = targets.get("conversions", 0)
 
     # Query real actuals from activities
     actual_calls = db.query(Activity).filter(
@@ -149,7 +161,7 @@ def get_today_target(
     conv_pct = round(min(100.0, (actual_conversions / target_conversions * 100)) if target_conversions > 0 else 0, 1)
 
     return TelecallerTargetTodayOut(
-        id=target.id if target else None,
+        id=None,
         user_id=target_user_id,
         target_date=str(today),
         target_calls=target_calls,
@@ -163,79 +175,11 @@ def get_today_target(
         calls_progress_pct=calls_pct,
         connects_progress_pct=conn_pct,
         talk_time_progress_pct=tt_pct,
-        conversions_progress_pct=conv_pct
+        conversions_progress_pct=conv_pct,
+        is_configured=is_configured
     )
 
 
-@router.post("/targets")
-def create_or_set_target(
-    data: TelecallerTargetCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    tenant_id: str = Depends(get_tenant_id)
-):
-    target_user_id = data.user_id or current_user.id
-    target_date = data.target_date or datetime.now(timezone.utc).date()
-
-    existing = db.query(TelecallerTarget).filter(
-        TelecallerTarget.organization_id == tenant_id,
-        TelecallerTarget.user_id == target_user_id,
-        TelecallerTarget.target_date == target_date
-    ).first()
-
-    if existing:
-        if data.target_calls is not None: existing.target_calls = data.target_calls
-        if data.target_connects is not None: existing.target_connects = data.target_connects
-        if data.target_talk_time_minutes is not None: existing.target_talk_time_minutes = data.target_talk_time_minutes
-        if data.target_qualified_leads is not None: existing.target_qualified_leads = data.target_qualified_leads
-        if data.target_conversions is not None: existing.target_conversions = data.target_conversions
-        if data.target_revenue is not None: existing.target_revenue = data.target_revenue
-        db.commit()
-        db.refresh(existing)
-        return {"status": "updated", "target_id": existing.id}
-    else:
-        new_target = TelecallerTarget(
-            id=generate_uuid(),
-            organization_id=tenant_id,
-            user_id=target_user_id,
-            target_date=target_date,
-            target_calls=data.target_calls or 80,
-            target_connects=data.target_connects or 30,
-            target_talk_time_minutes=data.target_talk_time_minutes or 120,
-            target_qualified_leads=data.target_qualified_leads or 10,
-            target_conversions=data.target_conversions or 2,
-            target_revenue=data.target_revenue or 0.0
-        )
-        db.add(new_target)
-        db.commit()
-        db.refresh(new_target)
-        return {"status": "created", "target_id": new_target.id}
-
-
-@router.patch("/targets/{id}")
-def update_target(
-    id: str,
-    data: TelecallerTargetUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    tenant_id: str = Depends(get_tenant_id)
-):
-    target = db.query(TelecallerTarget).filter(
-        TelecallerTarget.id == id,
-        TelecallerTarget.organization_id == tenant_id
-    ).first()
-    if not target:
-        raise HTTPException(status_code=404, detail="Target not found")
-
-    if data.target_calls is not None: target.target_calls = data.target_calls
-    if data.target_connects is not None: target.target_connects = data.target_connects
-    if data.target_talk_time_minutes is not None: target.target_talk_time_minutes = data.target_talk_time_minutes
-    if data.target_qualified_leads is not None: target.target_qualified_leads = data.target_qualified_leads
-    if data.target_conversions is not None: target.target_conversions = data.target_conversions
-    if data.target_revenue is not None: target.target_revenue = data.target_revenue
-
-    db.commit()
-    return {"status": "updated", "target_id": target.id}
 
 
 @router.get("/performance/today")
@@ -333,10 +277,12 @@ def get_daily_queue_today(
         Task.assigned_to == current_user.id,
         Task.status.in_(["PENDING", "OVERDUE"]),
         Task.due_at <= today_end
-    ).order_by(desc(Task.priority == "HIGH"), Task.due_at.asc()).limit(50).all()
+    ).order_by(desc(Task.priority == "HIGH"), Task.due_at.asc()).limit(100).all()
 
+    processed_task_lead_ids = set()
     for t in tasks:
-        if t.lead:
+        if t.lead and t.lead_id not in processed_task_lead_ids:
+            processed_task_lead_ids.add(t.lead_id)
             s_lead = serialize_lead(t.lead, current_user, db)
             items.append(DailyQueueItem(
                 lead_id=t.lead.id,
@@ -353,11 +299,20 @@ def get_daily_queue_today(
                 lead_type=t.lead.lead_type
             ))
 
-    # 2. New Leads Assigned to Caller
-    new_leads = db.query(Lead).filter(
+    # 2. Fresh Leads Assigned to Caller (NEW or OPEN with no call activity)
+    from app.models.activity import Activity
+    subq = db.query(Activity.lead_id).filter(
+        Activity.organization_id == tenant_id,
+        Activity.activity_type == "CALL"
+    ).subquery()
+
+    new_leads = db.query(Lead).outerjoin(
+        subq, Lead.id == subq.c.lead_id
+    ).filter(
         Lead.organization_id == tenant_id,
         Lead.owner_id == current_user.id,
-        Lead.status == "NEW"
+        Lead.status.in_(["NEW", "OPEN"]),
+        subq.c.lead_id == None
     ).order_by(desc(Lead.score), Lead.created_at.desc()).limit(50).all()
 
     existing_ids = {i.lead_id for i in items}
@@ -479,14 +434,17 @@ def get_next_best_actions(
         Task.organization_id == tenant_id,
         Task.assigned_to == current_user.id,
         Task.status.in_(["PENDING", "OVERDUE"])
-    ).limit(30).all()
+    ).order_by(desc(Task.priority == "HIGH"), Task.due_at.asc()).limit(50).all()
 
     scored_actions: List[NextActionItem] = []
+    processed_lead_ids = set()
 
     for t in tasks:
         lead = t.lead
-        if not lead:
+        if not lead or lead.id in processed_lead_ids:
             continue
+
+        processed_lead_ids.add(lead.id)
 
         base_score = float(lead.score or 50)
         value = float(lead.value or 0)

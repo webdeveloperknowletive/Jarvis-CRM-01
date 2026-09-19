@@ -95,7 +95,24 @@ export const TelecallerDesk: React.FC = () => {
   const [stages, setStages] = useState<PipelineStage[]>([]);
 
   // Shift & Attendance Tracking (Problem 11)
-  const [shiftStatus, setShiftStatus] = useState<"ACTIVE" | "ON_BREAK" | "OFFLINE">("ACTIVE");
+  const [shiftStatus, setShiftStatus] = useState<"ACTIVE" | "ON_BREAK" | "OFFLINE">("OFFLINE");
+  const [shiftTimer, setShiftTimer] = useState<string>("00:00:00");
+  const [shiftStartTimestamp, setShiftStartTimestamp] = useState<Date | null>(null);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setTimeout>;
+    if (shiftStatus === "ACTIVE" && shiftStartTimestamp) {
+      interval = setInterval(() => {
+        const now = new Date();
+        const diffInSeconds = Math.floor((now.getTime() - shiftStartTimestamp.getTime()) / 1000);
+        const hours = Math.floor(diffInSeconds / 3600);
+        const minutes = Math.floor((diffInSeconds % 3600) / 60);
+        const seconds = diffInSeconds % 60;
+        setShiftTimer(`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [shiftStatus, shiftStartTimestamp]);
 
   // Dynamic Payment Link Modal (Problem 19)
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -108,11 +125,28 @@ export const TelecallerDesk: React.FC = () => {
   }, []);
 
   const loadInitialData = async () => {
+    loadShiftStatus();
     loadMyLeads();
     loadTargets();
     loadNextActions();
     loadDailyQueue();
     loadStages();
+  };
+
+  const loadShiftStatus = async () => {
+    try {
+      const res = await api.getShiftStatus();
+      if (res.is_active) {
+        setShiftStatus(res.is_on_break ? "ON_BREAK" : "ACTIVE");
+        if (res.shift_started_at) {
+          setShiftStartTimestamp(new Date(res.shift_started_at));
+        }
+      } else {
+        setShiftStatus("OFFLINE");
+      }
+    } catch (e) {
+      console.error("Failed to load shift status:", e);
+    }
   };
 
   const loadStages = async () => {
@@ -433,36 +467,52 @@ export const TelecallerDesk: React.FC = () => {
 
         {/* Shift Tracking Buttons (Problem 11) */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{ display: "flex", alignItems: "center", background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: "8px", padding: "3px 6px", gap: "4px" }}>
-            <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-secondary)", marginRight: "4px" }}>
-              Shift Status:
-            </span>
-            <span style={{
-              fontSize: "0.6875rem",
-              fontWeight: 700,
-              padding: "2px 6px",
-              borderRadius: "4px",
-              background: shiftStatus === "ACTIVE" ? "#dcfce7" : "#fef3c7",
-              color: shiftStatus === "ACTIVE" ? "#166534" : "#b45309"
-            }}>
-              {shiftStatus}
-            </span>
-            {shiftStatus === "ACTIVE" ? (
+          {shiftStatus === "OFFLINE" ? (
+            <button 
+              onClick={async () => { await api.startShift(); loadShiftStatus(); }}
+              className="btn-primary"
+              style={{ fontSize: "0.75rem", padding: "6px 12px" }}
+            >
+              Start Shift
+            </button>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: "8px", padding: "3px 6px", gap: "4px" }}>
+              <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-secondary)", marginRight: "4px" }}>
+                {shiftTimer}
+              </span>
+              <span style={{
+                fontSize: "0.6875rem",
+                fontWeight: 700,
+                padding: "2px 6px",
+                borderRadius: "4px",
+                background: shiftStatus === "ACTIVE" ? "#dcfce7" : "#fef3c7",
+                color: shiftStatus === "ACTIVE" ? "#166534" : "#b45309"
+              }}>
+                {shiftStatus}
+              </span>
+              {shiftStatus === "ACTIVE" ? (
+                <button 
+                  onClick={async () => { await api.startBreak(); loadShiftStatus(); }}
+                  style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: "0.6875rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "2px", padding: "2px 4px" }}
+                >
+                  <Coffee style={{ width: "12px", height: "12px" }} /> Break
+                </button>
+              ) : (
+                <button 
+                  onClick={async () => { await api.endBreak(); loadShiftStatus(); }}
+                  style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: "0.6875rem", color: "var(--primary)", display: "flex", alignItems: "center", gap: "2px", padding: "2px 4px" }}
+                >
+                  <Play style={{ width: "12px", height: "12px" }} /> Resume
+                </button>
+              )}
               <button 
-                onClick={async () => { await api.startBreak(); setShiftStatus("ON_BREAK"); }}
-                style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: "0.6875rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "2px", padding: "2px 4px" }}
+                onClick={async () => { await api.endShift(); loadShiftStatus(); }}
+                style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: "0.6875rem", color: "#ef4444", display: "flex", alignItems: "center", gap: "2px", padding: "2px 4px", marginLeft: "4px" }}
               >
-                <Coffee style={{ width: "12px", height: "12px" }} /> Break
+                End
               </button>
-            ) : (
-              <button 
-                onClick={async () => { await api.endBreak(); setShiftStatus("ACTIVE"); }}
-                style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: "0.6875rem", color: "var(--primary)", display: "flex", alignItems: "center", gap: "2px", padding: "2px 4px" }}
-              >
-                <Play style={{ width: "12px", height: "12px" }} /> Resume
-              </button>
-            )}
-          </div>
+            </div>
+          )}
 
           <button
             onClick={loadInitialData}
@@ -493,92 +543,111 @@ export const TelecallerDesk: React.FC = () => {
 
       {/* Target Engine Header: 4 Real-Time Quota Progress Rings (Problem 2) */}
       {targets && (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "14px",
-          padding: "16px",
-          background: "var(--bg-surface)",
-          borderRadius: "12px",
-          border: "1px solid var(--border-subtle)",
-          boxShadow: "var(--shadow-sm)"
-        }}>
-          {/* Calls Quota */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "var(--primary-light)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <PhoneCall style={{ width: "20px", height: "20px", color: "var(--primary)" }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Daily Calls</span>
-                <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--primary)" }}>{targets.calls_progress_pct}%</span>
-              </div>
-              <p style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                {targets.actual_calls} <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>/ {targets.target_calls}</span>
-              </p>
-              <div style={{ width: "100%", height: "4px", background: "var(--border-subtle)", borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
-                <div style={{ width: `${targets.calls_progress_pct}%`, height: "100%", background: "var(--primary)", borderRadius: "2px" }}></div>
-              </div>
-            </div>
+        !targets.is_configured ? (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+            background: "var(--bg-surface)",
+            borderRadius: "12px",
+            border: "1px solid var(--border-subtle)",
+            boxShadow: "var(--shadow-sm)",
+            color: "var(--text-secondary)",
+            fontSize: "0.875rem",
+            fontWeight: 600
+          }}>
+            <AlertCircle style={{ width: "16px", height: "16px", marginRight: "8px", color: "var(--amber-dark)" }} />
+            NO TARGET CONFIGURED
           </div>
+        ) : (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "14px",
+            padding: "16px",
+            background: "var(--bg-surface)",
+            borderRadius: "12px",
+            border: "1px solid var(--border-subtle)",
+            boxShadow: "var(--shadow-sm)"
+          }}>
+            {/* Calls Quota */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "var(--primary-light)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <PhoneCall style={{ width: "20px", height: "20px", color: "var(--primary)" }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Daily Calls</span>
+                  <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--primary)" }}>{targets.calls_progress_pct}%</span>
+                </div>
+                <p style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                  {targets.actual_calls} <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>/ {targets.target_calls}</span>
+                </p>
+                <div style={{ width: "100%", height: "4px", background: "var(--border-subtle)", borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
+                  <div style={{ width: `${targets.calls_progress_pct}%`, height: "100%", background: "var(--primary)", borderRadius: "2px" }}></div>
+                </div>
+              </div>
+            </div>
 
-          {/* Connects Quota */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Flame style={{ width: "20px", height: "20px", color: "#d97706" }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Connected Calls</span>
-                <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#d97706" }}>{targets.connects_progress_pct}%</span>
+            {/* Connects Quota */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Flame style={{ width: "20px", height: "20px", color: "#d97706" }} />
               </div>
-              <p style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                {targets.actual_connects} <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>/ {targets.target_connects}</span>
-              </p>
-              <div style={{ width: "100%", height: "4px", background: "var(--border-subtle)", borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
-                <div style={{ width: `${targets.connects_progress_pct}%`, height: "100%", background: "#f59e0b", borderRadius: "2px" }}></div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Connected Calls</span>
+                  <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#d97706" }}>{targets.connects_progress_pct}%</span>
+                </div>
+                <p style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                  {targets.actual_connects} <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>/ {targets.target_connects}</span>
+                </p>
+                <div style={{ width: "100%", height: "4px", background: "var(--border-subtle)", borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
+                  <div style={{ width: `${targets.connects_progress_pct}%`, height: "100%", background: "#f59e0b", borderRadius: "2px" }}></div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Talk Time Quota */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "#dbeafe", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Clock style={{ width: "20px", height: "20px", color: "#2563eb" }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Talk Time</span>
-                <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#2563eb" }}>{targets.talk_time_progress_pct}%</span>
+            {/* Talk Time Quota */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "#dbeafe", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Clock style={{ width: "20px", height: "20px", color: "#2563eb" }} />
               </div>
-              <p style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                {targets.actual_talk_time_minutes}m <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>/ {targets.target_talk_time_minutes}m</span>
-              </p>
-              <div style={{ width: "100%", height: "4px", background: "var(--border-subtle)", borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
-                <div style={{ width: `${targets.talk_time_progress_pct}%`, height: "100%", background: "#3b82f6", borderRadius: "2px" }}></div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Talk Time</span>
+                  <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#2563eb" }}>{targets.talk_time_progress_pct}%</span>
+                </div>
+                <p style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                  {targets.actual_talk_time_minutes}m <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>/ {targets.target_talk_time_minutes}m</span>
+                </p>
+                <div style={{ width: "100%", height: "4px", background: "var(--border-subtle)", borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
+                  <div style={{ width: `${targets.talk_time_progress_pct}%`, height: "100%", background: "#3b82f6", borderRadius: "2px" }}></div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Conversions / Won Deals Quota */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <CheckCircle2 style={{ width: "20px", height: "20px", color: "#16a34a" }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Conversions</span>
-                <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#16a34a" }}>{targets.conversions_progress_pct}%</span>
+            {/* Conversions / Won Deals Quota */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <CheckCircle2 style={{ width: "20px", height: "20px", color: "#16a34a" }} />
               </div>
-              <p style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
-                {targets.actual_conversions} <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>/ {targets.target_conversions}</span>
-              </p>
-              <div style={{ width: "100%", height: "4px", background: "var(--border-subtle)", borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
-                <div style={{ width: `${targets.conversions_progress_pct}%`, height: "100%", background: "#10b981", borderRadius: "2px" }}></div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Conversions</span>
+                  <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "#16a34a" }}>{targets.conversions_progress_pct}%</span>
+                </div>
+                <p style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                  {targets.actual_conversions} <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>/ {targets.target_conversions}</span>
+                </p>
+                <div style={{ width: "100%", height: "4px", background: "var(--border-subtle)", borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
+                  <div style={{ width: `${targets.conversions_progress_pct}%`, height: "100%", background: "#10b981", borderRadius: "2px" }}></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )
       )}
 
       {/* Next-Best-Action Smart Queue Accordion (Problems 16 & 17) */}
@@ -747,9 +816,14 @@ export const TelecallerDesk: React.FC = () => {
               <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                 Worklist Queue ({filteredLeads.length})
               </span>
-              <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)", display: "block" }}>
-                Total assigned: {leads.length} leads
-              </span>
+              <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                <span style={{ fontSize: "0.6875rem", color: "var(--emerald)", fontWeight: 600, background: "var(--emerald-light)", padding: "2px 6px", borderRadius: "4px" }}>
+                  {dailyQueue.filter(q => q.source === 'NEW_LEAD').length} Fresh Leads
+                </span>
+                <span style={{ fontSize: "0.6875rem", color: "var(--amber)", fontWeight: 600, background: "#fef3c7", padding: "2px 6px", borderRadius: "4px" }}>
+                  {dailyQueue.filter(q => q.source === 'FOLLOWUP').length} Follow-ups
+                </span>
+              </div>
             </div>
 
             <button
@@ -859,6 +933,7 @@ export const TelecallerDesk: React.FC = () => {
               filteredLeads.map((lead) => {
                 const isSelected = selectedLead?.id === lead.id;
                 const isLandline = isLandlineNumber(lead.contact_phone);
+                const queueMatch = dailyQueue.find((q) => q.lead_id === lead.id);
 
                 return (
                   <div
@@ -876,6 +951,14 @@ export const TelecallerDesk: React.FC = () => {
                       gap: "6px"
                     }}
                   >
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      {queueMatch && queueMatch.source === "FOLLOWUP" && (
+                        <span style={{ fontSize: "0.625rem", fontWeight: 800, background: "#fef3c7", color: "#d97706", padding: "2px 4px", borderRadius: "4px" }}>FOLLOW-UP</span>
+                      )}
+                      {queueMatch && queueMatch.source === "NEW_LEAD" && (
+                        <span style={{ fontSize: "0.625rem", fontWeight: 800, background: "var(--emerald-light)", color: "var(--emerald)", padding: "2px 4px", borderRadius: "4px" }}>FRESH</span>
+                      )}
+                    </div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {lead.contact_name || lead.title}
@@ -1101,6 +1184,11 @@ export const TelecallerDesk: React.FC = () => {
                 <div>
                   <strong>Deal Value:</strong> INR {selectedLead.value?.toLocaleString() || "0"}
                 </div>
+                {selectedLead.product_service_name && (
+                  <div>
+                    <strong>Product/Service:</strong> {selectedLead.product_service_name}
+                  </div>
+                )}
               </div>
 
               {/* AI Recommendation Talking Points */}

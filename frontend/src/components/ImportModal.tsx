@@ -30,6 +30,14 @@ export const ImportModal: React.FC<ImportModalProps> = ({ jobType = "TENANT_LEAD
   const [error, setError] = useState<string | null>(null);
   const [formatWarning, setFormatWarning] = useState<string | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [productServices, setProductServices] = useState<any[]>([]);
+  const [defaultProductServiceId, setDefaultProductServiceId] = useState<string>("");
+
+  React.useEffect(() => {
+    if (jobType === "TENANT_LEADS") {
+      api.getProductServices(true).then(setProductServices).catch(() => {});
+    }
+  }, [jobType]);
 
   const SYSTEM_FIELDS = [
     { value: "ignore", label: "— Ignore Column —" },
@@ -54,6 +62,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({ jobType = "TENANT_LEAD
     { value: "linkedin_url", label: "LinkedIn Profile URL" },
     { value: "value", label: "Estimated Opportunity Value (₹)" },
     { value: "title", label: "Opportunity Title" },
+    { value: "product_service", label: "Product/Service Name" },
+    { value: "purpose", label: "Lead/Call Purpose" },
     { value: "notes", label: "Notes / Persona Bio" },
   ];
 
@@ -175,12 +185,14 @@ Sunita Verma,+919812345678,sunita.verma@apex.in,"Apex Health, BioPharma Labs","B
         { field: "contact_phone", label: "Mobile / Phone", note: "Contact number" },
         { field: "designation", label: "Designation", note: "Role or title" },
         { field: "city", label: "City", note: "Location" },
+        { field: "product_service", label: "Product/Service", note: "Mapped to catalog" },
+        { field: "purpose", label: "Purpose", note: "Reason for lead" },
         { field: "value", label: "Value (₹)", note: "Opportunity budget" }
       ],
       sampleFileName: "crm_leads_sample_template.csv",
-      sampleContent: `contact_name,company_name,designation,contact_email,contact_phone,city,value
-Vikram Mehta,Mehta Logistics Pvt Ltd,Managing Director,vikram@mehtalogistics.in,+919822011223,Pune,500000
-Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+919823344556,Nashik,350000`,
+      sampleContent: `contact_name,company_name,designation,contact_email,contact_phone,city,product_service,purpose,value
+Vikram Mehta,Mehta Logistics Pvt Ltd,Managing Director,vikram@mehtalogistics.in,+919822011223,Pune,Premium Tech Support,Renew Contract,500000
+Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+919823344556,Nashik,Software License,New Inquiry,350000`,
       sampleJsonFileName: "crm_leads_sample_template.json",
       sampleJsonContent: JSON.stringify([
         {
@@ -190,6 +202,8 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
           "contact_email": "vikram@mehtalogistics.in",
           "contact_phone": "+919822011223",
           "city": "Pune",
+          "product_service": "Premium Tech Support",
+          "purpose": "Renew Contract",
           "value": 500000
         },
         {
@@ -199,6 +213,8 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
           "contact_email": "pooja@kulkarnieng.com",
           "contact_phone": "+919823344556",
           "city": "Nashik",
+          "product_service": "Software License",
+          "purpose": "New Inquiry",
           "value": 350000
         }
       ], null, 2)
@@ -304,6 +320,7 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
         file_type: previewData.file_type,
         job_type: jobType,
         column_mapping: columnMapping,
+        default_product_service_id: defaultProductServiceId || undefined,
       });
       setActiveJob(job);
       setStep("processing");
@@ -537,7 +554,7 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
 
           return (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
                 <div>
                   <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-primary)" }}>
                     Verify & Confirm Ingestion Column Mappings
@@ -546,7 +563,25 @@ Pooja Kulkarni,Kulkarni Engineering,Head of Purchasing,pooja@kulkarnieng.com,+91
                     Detected {totalRows} rows in {previewData.file_name}. Columns have been auto-matched.
                   </p>
                 </div>
-                <span className="badge badge-medium">Auto-Mapped</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  {jobType === "TENANT_LEADS" && productServices.length > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600 }}>Default Product:</span>
+                      <select 
+                        className="select-dropdown" 
+                        style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                        value={defaultProductServiceId}
+                        onChange={(e) => setDefaultProductServiceId(e.target.value)}
+                      >
+                        <option value="">-- Auto-detect from file --</option>
+                        {productServices.map(ps => (
+                          <option key={ps.id} value={ps.id}>{ps.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <span className="badge badge-medium">Auto-Mapped</span>
+                </div>
               </div>
 
               <div style={{ maxHeight: "320px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", paddingRight: "4px" }}>

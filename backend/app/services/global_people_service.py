@@ -26,6 +26,16 @@ def search_global_people(
 ) -> List[GlobalPersonOut]:
     query = db.query(GlobalPerson)
 
+    tenant_id = getattr(current_user, "organization_id", None)
+    pulled_contact_ids = set()
+    
+    if tenant_id:
+        pulled_conts = db.query(Contact.source_global_contact_id).filter(
+            Contact.organization_id == tenant_id,
+            Contact.source_global_contact_id.isnot(None)
+        ).all()
+        pulled_contact_ids = {c[0] for c in pulled_conts}
+
     if search:
         s = f"%{search.strip()}%"
         query = query.filter(
@@ -46,6 +56,8 @@ def search_global_people(
     results = []
     for p in people:
         p_dict = {k: v for k, v in p.__dict__.items() if not k.startswith("_")}
+        if p.id in pulled_contact_ids:
+            p_dict["status"] = "PULLED"
         results.append(GlobalPersonOut(**p_dict))
     return results
 

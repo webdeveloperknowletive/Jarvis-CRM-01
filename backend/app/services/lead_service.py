@@ -17,6 +17,8 @@ from app.services.pipeline_service import get_stage_by_id, get_first_stage
 from app.services.masking_service import should_mask_field, mask_phone_number, mask_email_address
 
 
+from app.models.product_service import ProductService
+
 def create_lead(
     db: Session,
     organization_id: str,
@@ -87,6 +89,16 @@ def create_lead(
         lead_status = "LOST"
         closed_at = datetime.now(timezone.utc)
 
+    # 4b. Resolve Product/Service Name
+    product_service_name = data.product_service_name
+    if data.product_service_id:
+        ps = db.query(ProductService).filter(
+            ProductService.id == data.product_service_id,
+            ProductService.organization_id == organization_id
+        ).first()
+        if ps:
+            product_service_name = ps.name
+
     # 5. Create Lead
     lead = Lead(
         organization_id=organization_id,
@@ -108,6 +120,9 @@ def create_lead(
         description=data.description,
         notes=data.notes,
         tags=data.tags or [],
+        product_service_id=data.product_service_id,
+        product_service_name=product_service_name,
+        purpose=data.purpose,
         created_by=user_id,
         closed_at=closed_at
     )
@@ -282,7 +297,19 @@ def assign_lead(
     if not new_owner:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assignee user not found in organization")
 
-    old_owner_id = lead.owner_id
+    # Safe assignment logic: Check if target user has an active shift
+    from app.models.session import AttendanceSession
+    from datetime import datetime, timezone
+    today = datetime.now(timezone.utc).date()
+    active_shift = db.query(AttendanceSession).filter(
+        AttendanceSession.user_id == new_owner.id,
+        AttendanceSession.date == today,
+        AttendanceSession.logout_at == None
+    ).first()
+    
+    if not active_shift:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target user is not clocked in. Assignment rejected.")
+
     lead.owner_id = new_owner.id
 
     # Mark active assignment unassigned
@@ -363,6 +390,9 @@ def serialize_lead(lead: Lead, user: User, db: Session) -> LeadOut:
         description=lead.description,
         notes=lead.notes,
         tags=lead.tags or [],
+        product_service_id=lead.product_service_id,
+        product_service_name=lead.product_service_name,
+        purpose=lead.purpose,
         is_phone_masked=mask_phone,
         is_email_masked=mask_email,
         stage=stage_out,

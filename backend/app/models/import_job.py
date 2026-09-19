@@ -27,6 +27,7 @@ class ImportJob(Base):
     column_mapping = Column(JSON, nullable=False, default=dict)
     target_stage_id = Column(String(36), ForeignKey("pipeline_stages.id"), nullable=True)
     target_owner_id = Column(String(36), ForeignKey("users.id"), nullable=True)
+    default_product_service_id = Column(String(36), ForeignKey("product_services.id", ondelete="SET NULL"), nullable=True)
     error_summary = Column(JSON, nullable=False, default=dict)
 
     started_at = Column(DateTime, nullable=True)

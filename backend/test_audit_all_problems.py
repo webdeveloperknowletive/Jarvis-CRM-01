@@ -40,7 +40,7 @@ def test_audit():
                 full_name="Rajesh Telecaller",
                 organization_id=org.id,
                 tenant_role="TELECALLER",
-                is_active=True
+                status="ACTIVE"
             )
             db.add(telecaller)
             db.commit()
@@ -54,7 +54,7 @@ def test_audit():
                 full_name="Aditi Admin",
                 organization_id=org.id,
                 tenant_role="ORG_ADMIN",
-                is_active=True
+                status="ACTIVE"
             )
             db.add(admin_user)
             db.commit()

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
-from app.core.deps import get_db, get_current_user
+from app.core.deps import get_db, get_current_user, get_tenant_id
 from app.models.user import User
 from app.models.session import AttendanceSession, BreakSession
 
@@ -15,8 +15,31 @@ def to_utc(dt):
 
 router = APIRouter(prefix="/shift", tags=["Telecaller Shifts"])
 
+@router.get("/status")
+def get_shift_status(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), tenant_id: str = Depends(get_tenant_id)):
+    now = datetime.now(timezone.utc)
+    today = now.date()
+    
+    active_shift = db.query(AttendanceSession).filter(
+        AttendanceSession.user_id == current_user.id,
+        AttendanceSession.date == today,
+        AttendanceSession.logout_at == None
+    ).first()
+    
+    active_break = db.query(BreakSession).filter(
+        BreakSession.user_id == current_user.id,
+        BreakSession.ended_at == None
+    ).first()
+    
+    return {
+        "is_active": active_shift is not None,
+        "is_on_break": active_break is not None,
+        "shift_started_at": active_shift.login_at if active_shift else None,
+        "break_started_at": active_break.started_at if active_break else None
+    }
+
 @router.post("/start")
-def start_shift(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def start_shift(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), tenant_id: str = Depends(get_tenant_id)):
     now = datetime.now(timezone.utc)
     today = now.date()
     
@@ -42,7 +65,7 @@ def start_shift(db: Session = Depends(get_db), current_user: User = Depends(get_
     return {"status": "started", "session_id": new_session.id}
 
 @router.post("/end")
-def end_shift(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def end_shift(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), tenant_id: str = Depends(get_tenant_id)):
     now = datetime.now(timezone.utc)
     today = now.date()
     
@@ -60,7 +83,7 @@ def end_shift(db: Session = Depends(get_db), current_user: User = Depends(get_cu
     return {"status": "ended", "session_id": existing.id}
 
 @router.post("/break-start")
-def start_break(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def start_break(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), tenant_id: str = Depends(get_tenant_id)):
     now = datetime.now(timezone.utc)
     
     existing = db.query(BreakSession).filter(
@@ -82,7 +105,7 @@ def start_break(db: Session = Depends(get_db), current_user: User = Depends(get_
     return {"status": "break_started", "session_id": new_break.id}
 
 @router.post("/break-end")
-def end_break(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def end_break(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), tenant_id: str = Depends(get_tenant_id)):
     now = datetime.now(timezone.utc)
     
     existing = db.query(BreakSession).filter(

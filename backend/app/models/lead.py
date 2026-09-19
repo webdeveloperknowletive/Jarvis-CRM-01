@@ -13,6 +13,7 @@ class Lead(Base, TimestampMixin, SoftDeleteMixin):
     contact_id = Column(String(36), ForeignKey("contacts.id", ondelete="SET NULL"), nullable=True, index=True)
     pipeline_stage_id = Column(String(36), ForeignKey("pipeline_stages.id"), nullable=False, index=True)
     owner_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    product_service_id = Column(String(36), ForeignKey("product_services.id", ondelete="SET NULL"), nullable=True, index=True)
 
     title = Column(String(255), nullable=False, index=True)
 
@@ -21,6 +22,8 @@ class Lead(Base, TimestampMixin, SoftDeleteMixin):
     contact_name = Column(String(255), nullable=True, index=True)
     contact_email = Column(String(255), nullable=True, index=True)
     contact_phone = Column(String(50), nullable=True, index=True)
+    product_service_name = Column(String(255), nullable=True)
+    purpose = Column(Text, nullable=True)
 
     source = Column(String(50), nullable=False, default="MANUAL")  # MANUAL, IMPORT, GLOBAL_PULL, WEBHOOK
     source_global_company_id = Column(String(36), nullable=True)

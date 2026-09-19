@@ -26,6 +26,10 @@ from app.api.v1 import (
     admin_access,
     admin_audit,
     admin_recovery,
+    product_services,
+    contacts_vcard,
+    followup_policies,
+    followups,
 )
 
 api_router = APIRouter()
@@ -56,5 +60,7 @@ api_router.include_router(communications.router)
 api_router.include_router(admin_access.router)
 api_router.include_router(admin_audit.router)
 api_router.include_router(admin_recovery.router)
-
-
+api_router.include_router(product_services.router)
+api_router.include_router(contacts_vcard.router)
+api_router.include_router(followup_policies.router)
+api_router.include_router(followups.router)

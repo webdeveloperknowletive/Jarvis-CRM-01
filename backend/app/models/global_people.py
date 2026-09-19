@@ -26,5 +26,10 @@ class GlobalPerson(Base):
     associated_companies = Column(JSON, nullable=False, default=list)  # [{"company_name": "...", "designation": "..."}]
     metadata_json = Column(JSON, nullable=False, default=dict)
 
+    pull_status = Column(String(30), nullable=True) # e.g. PULLED
+    pulled_at = Column(DateTime, nullable=True)
+    pulled_by_org_id = Column(String(36), nullable=True, index=True)
+    pulled_by_org_name = Column(String(255), nullable=True)
+
     first_seen_at = Column(DateTime, default=utc_now, nullable=False)
     last_updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)

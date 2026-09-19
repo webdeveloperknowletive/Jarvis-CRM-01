@@ -21,7 +21,16 @@ def test_telecaller_scoping_and_batch_assignment(client):
     telecaller = next(t for t in telecallers if t["email"] == "telecaller@apex.com")
     telecaller_id = telecaller["id"]
 
-    # 3. Get leads and batch assign 5 leads
+    # 3. Login as Telecaller and start shift
+    res_t_login = client.post("/api/v1/auth/login", json={"email": "telecaller@apex.com", "password": "Telecaller@2026"})
+    assert res_t_login.status_code == 200
+    tel_token = res_t_login.json()["access_token"]
+    tel_headers = {"Authorization": f"Bearer {tel_token}"}
+    
+    res_shift = client.post("/api/v1/shift/start", headers=tel_headers)
+    assert res_shift.status_code in [200, 400] # 400 if already started
+
+    # 4. Get leads and batch assign 5 leads
     res_leads = client.get("/api/v1/leads/", headers=org_headers)
     assert res_leads.status_code == 200
     all_leads = res_leads.json()
@@ -38,12 +47,7 @@ def test_telecaller_scoping_and_batch_assignment(client):
     assert data["updated_count"] == 5
     assert data["telecaller_id"] == telecaller_id
 
-    # 4. Login as Telecaller and verify strictly sees assigned leads
-    res_t_login = client.post("/api/v1/auth/login", json={"email": "telecaller@apex.com", "password": "Telecaller@2026"})
-    assert res_t_login.status_code == 200
-    tel_token = res_t_login.json()["access_token"]
-    tel_headers = {"Authorization": f"Bearer {tel_token}"}
-
+    # 5. Verify strictly sees assigned leads
     res_t_leads = client.get("/api/v1/leads/", headers=tel_headers)
     assert res_t_leads.status_code == 200
     tel_leads = res_t_leads.json()

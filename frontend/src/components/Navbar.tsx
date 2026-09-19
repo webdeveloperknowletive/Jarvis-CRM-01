@@ -1,23 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { User } from "../services/api";
 import { 
-  Building2, 
-  Users, 
-  PhoneCall, 
-  Sparkles, 
-  LogOut, 
-  Kanban, 
-  Globe2, 
-  UploadCloud, 
-  ActivitySquare,
-  Lock,
-  Menu,
-  X,
-  ShieldCheck,
-  UserCheck,
-  BrainCircuit,
-  Shield,
-  Key
+  Building2, Users, PhoneCall, Sparkles, LogOut, Kanban, Globe2, 
+  UploadCloud, ActivitySquare, Lock, Menu, X, ShieldCheck, 
+  UserCheck, BrainCircuit, Shield, Key, Briefcase, ChevronDown
 } from "lucide-react";
 import { ActionCenterDropdown } from "./ActionCenterDropdown";
 
@@ -29,16 +15,75 @@ interface NavbarProps {
   onNewLeadClick?: () => void;
 }
 
+interface NavModule {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  iconColor?: string;
+  visible: (user: User) => boolean;
+}
+
+const isDataEntry = (u: User) => Boolean(u.is_data_entry || u.platform_role === "DATA_ENTRY" || u.tenant_role === "DATA_ENTRY");
+const isSuperAdmin = (u: User) => Boolean(u.is_super_admin);
+const isTelecaller = (u: User) => u.tenant_role === "TELECALLER";
+const isOrgAdmin = (u: User) => u.tenant_role === "ORG_ADMIN";
+
+const NAVIGATION_CONFIG: NavModule[] = [
+  { id: "telecaller", label: "Calling Desk", icon: PhoneCall, visible: isTelecaller },
+  { id: "dashboard", label: "Dashboard", icon: ActivitySquare, visible: isSuperAdmin },
+  { id: "organizations", label: "Organizations", icon: Building2, visible: isSuperAdmin },
+  { id: "global_intelligence", label: "Global Intelligence", icon: BrainCircuit, iconColor: "var(--primary)", visible: (u) => isDataEntry(u) || isSuperAdmin(u) },
+  { id: "global_edits", label: "Global Edits", icon: ActivitySquare, iconColor: "var(--amber)", visible: isSuperAdmin },
+  { id: "global", label: "Company Intelligence", icon: Globe2, iconColor: "var(--cyan)", visible: (u) => isDataEntry(u) || isSuperAdmin(u) },
+  { id: "people", label: "People Intelligence", icon: UserCheck, iconColor: "var(--emerald)", visible: (u) => isDataEntry(u) || isSuperAdmin(u) },
+  { id: "import", label: "Data Ingestion", icon: UploadCloud, iconColor: "#6366f1", visible: (u) => isDataEntry(u) || (!isSuperAdmin(u) && !isTelecaller(u)) },
+  { id: "radar", label: "Radar Insights", icon: Sparkles, iconColor: "var(--amber)", visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
+  { id: "pipeline", label: "Pipeline", icon: Kanban, visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
+  { id: "leads", label: "Leads & Contacts", icon: Users, visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
+  { id: "team", label: "Team & Telecallers", icon: UserCheck, iconColor: "var(--emerald)", visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
+  { id: "templates", label: "Templates", icon: ActivitySquare, iconColor: "var(--primary)", visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
+  { id: "governance", label: "Data Governance", icon: Shield, iconColor: "var(--primary)", visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
+  { id: "products", label: "Products & Services", icon: Briefcase, visible: isOrgAdmin },
+  { id: "api_keys", label: "Developer Settings", icon: Key, iconColor: "var(--amber)", visible: (u) => !isTelecaller(u) && !isDataEntry(u) },
+  { id: "users", label: "Users", icon: Users, visible: isSuperAdmin },
+  { id: "audit", label: "Platform Activities", icon: ActivitySquare, visible: isSuperAdmin }
+];
+
 export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, onLogout, onNewLeadClick }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isSuperAdmin = user.is_super_admin;
-  const isDataEntry = Boolean(user.is_data_entry || user.platform_role === "DATA_ENTRY" || user.tenant_role === "DATA_ENTRY");
-  const isTelecaller = user.tenant_role === "TELECALLER";
+  const [visibleCount, setVisibleCount] = useState(10);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
+
+  const allowedTabs = NAVIGATION_CONFIG.filter(mod => mod.visible(user));
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        // Approximate width: each tab is ~160px
+        const containerWidth = containerRef.current.offsetWidth;
+        const estimatedFit = Math.floor(containerWidth / 160);
+        setVisibleCount(Math.max(1, estimatedFit - 1)); // -1 for the "More" button
+      }
+    };
+    
+    // Slight delay to allow flexbox to calculate initial width
+    const timer = setTimeout(handleResize, 100);
+    window.addEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [allowedTabs.length]);
 
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
     setMobileMenuOpen(false);
+    setMoreDropdownOpen(false);
   };
+
+  const visibleNavTabs = allowedTabs.slice(0, visibleCount);
+  const hiddenNavTabs = allowedTabs.slice(visibleCount);
 
   return (
     <header className="nav-header">
@@ -83,212 +128,79 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               textOverflow: "ellipsis",
               maxWidth: "135px"
             }} title={user.organization ? user.organization.name : undefined}>
-              {user.organization ? user.organization.name : isDataEntry ? "Data Operations" : "Platform Management"}
+              {user.organization ? user.organization.name : isDataEntry(user) ? "Data Operations" : "Platform Management"}
             </p>
           </div>
         </div>
 
         {/* Desktop Navigation Tabs */}
-        <nav className="nav-tabs-wrapper" style={{ display: "flex" }}>
-          {/* Telecaller Focused Tab */}
-          {isTelecaller && (
-            <button
-              onClick={() => handleTabClick("telecaller")}
-              className={`nav-tab-btn ${activeTab === "telecaller" ? "active" : ""}`}
-            >
-              <PhoneCall style={{ width: "14px", height: "14px" }} />
-              Calling Desk
-            </button>
-          )}
-
-          {/* Data Entry Supervised Tabs */}
-          {isDataEntry && (
-            <>
+        <nav className="nav-tabs-wrapper" style={{ display: "flex", flex: 1, overflow: "visible", position: "relative" }} ref={containerRef}>
+          {visibleNavTabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
               <button
-                onClick={() => handleTabClick("global_intelligence")}
-                className={`nav-tab-btn ${activeTab === "global_intelligence" ? "active" : ""}`}
-                id="nav-tab-dataentry-global-intel"
+                key={tab.id}
+                onClick={() => handleTabClick(tab.id)}
+                className={`nav-tab-btn ${activeTab === tab.id ? "active" : ""}`}
               >
-                <BrainCircuit style={{ width: "14px", height: "14px", color: "var(--primary)" }} />
-                Global Intelligence
+                <Icon style={{ width: "14px", height: "14px", color: tab.iconColor || "inherit" }} />
+                {tab.label}
               </button>
-
+            );
+          })}
+          
+          {hiddenNavTabs.length > 0 && (
+            <div style={{ position: "relative" }}>
               <button
-                onClick={() => handleTabClick("global")}
-                className={`nav-tab-btn ${activeTab === "global" ? "active" : ""}`}
-                id="nav-tab-dataentry-companies"
+                onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+                className={`nav-tab-btn ${hiddenNavTabs.some(t => t.id === activeTab) ? "active" : ""}`}
               >
-                <Globe2 style={{ width: "14px", height: "14px", color: "var(--cyan)" }} />
-                Company Intelligence
+                More <ChevronDown style={{ width: "14px", height: "14px", marginLeft: "2px" }} />
               </button>
-
-              <button
-                onClick={() => handleTabClick("people")}
-                className={`nav-tab-btn ${activeTab === "people" ? "active" : ""}`}
-                id="nav-tab-dataentry-people"
-              >
-                <UserCheck style={{ width: "14px", height: "14px", color: "var(--emerald)" }} />
-                People Intelligence
-              </button>
-
-              <button
-                onClick={() => handleTabClick("import")}
-                className={`nav-tab-btn ${activeTab === "import" ? "active" : ""}`}
-                id="nav-tab-dataentry-import"
-              >
-                <UploadCloud style={{ width: "14px", height: "14px", color: "#6366f1" }} />
-                Data Ingestion
-              </button>
-            </>
-          )}
-
-          {/* Core CRM Tabs */}
-          {!isTelecaller && !isSuperAdmin && !isDataEntry && (
-            <>
-              <button
-                onClick={() => handleTabClick("radar")}
-                className={`nav-tab-btn ${activeTab === "radar" ? "active" : ""}`}
-              >
-                <Sparkles style={{ width: "14px", height: "14px", color: "var(--amber)" }} />
-                Radar Insights
-              </button>
-
-              <button
-                onClick={() => handleTabClick("pipeline")}
-                className={`nav-tab-btn ${activeTab === "pipeline" ? "active" : ""}`}
-              >
-                <Kanban style={{ width: "14px", height: "14px" }} />
-                Pipeline
-              </button>
-
-              <button
-                onClick={() => handleTabClick("leads")}
-                className={`nav-tab-btn ${activeTab === "leads" ? "active" : ""}`}
-              >
-                <Users style={{ width: "14px", height: "14px" }} />
-                Leads & Contacts
-              </button>
-
-              <button
-                onClick={() => handleTabClick("import")}
-                className={`nav-tab-btn ${activeTab === "import" ? "active" : ""}`}
-              >
-                <UploadCloud style={{ width: "14px", height: "14px" }} />
-                Import Leads
-              </button>
-
-              <button
-                onClick={() => handleTabClick("global")}
-                className={`nav-tab-btn ${activeTab === "global" ? "active" : ""}`}
-              >
-                <Globe2 style={{ width: "14px", height: "14px", color: "var(--cyan)" }} />
-                Global Registry
-              </button>
-
-              <button
-                onClick={() => handleTabClick("team")}
-                className={`nav-tab-btn ${activeTab === "team" ? "active" : ""}`}
-                id="nav-tab-team"
-              >
-                <UserCheck style={{ width: "14px", height: "14px", color: "var(--emerald)" }} />
-                Team & Telecallers
-              </button>
-
-              <button
-                onClick={() => handleTabClick("templates")}
-                className={`nav-tab-btn ${activeTab === "templates" ? "active" : ""}`}
-                id="nav-tab-templates"
-              >
-                <ActivitySquare style={{ width: "14px", height: "14px", color: "var(--primary)" }} />
-                Templates
-              </button>
-              <button
-                onClick={() => handleTabClick("governance")}
-                className={`nav-tab-btn ${activeTab === "governance" ? "active" : ""}`}
-              >
-                <Shield style={{ width: "14px", height: "14px", color: "var(--primary)" }} />
-                Data Governance
-              </button>
-
-              <button
-                onClick={() => handleTabClick("api_keys")}
-                className={`nav-tab-btn ${activeTab === "api_keys" ? "active" : ""}`}
-              >
-                <Key style={{ width: "14px", height: "14px", color: "var(--amber)" }} />
-                Developer Settings
-              </button>
-            </>
-          )}
-
-          {/* Super Admin Tabs */}
-          {isSuperAdmin && (
-            <>
-              <button
-                onClick={() => handleTabClick("dashboard")}
-                className={`nav-tab-btn ${activeTab === "dashboard" ? "active" : ""}`}
-              >
-                <ActivitySquare style={{ width: "15px", height: "15px" }} />
-                Dashboard
-              </button>
-
-              <button
-                onClick={() => handleTabClick("organizations")}
-                className={`nav-tab-btn ${activeTab === "organizations" ? "active" : ""}`}
-              >
-                <Building2 style={{ width: "15px", height: "15px" }} />
-                Organizations
-              </button>
-
-              <button
-                onClick={() => handleTabClick("global_intelligence")}
-                className={`nav-tab-btn ${activeTab === "global_intelligence" ? "active" : ""}`}
-                id="nav-tab-global-intelligence"
-              >
-                <BrainCircuit style={{ width: "15px", height: "15px", color: "var(--primary)" }} />
-                Global Intelligence
-              </button>
-
-              <button
-                onClick={() => handleTabClick("global_edits")}
-                className={`nav-tab-btn ${activeTab === "global_edits" ? "active" : ""}`}
-              >
-                <ActivitySquare style={{ width: "15px", height: "15px", color: "var(--amber)" }} />
-                Global Edits
-              </button>
-
-              <button
-                onClick={() => handleTabClick("global")}
-                className={`nav-tab-btn ${activeTab === "global" ? "active" : ""}`}
-              >
-                <Globe2 style={{ width: "15px", height: "15px", color: "var(--cyan)" }} />
-                Company Intelligence
-              </button>
-
-              <button
-                onClick={() => handleTabClick("people")}
-                className={`nav-tab-btn ${activeTab === "people" ? "active" : ""}`}
-              >
-                <UserCheck style={{ width: "15px", height: "15px", color: "var(--emerald)" }} />
-                People Intelligence
-              </button>
-
-              <button
-                onClick={() => handleTabClick("users")}
-                className={`nav-tab-btn ${activeTab === "users" ? "active" : ""}`}
-              >
-                <Users style={{ width: "15px", height: "15px" }} />
-                Users
-              </button>
-
-              <button
-                onClick={() => handleTabClick("audit")}
-                className={`nav-tab-btn ${activeTab === "audit" ? "active" : ""}`}
-                id="nav-tab-platform-activities"
-              >
-                <ActivitySquare style={{ width: "15px", height: "15px" }} />
-                Platform Activities
-              </button>
-            </>
+              {moreDropdownOpen && (
+                <div style={{
+                  position: "absolute",
+                  top: "100%",
+                  right: 0,
+                  marginTop: "4px",
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border-subtle)",
+                  borderRadius: "8px",
+                  boxShadow: "var(--shadow-md)",
+                  zIndex: 1000,
+                  minWidth: "220px",
+                  padding: "8px"
+                }}>
+                  {hiddenNavTabs.map(tab => {
+                    const Icon = tab.icon;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => handleTabClick(tab.id)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          width: "100%",
+                          padding: "10px 12px",
+                          background: activeTab === tab.id ? "var(--bg-subtle)" : "transparent",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          color: activeTab === tab.id ? "var(--primary)" : "var(--text-primary)",
+                          fontSize: "0.8125rem",
+                          fontWeight: 500,
+                          textAlign: "left"
+                        }}
+                      >
+                        <Icon style={{ width: "16px", height: "16px", color: tab.iconColor || "var(--text-secondary)" }} />
+                        {tab.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           )}
         </nav>
 
@@ -299,17 +211,17 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
               {user.full_name}
             </p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px" }}>
-              {isTelecaller ? (
+              {isTelecaller(user) ? (
                 <span className="badge badge-masked" style={{ fontSize: "0.625rem" }}>
                   <Lock style={{ width: "10px", height: "10px" }} />
-                  TELECALLER (MASKED)
+                  TELECALLER
                 </span>
-              ) : isSuperAdmin ? (
+              ) : isSuperAdmin(user) ? (
                 <span className="badge badge-hot" style={{ fontSize: "0.625rem" }}>
                   <ShieldCheck style={{ width: "10px", height: "10px" }} />
                   SUPER ADMIN
                 </span>
-              ) : isDataEntry ? (
+              ) : isDataEntry(user) ? (
                 <span className="badge" style={{ fontSize: "0.625rem", background: "rgba(245, 158, 11, 0.15)", color: "#b45309", border: "1px solid rgba(245, 158, 11, 0.3)", fontWeight: 700 }}>
                   DATA ENTRY
                 </span>
@@ -381,210 +293,20 @@ export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, o
           flexDirection: "column",
           gap: "6px"
         }}>
-          {isTelecaller && (
-            <button
-              onClick={() => handleTabClick("telecaller")}
-              className={`nav-tab-btn ${activeTab === "telecaller" ? "active" : ""}`}
-              style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-            >
-              <PhoneCall style={{ width: "16px", height: "16px" }} />
-              Calling Desk
-            </button>
-          )}
-
-          {/* Data Entry Mobile Tabs */}
-          {isDataEntry && (
-            <>
+          {allowedTabs.map(tab => {
+            const Icon = tab.icon;
+            return (
               <button
-                onClick={() => handleTabClick("global_intelligence")}
-                className={`nav-tab-btn ${activeTab === "global_intelligence" ? "active" : ""}`}
+                key={tab.id}
+                onClick={() => handleTabClick(tab.id)}
+                className={`nav-tab-btn ${activeTab === tab.id ? "active" : ""}`}
                 style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
               >
-                <BrainCircuit style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
-                Global Intelligence
+                <Icon style={{ width: "16px", height: "16px", color: tab.iconColor || "inherit" }} />
+                {tab.label}
               </button>
-
-              <button
-                onClick={() => handleTabClick("global")}
-                className={`nav-tab-btn ${activeTab === "global" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <Globe2 style={{ width: "16px", height: "16px", color: "var(--cyan)" }} />
-                Company Intelligence
-              </button>
-
-              <button
-                onClick={() => handleTabClick("people")}
-                className={`nav-tab-btn ${activeTab === "people" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <UserCheck style={{ width: "16px", height: "16px", color: "var(--emerald)" }} />
-                People Intelligence
-              </button>
-
-              <button
-                onClick={() => handleTabClick("import")}
-                className={`nav-tab-btn ${activeTab === "import" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <UploadCloud style={{ width: "16px", height: "16px", color: "#6366f1" }} />
-                Data Ingestion
-              </button>
-            </>
-          )}
-
-          {!isTelecaller && !isSuperAdmin && !isDataEntry && (
-            <>
-              <button
-                onClick={() => handleTabClick("radar")}
-                className={`nav-tab-btn ${activeTab === "radar" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <Sparkles style={{ width: "16px", height: "16px", color: "var(--amber)" }} />
-                Radar Insights
-              </button>
-
-              <button
-                onClick={() => handleTabClick("pipeline")}
-                className={`nav-tab-btn ${activeTab === "pipeline" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <Kanban style={{ width: "16px", height: "16px" }} />
-                Pipeline
-              </button>
-
-              <button
-                onClick={() => handleTabClick("leads")}
-                className={`nav-tab-btn ${activeTab === "leads" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <Users style={{ width: "16px", height: "16px" }} />
-                Leads & Contacts
-              </button>
-
-              <button
-                onClick={() => handleTabClick("import")}
-                className={`nav-tab-btn ${activeTab === "import" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <UploadCloud style={{ width: "16px", height: "16px" }} />
-                Import Leads
-              </button>
-
-              <button
-                onClick={() => handleTabClick("global")}
-                className={`nav-tab-btn ${activeTab === "global" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <Globe2 style={{ width: "16px", height: "16px", color: "var(--cyan)" }} />
-                Global Registry
-              </button>
-
-              <button
-                onClick={() => handleTabClick("team")}
-                className={`nav-tab-btn ${activeTab === "team" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-                id="mobile-nav-tab-team"
-              >
-                <UserCheck style={{ width: "16px", height: "16px", color: "var(--emerald)" }} />
-                Team & Telecallers
-              </button>
-
-              <button
-                onClick={() => handleTabClick("templates")}
-                className={`nav-tab-btn ${activeTab === "templates" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-                id="mobile-nav-tab-templates"
-              >
-                <ActivitySquare style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
-                Templates
-              </button>
-              <button
-                onClick={() => handleTabClick("governance")}
-                className={`nav-tab-btn ${activeTab === "governance" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <Shield style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
-                Data Governance
-              </button>
-
-              <button
-                onClick={() => handleTabClick("api_keys")}
-                className={`nav-tab-btn ${activeTab === "api_keys" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <Key style={{ width: "16px", height: "16px", color: "var(--amber)" }} />
-                Developer Settings
-              </button>
-            </>
-          )}
-
-          {isSuperAdmin && (
-            <>
-              <button
-                onClick={() => handleTabClick("dashboard")}
-                className={`nav-tab-btn ${activeTab === "dashboard" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <ActivitySquare style={{ width: "16px", height: "16px" }} />
-                Dashboard
-              </button>
-
-              <button
-                onClick={() => handleTabClick("organizations")}
-                className={`nav-tab-btn ${activeTab === "organizations" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <Building2 style={{ width: "16px", height: "16px" }} />
-                Organizations
-              </button>
-
-              <button
-                onClick={() => handleTabClick("global_intelligence")}
-                className={`nav-tab-btn ${activeTab === "global_intelligence" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <BrainCircuit style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
-                Global Intelligence
-              </button>
-
-              <button
-                onClick={() => handleTabClick("global")}
-                className={`nav-tab-btn ${activeTab === "global" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <Globe2 style={{ width: "16px", height: "16px", color: "var(--cyan)" }} />
-                Company Intelligence
-              </button>
-
-              <button
-                onClick={() => handleTabClick("people")}
-                className={`nav-tab-btn ${activeTab === "people" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <UserCheck style={{ width: "16px", height: "16px", color: "var(--emerald)" }} />
-                People Intelligence
-              </button>
-
-              <button
-                onClick={() => handleTabClick("users")}
-                className={`nav-tab-btn ${activeTab === "users" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <Users style={{ width: "16px", height: "16px" }} />
-                Users
-              </button>
-
-              <button
-                onClick={() => handleTabClick("audit")}
-                className={`nav-tab-btn ${activeTab === "audit" ? "active" : ""}`}
-                style={{ justifyContent: "flex-start", padding: "10px 14px", width: "100%" }}
-              >
-                <ActivitySquare style={{ width: "16px", height: "16px" }} />
-                Platform Activities
-              </button>
-            </>
-          )}
+            )
+          })}
         </div>
       )}
     </header>

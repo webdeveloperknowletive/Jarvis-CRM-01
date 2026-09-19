@@ -39,6 +39,18 @@ def create_task(
         assigned_to=data.assigned_to or creator_user.id,
         created_by=creator_user.id
     )
+
+    # Idempotency: If this is a FOLLOW_UP task for a lead, cancel any existing PENDING follow-ups
+    if task.task_type == "FOLLOW_UP" and task.lead_id:
+        existing_tasks = db.query(Task).filter(
+            Task.lead_id == task.lead_id,
+            Task.task_type == "FOLLOW_UP",
+            Task.status == "PENDING"
+        ).all()
+        for et in existing_tasks:
+            et.status = "CANCELLED"
+            # Maintain audit history if we want, but CANCELLED status is enough.
+
     db.add(task)
     db.commit()
     try:

@@ -228,6 +228,12 @@ def update_lead(
         lead.notes = data.notes
     if data.tags is not None:
         lead.tags = data.tags
+    if data.product_service_id is not None:
+        lead.product_service_id = data.product_service_id
+    if data.product_service_name is not None:
+        lead.product_service_name = data.product_service_name
+    if data.purpose is not None:
+        lead.purpose = data.purpose
 
     db.commit()
     try:
@@ -266,6 +272,24 @@ class BatchAssignRequest(BaseModel):
     telecaller_id: str
 
 
+@router.get("/available-for-assignment")
+def get_leads_available_for_assignment(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    if current_user.tenant_role not in ["ORG_ADMIN", "SALES_MANAGER", "SUPER_ADMIN"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+        
+    query = db.query(Lead).filter(
+        Lead.organization_id == tenant_id,
+        Lead.owner_id == None,
+        Lead.status.notin_(["WON", "LOST", "ARCHIVED", "REJECTED"])
+    )
+    
+    leads = query.order_by(Lead.created_at.desc()).limit(100).all()
+    return [{"id": l.id, "title": l.title, "contact_name": l.contact_name, "created_at": l.created_at} for l in leads]
+
 @router.post("/batch-assign")
 def batch_assign_leads(
     data: BatchAssignRequest,
@@ -286,6 +310,19 @@ def batch_assign_leads(
     ).first()
     if not telecaller:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target telecaller not found in this organization")
+
+    # Safe assignment logic: Check if telecaller has an active shift
+    from app.models.session import AttendanceSession
+    from datetime import datetime, timezone
+    today = datetime.now(timezone.utc).date()
+    active_shift = db.query(AttendanceSession).filter(
+        AttendanceSession.user_id == telecaller.id,
+        AttendanceSession.date == today,
+        AttendanceSession.logout_at == None
+    ).first()
+    
+    if not active_shift:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target telecaller is not clocked in. Assignment rejected.")
 
     leads = db.query(Lead).filter(
         Lead.id.in_(data.lead_ids),
@@ -340,6 +377,19 @@ def bulk_reassign_leads(
     ).first()
     if not to_user:
         raise HTTPException(status_code=404, detail="Target user not found")
+
+    # Safe assignment logic: Check if target user has an active shift
+    from app.models.session import AttendanceSession
+    from datetime import datetime, timezone
+    today = datetime.now(timezone.utc).date()
+    active_shift = db.query(AttendanceSession).filter(
+        AttendanceSession.user_id == to_user.id,
+        AttendanceSession.date == today,
+        AttendanceSession.logout_at == None
+    ).first()
+    
+    if not active_shift:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target user is not clocked in. Assignment rejected.")
 
     leads = db.query(Lead).filter(
         Lead.organization_id == tenant_id,
