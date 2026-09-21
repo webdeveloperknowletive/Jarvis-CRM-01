@@ -15,6 +15,7 @@ from app.models.audit import AuditLog
 from app.schemas.lead import LeadCreate, LeadUpdate, LeadOut, PipelineStageOut
 from app.services.pipeline_service import get_stage_by_id, get_first_stage
 from app.services.masking_service import should_mask_field, mask_phone_number, mask_email_address
+from app.services.lead_qualification_service import resolve_segment
 
 
 from app.models.product_service import ProductService
@@ -123,6 +124,8 @@ def create_lead(
         product_service_id=data.product_service_id,
         product_service_name=product_service_name,
         purpose=data.purpose,
+        segment=resolve_segment(data.segment, comp_name, c_email),
+        lead_type=data.lead_type.strip().upper() if data.lead_type else None,
         created_by=user_id,
         closed_at=closed_at
     )
@@ -199,6 +202,11 @@ def change_lead_stage(
     ).first()
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+
+    # This service is the lifecycle boundary, so non-list callers cannot bypass
+    # the same object-level authorization enforced by lead endpoints.
+    from app.core.deps import ensure_lead_access
+    ensure_lead_access(db, lead, actor_user, organization_id)
 
     new_stage = get_stage_by_id(db, to_stage_id, organization_id)
     if lead.pipeline_stage_id == new_stage.id:
@@ -393,6 +401,8 @@ def serialize_lead(lead: Lead, user: User, db: Session) -> LeadOut:
         product_service_id=lead.product_service_id,
         product_service_name=lead.product_service_name,
         purpose=lead.purpose,
+        segment=lead.segment,
+        lead_type=lead.lead_type,
         is_phone_masked=mask_phone,
         is_email_masked=mask_email,
         stage=stage_out,

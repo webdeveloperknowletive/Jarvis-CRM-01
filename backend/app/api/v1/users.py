@@ -35,12 +35,20 @@ def list_organization_telecallers(
         User.tenant_role == "TELECALLER"
     ).order_by(User.full_name.asc()).all()
 
+    from datetime import datetime, timezone
+    from app.models.telecaller_target import TelecallerTarget
+    today = datetime.now(timezone.utc).date()
     result = []
     for t in telecallers:
         assigned_count = db.query(Lead).filter(
             Lead.owner_id == t.id,
             Lead.organization_id == tenant_id
         ).count()
+        target = db.query(TelecallerTarget).filter(
+            TelecallerTarget.organization_id == tenant_id,
+            TelecallerTarget.user_id == t.id,
+            TelecallerTarget.target_date == today,
+        ).first()
         result.append({
             "id": t.id,
             "full_name": t.full_name,
@@ -48,7 +56,12 @@ def list_organization_telecallers(
             "phone": t.phone,
             "status": t.status,
             "assigned_leads_count": assigned_count,
-            "telecaller_targets": t.telecaller_targets or {"calls": 0, "connects": 0, "conversions": 0},
+            "telecaller_targets": {
+                "calls": target.target_calls,
+                "connects": target.target_connects,
+                "talk_time": target.target_talk_time_minutes,
+                "conversions": target.target_conversions,
+            } if target else {"calls": 0, "connects": 0, "talk_time": 0, "conversions": 0},
             "created_at": t.created_at.isoformat() if t.created_at else None
         })
     return result
@@ -104,7 +117,9 @@ def create_tenant_user(
         phone=data.phone,
         password_hash=get_password_hash(data.password),
         status="ACTIVE",
-        permission_overrides=data.permission_overrides or {}
+        # Tenant administrators manage tenant roles only. Platform permissions
+        # are assigned through the platform RBAC administration boundary.
+        permission_overrides={}
     )
     db.add(user)
     db.flush()
@@ -151,9 +166,34 @@ def update_user(
     if data.status:
         user.status = data.status
     if data.permission_overrides is not None:
-        user.permission_overrides = data.permission_overrides
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Organization administrators cannot modify platform permission overrides",
+        )
     if data.telecaller_targets is not None:
-        user.telecaller_targets = data.telecaller_targets
+        from datetime import datetime, timezone
+        from app.models.telecaller_target import TelecallerTarget
+        values = data.telecaller_targets
+        target_date = datetime.now(timezone.utc).date()
+        target = db.query(TelecallerTarget).filter(
+            TelecallerTarget.organization_id == tenant_id,
+            TelecallerTarget.user_id == user.id,
+            TelecallerTarget.target_date == target_date,
+        ).first()
+        if not target:
+            target = TelecallerTarget(
+                id=str(__import__('uuid').uuid4()), organization_id=tenant_id,
+                user_id=user.id, target_date=target_date,
+            )
+            db.add(target)
+        target.target_calls = int(values.get("calls", values.get("target_calls", 0)) or 0)
+        target.target_connects = int(values.get("connects", values.get("target_connects", 0)) or 0)
+        target.target_talk_time_minutes = int(values.get("talk_time", values.get("target_talk_time_minutes", 0)) or 0)
+        target.target_qualified_leads = int(values.get("qualified_leads", values.get("target_qualified_leads", 0)) or 0)
+        target.target_conversions = int(values.get("conversions", values.get("target_conversions", 0)) or 0)
+        target.target_revenue = float(values.get("revenue", values.get("target_revenue", 0)) or 0)
+        # The legacy JSON is deliberately not updated: TelecallerTarget is the
+        # authoritative store.  Existing JSON is read only once for migration.
 
     audit = AuditLog(
         organization_id=tenant_id,

@@ -38,8 +38,6 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
   lead,
   onSent,
 }) => {
-  if (!isOpen || !lead) return null;
-
   // Sender configuration
   const [senderName, setSenderName] = useState("Apex Admin");
   const [senderEmail, setSenderEmail] = useState("admin@apex.com");
@@ -54,8 +52,8 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
   const [gmailError, setGmailError] = useState<string | null>(null);
 
   // Recipient info for "TO" stage
-  const [recipientEmail, setRecipientEmail] = useState(lead.contact_email || "");
-  const [subject, setSubject] = useState(`Regarding ${lead.title} - ${lead.company_name || "Opportunity"}`);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [logging, setLogging] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -99,6 +97,8 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
   };
 
   useEffect(() => {
+    if (!isOpen || !lead) return;
+
     try {
       const storedUser = localStorage.getItem("jarvis_user");
       let defaultName = "Apex Admin";
@@ -143,6 +143,11 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, [lead, isOpen]);
+
+  // Hooks must be called on every render.  Render nothing only after all
+  // state/effect hooks have been declared so opening or closing the modal
+  // cannot change React's hook order.
+  if (!isOpen || !lead) return null;
 
   const handleSenderChange = (email: string) => {
     setSenderEmail(email);

@@ -456,9 +456,9 @@ def upgrade() -> None:
         batch_op.create_index(batch_op.f('ix_audit_logs_sequence_number'), ['sequence_number'], unique=False)
         batch_op.create_index(batch_op.f('ix_audit_logs_support_session_id'), ['support_session_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_audit_logs_target_user_id'), ['target_user_id'], unique=False)
-        batch_op.create_foreign_key(None, 'support_sessions', ['support_session_id'], ['id'], ondelete='SET NULL')
-        batch_op.create_foreign_key(None, 'users', ['target_user_id'], ['id'], ondelete='SET NULL')
-        batch_op.create_foreign_key(None, 'users', ['actor_user_id'], ['id'], ondelete='SET NULL')
+        batch_op.create_foreign_key('fk_audit_logs_support_session_id', 'support_sessions', ['support_session_id'], ['id'], ondelete='SET NULL')
+        batch_op.create_foreign_key('fk_audit_logs_target_user_id', 'users', ['target_user_id'], ['id'], ondelete='SET NULL')
+        batch_op.create_foreign_key('fk_audit_logs_actor_user_id', 'users', ['actor_user_id'], ['id'], ondelete='SET NULL')
 
     with op.batch_alter_table('companies', schema=None) as batch_op:
         batch_op.add_column(sa.Column('deleted_at', sa.DateTime(), nullable=True))
@@ -548,9 +548,9 @@ def downgrade() -> None:
         batch_op.drop_column('deleted_at')
 
     with op.batch_alter_table('audit_logs', schema=None) as batch_op:
-        batch_op.drop_constraint(None, type_='foreignkey')
-        batch_op.drop_constraint(None, type_='foreignkey')
-        batch_op.drop_constraint(None, type_='foreignkey')
+        batch_op.drop_constraint('fk_audit_logs_actor_user_id', type_='foreignkey')
+        batch_op.drop_constraint('fk_audit_logs_target_user_id', type_='foreignkey')
+        batch_op.drop_constraint('fk_audit_logs_support_session_id', type_='foreignkey')
         batch_op.drop_index(batch_op.f('ix_audit_logs_target_user_id'))
         batch_op.drop_index(batch_op.f('ix_audit_logs_support_session_id'))
         batch_op.drop_index(batch_op.f('ix_audit_logs_sequence_number'))

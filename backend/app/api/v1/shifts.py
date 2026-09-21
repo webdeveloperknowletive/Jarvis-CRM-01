@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
 
 from app.core.deps import get_db, get_current_user, get_tenant_id
 from app.models.user import User
 from app.models.session import AttendanceSession, BreakSession
+from app.core.business_time import organization_business_date
 
 def to_utc(dt):
     if dt is None:
@@ -18,15 +20,17 @@ router = APIRouter(prefix="/shift", tags=["Telecaller Shifts"])
 @router.get("/status")
 def get_shift_status(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), tenant_id: str = Depends(get_tenant_id)):
     now = datetime.now(timezone.utc)
-    today = now.date()
+    today = organization_business_date(db, tenant_id, now)
     
     active_shift = db.query(AttendanceSession).filter(
+        AttendanceSession.organization_id == tenant_id,
         AttendanceSession.user_id == current_user.id,
         AttendanceSession.date == today,
         AttendanceSession.logout_at == None
     ).first()
     
     active_break = db.query(BreakSession).filter(
+        BreakSession.organization_id == tenant_id,
         BreakSession.user_id == current_user.id,
         BreakSession.ended_at == None
     ).first()
@@ -41,10 +45,11 @@ def get_shift_status(db: Session = Depends(get_db), current_user: User = Depends
 @router.post("/start")
 def start_shift(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), tenant_id: str = Depends(get_tenant_id)):
     now = datetime.now(timezone.utc)
-    today = now.date()
+    today = organization_business_date(db, tenant_id, now)
     
     # Check if already active shift today
     existing = db.query(AttendanceSession).filter(
+        AttendanceSession.organization_id == tenant_id,
         AttendanceSession.user_id == current_user.id,
         AttendanceSession.date == today,
         AttendanceSession.logout_at == None
@@ -60,16 +65,32 @@ def start_shift(db: Session = Depends(get_db), current_user: User = Depends(get_
         login_at=now
     )
     db.add(new_session)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # The partial unique index is the final concurrency guard.  A second
+        # request returns the already-open server session rather than creating
+        # another one.
+        db.rollback()
+        existing = db.query(AttendanceSession).filter(
+            AttendanceSession.organization_id == tenant_id,
+            AttendanceSession.user_id == current_user.id,
+            AttendanceSession.date == today,
+            AttendanceSession.logout_at.is_(None),
+        ).first()
+        if existing:
+            return {"status": "already_started", "session_id": existing.id}
+        raise
     db.refresh(new_session)
     return {"status": "started", "session_id": new_session.id}
 
 @router.post("/end")
 def end_shift(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), tenant_id: str = Depends(get_tenant_id)):
     now = datetime.now(timezone.utc)
-    today = now.date()
+    today = organization_business_date(db, tenant_id, now)
     
     existing = db.query(AttendanceSession).filter(
+        AttendanceSession.organization_id == tenant_id,
         AttendanceSession.user_id == current_user.id,
         AttendanceSession.date == today,
         AttendanceSession.logout_at == None
@@ -79,6 +100,12 @@ def end_shift(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         raise HTTPException(status_code=400, detail="No active shift found")
         
     existing.logout_at = now
+    # A shift cannot retain an open break after it has ended.
+    db.query(BreakSession).filter(
+        BreakSession.organization_id == tenant_id,
+        BreakSession.user_id == current_user.id,
+        BreakSession.ended_at.is_(None),
+    ).update({BreakSession.ended_at: now}, synchronize_session=False)
     db.commit()
     return {"status": "ended", "session_id": existing.id}
 
@@ -86,7 +113,16 @@ def end_shift(db: Session = Depends(get_db), current_user: User = Depends(get_cu
 def start_break(db: Session = Depends(get_db), current_user: User = Depends(get_current_user), tenant_id: str = Depends(get_tenant_id)):
     now = datetime.now(timezone.utc)
     
+    active_shift = db.query(AttendanceSession).filter(
+        AttendanceSession.organization_id == tenant_id,
+        AttendanceSession.user_id == current_user.id,
+        AttendanceSession.logout_at.is_(None),
+    ).first()
+    if not active_shift:
+        raise HTTPException(status_code=400, detail="Start a shift before starting a break")
+
     existing = db.query(BreakSession).filter(
+        BreakSession.organization_id == tenant_id,
         BreakSession.user_id == current_user.id,
         BreakSession.ended_at == None
     ).first()
@@ -109,6 +145,7 @@ def end_break(db: Session = Depends(get_db), current_user: User = Depends(get_cu
     now = datetime.now(timezone.utc)
     
     existing = db.query(BreakSession).filter(
+        BreakSession.organization_id == tenant_id,
         BreakSession.user_id == current_user.id,
         BreakSession.ended_at == None
     ).first()
@@ -145,10 +182,11 @@ def get_productivity_report(
     """
     target_user_id = user_id if (user_id and current_user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER", "SUPER_ADMIN")) else current_user.id
     now = datetime.now(timezone.utc)
-    today = now.date()
+    today = organization_business_date(db, tenant_id, now)
 
     # 1. Total Shift Time
     attendance = db.query(AttendanceSession).filter(
+        AttendanceSession.organization_id == tenant_id,
         AttendanceSession.user_id == target_user_id
     ).all()
     total_shift_seconds = 0
@@ -162,6 +200,7 @@ def get_productivity_report(
 
     # 2. Break Time
     breaks = db.query(BreakSession).filter(
+        BreakSession.organization_id == tenant_id,
         BreakSession.user_id == target_user_id
     ).all()
     total_break_seconds = 0
@@ -226,4 +265,3 @@ def get_productivity_report(
             {"label": "Idle / Wrap-up", "minutes": idle_wrap_seconds // 60, "color": "#6366f1"},
         ]
     }
-

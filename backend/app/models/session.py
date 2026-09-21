@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey, Integer
+from sqlalchemy import Column, String, DateTime, ForeignKey, Integer, Date
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.core.database import Base
@@ -27,7 +27,7 @@ class AttendanceSession(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     organization_id = Column(String(36), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    date = Column(DateTime, nullable=False) # Or Date
+    date = Column(Date, nullable=False)
     login_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     logout_at = Column(DateTime(timezone=True), nullable=True)
 

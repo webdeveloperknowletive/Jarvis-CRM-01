@@ -476,13 +476,16 @@ def assign_import_batch(
         telecallers = db.query(User).filter(
             User.organization_id == tenant_id,
             User.id.in_(data.telecaller_ids),
-            User.is_active == True
+            User.status == "ACTIVE",
+            User.deleted_at.is_(None),
+            User.tenant_role == "TELECALLER"
         ).all()
     else:
         telecallers = db.query(User).filter(
             User.organization_id == tenant_id,
             User.tenant_role == "TELECALLER",
-            User.is_active == True
+            User.status == "ACTIVE",
+            User.deleted_at.is_(None)
         ).all()
 
     if not telecallers:

@@ -43,6 +43,8 @@ class LeadCreate(BaseModel):
     product_service_id: Optional[str] = None
     product_service_name: Optional[str] = None
     purpose: Optional[str] = None
+    segment: Optional[str] = None
+    lead_type: Optional[str] = None
 
 
 class LeadUpdate(BaseModel):
@@ -65,6 +67,8 @@ class LeadUpdate(BaseModel):
     product_service_id: Optional[str] = None
     product_service_name: Optional[str] = None
     purpose: Optional[str] = None
+    segment: Optional[str] = None
+    lead_type: Optional[str] = None
 
 
 class LeadStageChangeRequest(BaseModel):
@@ -100,6 +104,8 @@ class LeadOut(BaseModel):
     product_service_id: Optional[str] = None
     product_service_name: Optional[str] = None
     purpose: Optional[str] = None
+    segment: Optional[str] = None
+    lead_type: Optional[str] = None
     is_phone_masked: bool = False
     is_email_masked: bool = False
     stage: Optional[PipelineStageOut] = None

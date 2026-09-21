@@ -13,6 +13,7 @@ from app.models.user import User
 from app.models.lead import Lead
 from app.models.lead_history import LeadStageHistory
 from app.models.activity import Activity
+from app.models.call_record import CallRecord
 from app.models.task import Task, DailyCallPlan, DailyTask
 from app.models.company import Company
 from app.models.telecaller_target import TelecallerTarget
@@ -44,11 +45,11 @@ def to_utc(dt: Optional[datetime]) -> Optional[datetime]:
 class TelecallerTargetCreate(BaseModel):
     user_id: Optional[str] = None
     target_date: Optional[date] = None
-    target_calls: Optional[int] = 80
-    target_connects: Optional[int] = 30
-    target_talk_time_minutes: Optional[int] = 120
-    target_qualified_leads: Optional[int] = 10
-    target_conversions: Optional[int] = 2
+    target_calls: Optional[int] = None
+    target_connects: Optional[int] = None
+    target_talk_time_minutes: Optional[int] = None
+    target_qualified_leads: Optional[int] = None
+    target_conversions: Optional[int] = None
     target_revenue: Optional[float] = 0.0
 
 
@@ -111,38 +112,54 @@ def get_today_target(
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    targets = target_user.telecaller_targets or {}
-    is_configured = bool(targets)
-    
-    target_calls = targets.get("calls", 0)
-    target_connects = targets.get("connects", 0)
-    target_talk_time = targets.get("talk_time", 120)  # Defaulting talk time if not set via UI
-    target_conversions = targets.get("conversions", 0)
+    target = db.query(TelecallerTarget).filter(
+        TelecallerTarget.organization_id == tenant_id,
+        TelecallerTarget.user_id == target_user_id,
+        TelecallerTarget.target_date == today,
+    ).first()
+    # Legacy JSON values are migrated on read only when no authoritative row
+    # exists.  All subsequent reads use the table.
+    if not target and target_user.telecaller_targets:
+        legacy = target_user.telecaller_targets
+        target = TelecallerTarget(
+            id=generate_uuid(), organization_id=tenant_id, user_id=target_user_id,
+            target_date=today, target_calls=int(legacy.get("calls", 0) or 0),
+            target_connects=int(legacy.get("connects", 0) or 0),
+            target_talk_time_minutes=int(legacy.get("talk_time", 0) or 0),
+            target_qualified_leads=int(legacy.get("qualified_leads", 0) or 0),
+            target_conversions=int(legacy.get("conversions", 0) or 0),
+            target_revenue=float(legacy.get("revenue", 0) or 0),
+        )
+        db.add(target)
+        db.flush()
+    is_configured = target is not None
+    target_calls = (target.target_calls or 0) if target else 0
+    target_connects = (target.target_connects or 0) if target else 0
+    target_talk_time = (target.target_talk_time_minutes or 0) if target else 0
+    target_conversions = (target.target_conversions or 0) if target else 0
 
     # Query real actuals from activities
-    actual_calls = db.query(Activity).filter(
-        Activity.organization_id == tenant_id,
-        Activity.user_id == target_user_id,
-        Activity.activity_type == "CALL",
-        Activity.occurred_at >= today_start,
-        Activity.occurred_at <= today_end
+    actual_calls = db.query(CallRecord).filter(
+        CallRecord.organization_id == tenant_id,
+        CallRecord.user_id == target_user_id,
+        CallRecord.started_at >= today_start,
+        CallRecord.started_at <= today_end,
+        CallRecord.disposition != "INITIATED",
     ).count()
 
-    actual_connects = db.query(Activity).filter(
-        Activity.organization_id == tenant_id,
-        Activity.user_id == target_user_id,
-        Activity.activity_type == "CALL",
-        Activity.status.in_(["CONNECTED", "INTERESTED", "CALLBACK", "PROPOSAL_SENT"]),
-        Activity.occurred_at >= today_start,
-        Activity.occurred_at <= today_end
+    actual_connects = db.query(CallRecord).filter(
+        CallRecord.organization_id == tenant_id,
+        CallRecord.user_id == target_user_id,
+        CallRecord.started_at >= today_start,
+        CallRecord.started_at <= today_end,
+        CallRecord.disposition.in_(["CONNECTED", "INTERESTED", "CALLBACK", "PROPOSAL_SENT"]),
     ).count()
 
-    talk_seconds = db.query(func.sum(Activity.duration_seconds)).filter(
-        Activity.organization_id == tenant_id,
-        Activity.user_id == target_user_id,
-        Activity.activity_type == "CALL",
-        Activity.occurred_at >= today_start,
-        Activity.occurred_at <= today_end
+    talk_seconds = db.query(func.sum(CallRecord.duration_seconds)).filter(
+        CallRecord.organization_id == tenant_id,
+        CallRecord.user_id == target_user_id,
+        CallRecord.started_at >= today_start,
+        CallRecord.started_at <= today_end,
     ).scalar() or 0
     actual_talk_minutes = talk_seconds // 60
 
@@ -161,7 +178,7 @@ def get_today_target(
     conv_pct = round(min(100.0, (actual_conversions / target_conversions * 100)) if target_conversions > 0 else 0, 1)
 
     return TelecallerTargetTodayOut(
-        id=None,
+        id=target.id if target else None,
         user_id=target_user_id,
         target_date=str(today),
         target_calls=target_calls,

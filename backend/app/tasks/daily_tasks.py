@@ -11,6 +11,8 @@ from app.models.user import User
 from app.models.telecaller_target import TelecallerTarget
 from app.models.lead import Lead
 from app.models.activity import Activity
+from app.models.call_record import CallRecord
+from app.core.business_time import organization_business_date, organization_timezone
 from app.models.session import TelecallerSession
 from app.models.eod_report import EODReport
 from app.models.dedupe import DedupeCandidate
@@ -28,15 +30,18 @@ def initialize_daily_targets():
     logger.info("Starting initialize_daily_targets job")
     db: Session = SessionLocal()
     try:
-        today = datetime.now(timezone.utc).date()
+        # Targets must be created for each organization's local business date,
+        # not the Celery host's UTC day.
         
         telecallers = db.query(User).filter(
-            User.is_active == True,
+            User.status == "ACTIVE",
+            User.deleted_at.is_(None),
             User.tenant_role == "TELECALLER"
         ).all()
         
         created = 0
         for tc in telecallers:
+            today = organization_business_date(db, tc.organization_id)
             existing = db.query(TelecallerTarget).filter(
                 TelecallerTarget.user_id == tc.id,
                 TelecallerTarget.target_date == today
@@ -48,11 +53,13 @@ def initialize_daily_targets():
                     organization_id=tc.organization_id,
                     user_id=tc.id,
                     target_date=today,
-                    target_calls=80,
-                    target_connects=30,
-                    target_talk_time_minutes=120,
-                    target_qualified_leads=10,
-                    target_conversions=2,
+                    # No business defaults are invented here.  A missing row
+                    # means the organization has not configured a target.
+                    target_calls=0,
+                    target_connects=0,
+                    target_talk_time_minutes=0,
+                    target_qualified_leads=0,
+                    target_conversions=0,
                     target_revenue=0.0
                 )
                 db.add(new_target)
@@ -246,16 +253,17 @@ def generate_eod_reports():
     logger.info("Starting generate_eod_reports job")
     db: Session = SessionLocal()
     try:
-        today = datetime.now(timezone.utc).date()
-        today_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc)
-        today_end = datetime.combine(today, datetime.max.time()).replace(tzinfo=timezone.utc)
-        
         telecallers = db.query(User).filter(
-            User.is_active == True,
+            User.status == "ACTIVE",
+            User.deleted_at.is_(None),
             User.tenant_role == "TELECALLER"
         ).all()
         
         for tc in telecallers:
+            today = organization_business_date(db, tc.organization_id)
+            tz = organization_timezone(db, tc.organization_id)
+            today_start = datetime.combine(today, datetime.min.time(), tzinfo=tz).astimezone(timezone.utc)
+            today_end = datetime.combine(today, datetime.max.time(), tzinfo=tz).astimezone(timezone.utc)
             existing = db.query(EODReport).filter(
                 EODReport.organization_id == tc.organization_id,
                 EODReport.user_id == tc.id,
@@ -263,29 +271,27 @@ def generate_eod_reports():
             ).first()
             
             # Compute SQL metrics
-            calls_made = db.query(Activity).filter(
-                Activity.organization_id == tc.organization_id,
-                Activity.user_id == tc.id,
-                Activity.activity_type == "CALL",
-                Activity.occurred_at >= today_start,
-                Activity.occurred_at <= today_end
+            calls_made = db.query(CallRecord).filter(
+                CallRecord.organization_id == tc.organization_id,
+                CallRecord.user_id == tc.id,
+                CallRecord.started_at >= today_start,
+                CallRecord.started_at <= today_end,
+                CallRecord.disposition != "INITIATED",
             ).count()
 
-            connects = db.query(Activity).filter(
-                Activity.organization_id == tc.organization_id,
-                Activity.user_id == tc.id,
-                Activity.activity_type == "CALL",
-                Activity.status.in_(["CONNECTED", "INTERESTED", "CALLBACK"]),
-                Activity.occurred_at >= today_start,
-                Activity.occurred_at <= today_end
+            connects = db.query(CallRecord).filter(
+                CallRecord.organization_id == tc.organization_id,
+                CallRecord.user_id == tc.id,
+                CallRecord.disposition.in_(["CONNECTED", "INTERESTED", "CALLBACK", "PROPOSAL_SENT"]),
+                CallRecord.started_at >= today_start,
+                CallRecord.started_at <= today_end,
             ).count()
 
-            talk_time = db.query(func.sum(Activity.duration_seconds)).filter(
-                Activity.organization_id == tc.organization_id,
-                Activity.user_id == tc.id,
-                Activity.activity_type == "CALL",
-                Activity.occurred_at >= today_start,
-                Activity.occurred_at <= today_end
+            talk_time = db.query(func.sum(CallRecord.duration_seconds)).filter(
+                CallRecord.organization_id == tc.organization_id,
+                CallRecord.user_id == tc.id,
+                CallRecord.started_at >= today_start,
+                CallRecord.started_at <= today_end,
             ).scalar() or 0
 
             conversions = db.query(Lead).filter(
@@ -305,11 +311,12 @@ def generate_eod_reports():
             ).scalar() or 0.0
 
             target = db.query(TelecallerTarget).filter(
+                TelecallerTarget.organization_id == tc.organization_id,
                 TelecallerTarget.user_id == tc.id,
                 TelecallerTarget.target_date == today
             ).first()
 
-            target_calls = target.target_calls if target else 80
+            target_calls = target.target_calls if target else 0
             achievement_pct = round(min(100.0, (calls_made / target_calls * 100)) if target_calls > 0 else 0, 1)
 
             metrics = {

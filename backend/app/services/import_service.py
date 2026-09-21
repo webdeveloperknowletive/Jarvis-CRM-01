@@ -21,6 +21,7 @@ from app.models.user import User
 from app.services.pipeline_service import get_first_stage, get_stage_by_id
 from app.services.company_service import get_or_create_company
 from app.services.contact_service import get_or_create_contact
+from app.services.lead_qualification_service import classify_segment as classify_lead_segment
 
 ALLOWED_TABULAR_EXTENSIONS = (".csv", ".xls", ".xlsx", ".xlsb", ".xlsm", ".parquet", ".json")
 
@@ -98,9 +99,8 @@ def is_free_email_domain(email: Optional[str]) -> bool:
 def classify_segment(row: dict) -> Tuple[str, float]:
     comp = row.get("company_name") or row.get("company")
     email = row.get("email") or row.get("contact_email")
-    if comp and not is_free_email_domain(email):
-        return "B2B", 0.99
-    return "B2C", 0.97
+    segment = classify_lead_segment(comp, email)
+    return segment, 0.99 if segment in ("B2B", "B2C") else 0.0
 
 
 def detect_file_encoding(file_path: str) -> str:
@@ -626,7 +626,9 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
 
                     # 4. Classify Segment & Lead Type (Problem 6 & 20)
                     detected_segment, _ = classify_segment({"company_name": comp_name, "email": email})
-                    inferred_lead_type = "B2B" if detected_segment == "B2B" else "COLD_OUTBOUND"
+                    # Segment describes B2B/B2C/OTHER; imported leads are an
+                    # outbound source regardless of their segment.
+                    inferred_lead_type = "OUTBOUND"
 
                     # Ensure ContactPhone record is registered (Problem 4 & 15)
                     if contact and phone:

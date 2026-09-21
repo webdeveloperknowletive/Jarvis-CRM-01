@@ -235,26 +235,36 @@ def pull_global_companies_to_crm(
     sub = db.query(Subscription).filter(
         Subscription.organization_id == organization_id,
         Subscription.status == "ACTIVE"
-    ).first()
+    ).with_for_update().first()
     if not sub:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No active subscription found for this organization"
         )
 
-    needed = len(global_company_ids)
-    remaining_quota = sub.pull_quota_monthly - sub.pull_quota_used
-    if needed > remaining_quota:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Requested {needed} records, but only {remaining_quota} monthly pull credits remaining"
-        )
+    # De-duplicate the request before quota validation and claiming.
+    global_company_ids = list(dict.fromkeys(global_company_ids))
+    # Quota is evaluated against successful *new tenant projections*, not the
+    # number of IDs supplied by a client.  This makes retrying an idempotent
+    # pull safe and avoids charging for missing/already-projected records.
+    remaining_quota = max(0, sub.pull_quota_monthly - sub.pull_quota_used)
 
     # 2. Resolve target stage
     if target_stage_id:
         stage = get_stage_by_id(db, target_stage_id, organization_id)
     else:
         stage = get_first_stage(db, organization_id)
+
+    if target_owner_id:
+        owner = db.query(User).filter(
+            User.id == target_owner_id,
+            User.organization_id == organization_id,
+            User.tenant_role == "TELECALLER",
+            User.status == "ACTIVE",
+            User.deleted_at.is_(None),
+        ).first()
+        if not owner:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target owner is not an active telecaller in this organization")
 
     pulled_comps = 0
     pulled_conts = 0
@@ -265,7 +275,10 @@ def pull_global_companies_to_crm(
     now_utc = datetime.now(timezone.utc)
 
     for g_id in global_company_ids:
-        g_comp = db.query(GlobalCompany).filter(GlobalCompany.id == g_id).first()
+        # Lock the master row for the duration of claim + tenant projection.
+        # This prevents two concurrent pulls from both consuming the same
+        # global record in PostgreSQL.
+        g_comp = db.query(GlobalCompany).filter(GlobalCompany.id == g_id).with_for_update().first()
         if not g_comp:
             continue
 
@@ -276,6 +289,10 @@ def pull_global_companies_to_crm(
         ).first()
 
         if not crm_comp:
+            if pulled_comps >= remaining_quota:
+                # Preserve partial-success semantics without charging a
+                # record that cannot be projected within the locked quota.
+                continue
             crm_comp = Company(
                 organization_id=organization_id,
                 source_global_company_id=g_comp.id,
@@ -370,8 +387,11 @@ def pull_global_companies_to_crm(
             db.add(history)
             created_leads += 1
 
-    # 3. Deduct Quota
-    sub.pull_quota_used += needed
+    # 3. Deduct only successful claims (new tenant company projections).
+    successful_claim_count = pulled_comps
+    if sub.pull_quota_used + successful_claim_count > sub.pull_quota_monthly:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Pull quota exhausted")
+    sub.pull_quota_used += successful_claim_count
     db.commit()
 
     return GlobalPullResponse(
@@ -433,4 +453,3 @@ def update_global_company(db: Session, company_id: str, data: GlobalCompanyUpdat
         first_seen_at=company.first_seen_at,
         last_updated_at=company.last_updated_at
     )
-

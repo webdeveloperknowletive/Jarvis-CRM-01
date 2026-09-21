@@ -3,8 +3,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from typing import Optional
 from pydantic import BaseModel
+from datetime import datetime, timezone
 
-from app.core.deps import get_db, get_current_user, get_tenant_id
+from app.core.deps import get_db, get_current_user, get_tenant_id, ensure_lead_access
+from app.core.config import settings
+from app.core.webhooks import verify_hmac_webhook
 from app.models.user import User
 from app.models.lead import Lead
 from app.models.call_record import CallRecord
@@ -32,6 +35,7 @@ def initiate_call(
     
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
+    ensure_lead_access(db, lead, current_user, tenant_id)
         
     # Problem 3 & 5: Log the call attempt immediately as Activity and CallRecord
     call_record = CallRecord(
@@ -41,6 +45,7 @@ def initiate_call(
         user_id=current_user.id,
         provider="NATIVE_DIALER",
         direction="OUTBOUND",
+        started_at=datetime.now(timezone.utc),
         disposition="INITIATED"
     )
     db.add(call_record)
@@ -57,7 +62,8 @@ def initiate_call(
         status="SCHEDULED"
     )
     db.add(activity)
-
+    db.flush()
+    activity.description = f"Call dialed via native application bridge. call_record_id={call_record.id}"
     db.commit()
     db.refresh(call_record)
     
@@ -82,14 +88,16 @@ class WebhookPayload(BaseModel):
 
 
 @router.post("/webhook")
-def telephony_webhook(
+async def telephony_webhook(
     data: WebhookPayload,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
     Problem 5: Webhook receives real duration/status.
     Auto-updates CallRecord and logs CRM Activity timeline event.
     """
+    await verify_hmac_webhook(request, settings.TELEPHONY_WEBHOOK_SECRET, "X-Telephony-Signature")
     target_id = data.call_id or data.call_record_id
     if not target_id:
         raise HTTPException(status_code=400, detail="Missing call_id or call_record_id")
@@ -107,19 +115,28 @@ def telephony_webhook(
         if data.recording_url:
             call_record.recording_url = data.recording_url
         
-        # Log to activity timeline
-        activity = Activity(
-            organization_id=call_record.organization_id,
-            lead_id=call_record.lead_id,
-            contact_id=call_record.contact_id,
-            user_id=call_record.user_id,
-            activity_type="CALL",
-            subject=f"Outbound Call - {disp}",
-            description=f"Call completed. Telemetry duration: {dur} seconds.",
-            duration_seconds=dur,
-            status="COMPLETED"
-        )
-        db.add(activity)
+        # Finalize the initiation activity instead of appending another raw
+        # call row.  Provider retries therefore remain idempotent.
+        activity = db.query(Activity).filter(
+            Activity.organization_id == call_record.organization_id,
+            Activity.lead_id == call_record.lead_id,
+            Activity.user_id == call_record.user_id,
+            Activity.activity_type == "CALL",
+            Activity.description.like(f"%call_record_id={call_record.id}%"),
+        ).order_by(Activity.occurred_at.desc()).first()
+        if not activity:
+            activity = Activity(
+                organization_id=call_record.organization_id,
+                lead_id=call_record.lead_id,
+                contact_id=call_record.contact_id,
+                user_id=call_record.user_id,
+                activity_type="CALL",
+            )
+            db.add(activity)
+        activity.subject = f"Outbound Call - {disp}"
+        activity.description = f"Call completed. Telemetry duration: {dur} seconds."
+        activity.duration_seconds = dur
+        activity.status = "COMPLETED"
         db.commit()
         return {"status": "success", "call_record_id": call_record.id}
 
@@ -145,26 +162,25 @@ def get_my_kpis(
 
     today = datetime.now(timezone.utc).date()
     
-    calls_made = db.query(Activity).filter(
-        Activity.organization_id == tenant_id,
-        Activity.user_id == current_user.id,
-        Activity.activity_type == "CALL",
-        Activity.occurred_at >= datetime.combine(today, datetime.min.time())
+    day_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc)
+    calls_made = db.query(CallRecord).filter(
+        CallRecord.organization_id == tenant_id,
+        CallRecord.user_id == current_user.id,
+        CallRecord.started_at >= day_start,
+        CallRecord.disposition != "INITIATED",
     ).count()
 
-    talk_time_seconds = db.query(func.sum(Activity.duration_seconds)).filter(
-        Activity.organization_id == tenant_id,
-        Activity.user_id == current_user.id,
-        Activity.activity_type == "CALL",
-        Activity.occurred_at >= datetime.combine(today, datetime.min.time())
+    talk_time_seconds = db.query(func.sum(CallRecord.duration_seconds)).filter(
+        CallRecord.organization_id == tenant_id,
+        CallRecord.user_id == current_user.id,
+        CallRecord.started_at >= day_start,
     ).scalar() or 0
 
-    high_interest = db.query(Activity).filter(
-        Activity.organization_id == tenant_id,
-        Activity.user_id == current_user.id,
-        Activity.activity_type == "CALL",
-        Activity.status == "INTERESTED",
-        Activity.occurred_at >= datetime.combine(today, datetime.min.time())
+    high_interest = db.query(CallRecord).filter(
+        CallRecord.organization_id == tenant_id,
+        CallRecord.user_id == current_user.id,
+        CallRecord.disposition.in_(["INTERESTED", "CALLBACK", "PROPOSAL_SENT"]),
+        CallRecord.started_at >= day_start,
     ).count()
 
     return TelecallerKPIsOut(
@@ -172,4 +188,3 @@ def get_my_kpis(
         talk_time_minutes=talk_time_seconds // 60,
         high_interest_leads=high_interest
     )
-

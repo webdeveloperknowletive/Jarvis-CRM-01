@@ -10,8 +10,36 @@ from app.models.user import User
 from app.models.organization import Organization, Subscription
 from app.models.revocation import RevokedToken
 from app.models.support import SupportSession
+from app.models.lead import Lead
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+def ensure_lead_access(db: Session, lead: Lead, current_user: User, tenant_id: str) -> Lead:
+    """Enforce object-level lead access independently of frontend/list filtering."""
+    if lead.organization_id != tenant_id or lead.deleted_at is not None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    if current_user.tenant_role != "TELECALLER":
+        return lead
+
+    if lead.owner_id == current_user.id:
+        return lead
+
+    from app.core.business_time import organization_business_date
+    from app.models.delegation import AbsenceDelegation
+
+    business_date = organization_business_date(db, tenant_id)
+    delegated = db.query(AbsenceDelegation.id).filter(
+        AbsenceDelegation.organization_id == tenant_id,
+        AbsenceDelegation.absent_user_id == lead.owner_id,
+        AbsenceDelegation.cover_user_id == current_user.id,
+        AbsenceDelegation.start_date <= business_date,
+        AbsenceDelegation.end_date >= business_date,
+    ).first()
+    if not delegated:
+        # Use a non-enumerating response for records outside a telecaller's scope.
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    return lead
 
 
 class RequestContext:
@@ -292,4 +320,3 @@ def get_optional_tenant_id(
             pass
 
     return tenant_id
-

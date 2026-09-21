@@ -3,13 +3,14 @@ from pydantic import BaseModel
 import urllib.parse
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func, or_
 
-from app.core.deps import get_db, get_current_user, get_tenant_id
+from app.core.deps import get_db, get_current_user, get_tenant_id, ensure_lead_access, require_org_admin
 from app.models.user import User
 from app.models.lead import Lead
 from app.models.lead_history import LeadStageHistory
 from app.models.activity import Activity
+from app.models.product_service import ProductService
 from app.models.audit import RadarEvent
 from app.schemas.lead import (
     LeadCreate, LeadUpdate, LeadOut, LeadStageChangeRequest,
@@ -74,7 +75,22 @@ def list_leads(
     if priority:
         query = query.filter(Lead.priority == priority.upper())
     if segment:
-        query = query.filter(Lead.segment == segment.upper())
+        requested_segment = segment.strip().upper()
+        if requested_segment == "OTHER":
+            # Includes legacy leads that pre-date the segment field.
+            query = query.filter(
+                or_(
+                    Lead.segment.is_(None),
+                    ~func.upper(Lead.segment).in_(("B2B", "B2C")),
+                )
+            )
+        elif requested_segment in ("B2B", "B2C"):
+            query = query.filter(func.upper(Lead.segment) == requested_segment)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="segment must be one of B2B, B2C, or OTHER",
+            )
     if lead_type:
         query = query.filter(Lead.lead_type == lead_type.upper())
     if min_score:
@@ -114,7 +130,12 @@ def create_new_lead(
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
 ):
-    lead = create_lead(db, tenant_id, data, current_user)
+    try:
+        lead = create_lead(db, tenant_id, data, current_user)
+    except ValueError as exc:
+        # Segment values are part of the API contract.  Do not turn a bad
+        # client filter/classification into an internal-server error.
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return serialize_lead(lead, current_user, db)
 
 
@@ -133,6 +154,7 @@ def get_lead_detail(
     ).first()
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    ensure_lead_access(db, lead, current_user, tenant_id)
 
     # Record contact view in radar
     radar_event = RadarEvent(
@@ -165,6 +187,7 @@ def delete_lead(
     ).first()
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    ensure_lead_access(db, lead, current_user, tenant_id)
 
     from datetime import datetime, timezone
     lead.deleted_at = datetime.now(timezone.utc)
@@ -203,6 +226,7 @@ def update_lead(
     ).first()
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    ensure_lead_access(db, lead, current_user, tenant_id)
 
     if data.title:
         lead.title = data.title.strip()
@@ -214,8 +238,11 @@ def update_lead(
         lead.contact_email = data.contact_email.lower().strip() if data.contact_email else None
     if data.contact_phone is not None:
         lead.contact_phone = data.contact_phone.strip() if data.contact_phone else None
-    if data.status:
-        lead.status = data.status.upper()
+    if data.status is not None and data.status.upper() != lead.status:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Lead status is controlled by pipeline stage transitions; use POST /leads/{id}/stage",
+        )
     if data.priority:
         lead.priority = data.priority.upper()
     if data.score is not None:
@@ -229,11 +256,26 @@ def update_lead(
     if data.tags is not None:
         lead.tags = data.tags
     if data.product_service_id is not None:
+        product_service = db.query(ProductService).filter(
+            ProductService.id == data.product_service_id,
+            ProductService.organization_id == tenant_id,
+        ).first()
+        if not product_service:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Product/Service not found in organization")
         lead.product_service_id = data.product_service_id
+        lead.product_service_name = product_service.name
     if data.product_service_name is not None:
         lead.product_service_name = data.product_service_name
     if data.purpose is not None:
         lead.purpose = data.purpose
+    if data.segment is not None:
+        from app.services.lead_qualification_service import normalize_segment
+        try:
+            lead.segment = normalize_segment(data.segment)
+        except ValueError as exc:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+    if data.lead_type is not None:
+        lead.lead_type = data.lead_type.strip().upper() or None
 
     db.commit()
     try:
@@ -260,7 +302,7 @@ def reassign_lead(
     id: str,
     data: LeadAssignRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_org_admin),
     tenant_id: str = Depends(get_tenant_id)
 ):
     lead = assign_lead(db, id, data.owner_id, tenant_id, current_user)
@@ -440,6 +482,7 @@ def get_pre_call_context(
     ).first()
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    ensure_lead_access(db, lead, current_user, tenant_id)
         
     timeline = get_lead_timeline(db, id, tenant_id)
     
@@ -495,6 +538,10 @@ def get_timeline(
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
 ):
+    lead = db.query(Lead).filter(Lead.id == id, Lead.organization_id == tenant_id, Lead.deleted_at.is_(None)).first()
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    ensure_lead_access(db, lead, current_user, tenant_id)
     return get_lead_timeline(db, id, tenant_id)
 
 
@@ -505,6 +552,10 @@ def get_stage_history(
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
 ):
+    lead = db.query(Lead).filter(Lead.id == id, Lead.organization_id == tenant_id, Lead.deleted_at.is_(None)).first()
+    if not lead:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    ensure_lead_access(db, lead, current_user, tenant_id)
     history = db.query(LeadStageHistory).filter(
         LeadStageHistory.lead_id == id,
         LeadStageHistory.organization_id == tenant_id
@@ -555,6 +606,7 @@ def trigger_lead_action(
     ).first()
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    ensure_lead_access(db, lead, current_user, tenant_id)
 
     action_clean = action_type.lower()
 
@@ -723,5 +775,3 @@ def dispatch_lead_email(
         "message": f"Email successfully dispatched to {target_to} from {result['from_name']} <{result['from_email']}>",
         "result": result
     }
-
-

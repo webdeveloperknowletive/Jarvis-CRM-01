@@ -399,6 +399,34 @@ export const api = {
     return api.request<Lead[]>(`/leads/${query ? "?" + query : ""}`);
   },
   getLeadDetail: (id: string) => api.request<Lead>(`/leads/${id}`),
+  downloadLeadVCard: async (id: string): Promise<void> => {
+    const token = api.getToken();
+    if (!token) throw new Error("Your session has expired. Please sign in again.");
+
+    const response = await fetch(`${API_BASE}/leads/${encodeURIComponent(id)}/vcard`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      let message = "Failed to download vCard";
+      try {
+        const body = await response.json();
+        message = body.detail || message;
+      } catch {
+        // Keep the safe fallback when the server did not return JSON.
+      }
+      throw new Error(message);
+    }
+
+    const disposition = response.headers.get("content-disposition") || "";
+    const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+    const anchor = document.createElement("a");
+    anchor.href = URL.createObjectURL(await response.blob());
+    anchor.download = filenameMatch?.[1] || "contact.vcf";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(anchor.href);
+  },
   createLead: (data: any) =>
     api.request<Lead>("/leads/", {
       method: "POST",
@@ -1115,4 +1143,3 @@ export interface GlobalEditRequest {
   resolved_at?: string;
   resolved_by?: string;
 }
-

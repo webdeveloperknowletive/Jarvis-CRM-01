@@ -31,6 +31,7 @@ import {
   CheckCircle2,
   Sparkles,
   ArrowRight,
+  Download,
   X
 } from "lucide-react";
 
@@ -126,12 +127,15 @@ export const TelecallerDesk: React.FC = () => {
 
   const loadInitialData = async () => {
     loadShiftStatus();
-    loadMyLeads();
     loadTargets();
     loadNextActions();
     loadDailyQueue();
     loadStages();
   };
+
+  useEffect(() => {
+    void loadMyLeads();
+  }, [activeSegment]);
 
   const loadShiftStatus = async () => {
     try {
@@ -203,11 +207,9 @@ export const TelecallerDesk: React.FC = () => {
   const loadMyLeads = async () => {
     setLoading(true);
     try {
-      const data = await api.getLeads();
+      const data = await api.getLeads(activeSegment === "ALL" ? {} : { segment: activeSegment });
       setLeads(data || []);
-      if (data && data.length > 0 && !selectedLead) {
-        setSelectedLead(data[0]);
-      }
+      setSelectedLead((current) => data?.find((lead) => lead.id === current?.id) || data?.[0] || null);
     } catch (e) {
       console.error("Error loading leads in telecaller desk:", e);
     } finally {
@@ -215,15 +217,10 @@ export const TelecallerDesk: React.FC = () => {
     }
   };
 
-  // Filtered leads based on search query, B2B/B2C segment, and stage/type filter
+  // Segment filtering is backend-authoritative; this only applies presentation filters.
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
-      // 1. Segment filter (Problem 20)
-      if (activeSegment !== "ALL") {
-        if (lead.segment && lead.segment.toUpperCase() !== activeSegment) return false;
-      }
-
-      // 2. Stage/Type filter (Problem 6)
+      // 1. Stage/Type filter
       if (activeStageFilter !== "ALL") {
         if (activeStageFilter === "HOT") {
           if (lead.priority !== "URGENT" && lead.priority !== "HIGH") return false;
@@ -240,7 +237,7 @@ export const TelecallerDesk: React.FC = () => {
         }
       }
 
-      // 3. Text search
+      // 2. Text search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchTitle = lead.title?.toLowerCase().includes(q);
@@ -251,7 +248,7 @@ export const TelecallerDesk: React.FC = () => {
       }
       return true;
     });
-  }, [leads, activeSegment, activeStageFilter, searchQuery]);
+  }, [leads, activeStageFilter, searchQuery]);
 
   // Lead selection with UX soft-block enforcement (Problem 5)
   const handleSelectLead = (lead: Lead) => {
@@ -329,6 +326,19 @@ export const TelecallerDesk: React.FC = () => {
     }
   };
 
+  const handleDownloadVCard = async () => {
+    if (!selectedLead) return;
+    try {
+      await api.downloadLeadVCard(selectedLead.id);
+      setSuccessMsg("Contact card downloaded.");
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to download contact card.";
+      setSuccessMsg(message);
+      setTimeout(() => setSuccessMsg(null), 4000);
+    }
+  };
+
   const handleCopyEmail = (email: string) => {
     if (!email) return;
     navigator.clipboard.writeText(email);
@@ -348,24 +358,9 @@ export const TelecallerDesk: React.FC = () => {
         subject: `Telecaller Call: ${outcome}`,
         description: notes || `Outcome marked as ${outcome}`,
         status: outcome,
-        duration_seconds: outcome === "CONNECTED" ? 120 : 15,
+        // Duration is populated by the telephony provider/webhook when
+        // available; the UI must not fabricate telemetry.
       });
-
-      // 2. Automated Followup Task
-      if (followupPreset !== "none") {
-        const dueDate = new Date();
-        if (followupPreset === "tomorrow") dueDate.setDate(dueDate.getDate() + 1);
-        if (followupPreset === "3days") dueDate.setDate(dueDate.getDate() + 3);
-        if (followupPreset === "nextweek") dueDate.setDate(dueDate.getDate() + 7);
-
-        await api.createTask({
-          lead_id: selectedLead.id,
-          task_type: "FOLLOW_UP",
-          title: `Follow-up with ${selectedLead.contact_name || selectedLead.title}`,
-          priority: outcome === "INTERESTED" ? "HIGH" : "MEDIUM",
-          due_at: dueDate.toISOString(),
-        });
-      }
 
       setSuccessMsg(`Call outcome "${outcome}" recorded successfully!`);
       setNotes("");
@@ -875,7 +870,7 @@ export const TelecallerDesk: React.FC = () => {
           {/* Segmented Filter Chips: [B2B] [B2C] [NEW] [CONTACTED] [INTERESTED] [HOT] [WARM] [COLD] (Problems 6 & 20) */}
           <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
             {/* Segment Chips */}
-            {["ALL", "B2B", "B2C"].map((seg) => (
+            {["ALL", "B2B", "B2C", "OTHER"].map((seg) => (
               <button
                 key={seg}
                 onClick={() => setActiveSegment(seg)}
@@ -1126,6 +1121,16 @@ export const TelecallerDesk: React.FC = () => {
                       WhatsApp
                     </button>
                   )}
+
+                  <button
+                    onClick={handleDownloadVCard}
+                    className="btn-secondary"
+                    style={{ fontSize: "0.75rem", padding: "7px 14px", display: "flex", alignItems: "center", gap: "6px" }}
+                    title="Download the contact card you are authorized to access"
+                  >
+                    <Download style={{ width: "14px", height: "14px", color: "var(--primary)" }} />
+                    Download VCF
+                  </button>
 
                   {/* Payment Link Trigger Modal (Problem 19) */}
                   <button

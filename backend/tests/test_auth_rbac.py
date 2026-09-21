@@ -37,6 +37,11 @@ def test_telecaller_data_masking(client, db_session, tenant_a_fixture):
         ),
         creator_user=tenant_a_fixture["admin_user"]
     )
+    # Telecallers may inspect only leads explicitly assigned to them.  This
+    # test verifies masking within that authorized scope, not an old global
+    # telecaller-access behavior.
+    lead.owner_id = tenant_a_fixture["telecaller_user"].id
+    db_session.commit()
 
     # 1. Tenant Admin sees UNMASKED data
     admin_headers = {"Authorization": f"Bearer {tenant_a_fixture['admin_token']}"}

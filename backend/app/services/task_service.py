@@ -40,16 +40,25 @@ def create_task(
         created_by=creator_user.id
     )
 
-    # Idempotency: If this is a FOLLOW_UP task for a lead, cancel any existing PENDING follow-ups
+    # Idempotency: a lead has one authoritative active follow-up.  Update the
+    # existing row in-place so repeated UI/policy requests cannot create a
+    # second active task or erase the historical record.
     if task.task_type == "FOLLOW_UP" and task.lead_id:
-        existing_tasks = db.query(Task).filter(
+        existing = db.query(Task).filter(
+            Task.organization_id == organization_id,
             Task.lead_id == task.lead_id,
             Task.task_type == "FOLLOW_UP",
             Task.status == "PENDING"
-        ).all()
-        for et in existing_tasks:
-            et.status = "CANCELLED"
-            # Maintain audit history if we want, but CANCELLED status is enough.
+        ).with_for_update().order_by(Task.created_at.desc()).first()
+        if existing:
+            existing.title = task.title
+            existing.description = task.description
+            existing.priority = task.priority
+            existing.due_at = task.due_at
+            existing.assigned_to = task.assigned_to
+            db.commit()
+            db.refresh(existing)
+            return existing
 
     db.add(task)
     db.commit()
