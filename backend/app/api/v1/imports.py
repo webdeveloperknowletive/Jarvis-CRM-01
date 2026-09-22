@@ -1,6 +1,7 @@
 import os
 import uuid
 import logging
+from pathlib import Path
 from typing import List, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, BackgroundTasks
@@ -34,6 +35,29 @@ os.makedirs(settings.STORAGE_LOCAL_DIR, exist_ok=True)
 ALLOWED_TABULAR_EXTENSIONS = (".csv", ".xls", ".xlsx", ".xlsb", ".xlsm", ".parquet", ".json")
 
 
+def _can_manage_imports(user: User) -> bool:
+    return bool(
+        user.is_super_admin
+        or user.is_data_entry
+        or user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER")
+    )
+
+
+def _user_upload_dir(user: User) -> Path:
+    root = Path(settings.STORAGE_LOCAL_DIR).resolve()
+    directory = (root / user.id).resolve()
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+def _resolve_user_upload(file_path: str, user: User) -> str:
+    candidate = Path(file_path).resolve()
+    user_root = _user_upload_dir(user)
+    if not candidate.is_relative_to(user_root) or not candidate.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Uploaded file not found")
+    return str(candidate)
+
+
 class ValidateImportRequest(BaseModel):
     file_path: str
     file_type: str
@@ -51,7 +75,7 @@ async def upload_import_file(
     current_user: User = Depends(get_current_user)
 ):
     # RBAC: Telecallers must never upload or touch import files
-    if current_user.tenant_role == "TELECALLER":
+    if not _can_manage_imports(current_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Telecallers do not have data import authorization. Only ORG Admin or Sales Manager can upload datasets."
@@ -68,10 +92,13 @@ async def upload_import_file(
 
     # Save to disk with absolute path
     file_id = str(uuid.uuid4())
-    save_filename = f"{file_id}_{file.filename}"
-    file_path = os.path.abspath(os.path.join(settings.STORAGE_LOCAL_DIR, save_filename))
+    safe_original_name = os.path.basename(file.filename or f"upload{ext}")
+    save_filename = f"{file_id}_{safe_original_name}"
+    file_path = str((_user_upload_dir(current_user) / save_filename).resolve())
 
     content = await file.read()
+    if len(content) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
+        raise HTTPException(status_code=413, detail=f"File exceeds {settings.MAX_UPLOAD_SIZE_MB} MB upload limit")
     with open(file_path, "wb") as f:
         f.write(content)
 
@@ -106,11 +133,10 @@ def validate_import_mapping(
     data: ValidateImportRequest,
     current_user: User = Depends(get_current_user)
 ):
-    if current_user.tenant_role == "TELECALLER":
-        raise HTTPException(status_code=403, detail="Telecaller access forbidden")
+    if not _can_manage_imports(current_user):
+        raise HTTPException(status_code=403, detail="Import management privilege required")
 
-    if not os.path.exists(data.file_path):
-        raise HTTPException(status_code=404, detail="Uploaded file not found")
+    _resolve_user_upload(data.file_path, current_user)
 
     mapping = data.column_mapping or {}
     has_contact = any(k in mapping.values() for k in ("contact_name", "contact_phone", "contact_email", "company_name", "title"))
@@ -129,32 +155,14 @@ def execute_import(
     tenant_id: Optional[str] = Depends(get_optional_tenant_id)
 ):
     # RBAC: Telecallers must never execute imports
-    if current_user.tenant_role == "TELECALLER":
+    if not _can_manage_imports(current_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Telecallers do not have permission to execute dataset imports."
         )
 
     import json as py_json
-    file_path = data.file_path
-    if not os.path.exists(file_path):
-        fname = os.path.basename(file_path)
-        candidates = [
-            os.path.abspath(file_path),
-            os.path.join(settings.STORAGE_LOCAL_DIR, fname),
-            os.path.abspath(os.path.join(settings.STORAGE_LOCAL_DIR, fname)),
-            os.path.join("storage_uploads", fname),
-            os.path.join("backend", "storage_uploads", fname),
-            os.path.abspath(os.path.join("backend", "storage_uploads", fname)),
-        ]
-        found = False
-        for c in candidates:
-            if os.path.exists(c):
-                file_path = os.path.abspath(c)
-                found = True
-                break
-        if not found:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Uploaded file not found on server: {data.file_path}")
+    file_path = _resolve_user_upload(data.file_path, current_user)
 
     target_org_id = None
     schema_name = None
@@ -171,6 +179,8 @@ def execute_import(
         if not tenant_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tenant context required for tenant lead import")
         target_org_id = tenant_id
+        if current_user.tenant_role not in ("ORG_ADMIN", "SALES_MANAGER"):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only Organization Admins or Sales Managers can import tenant leads")
         # Resolve schema_name
         if target_org_id and db.bind and db.bind.dialect.name == "postgresql":
             from app.models.organization import Organization
@@ -183,6 +193,26 @@ def execute_import(
     job_id = str(uuid.uuid4())
     col_map = data.column_mapping or {}
 
+    if target_org_id and data.target_owner_id:
+        owner = db.query(User).filter(
+            User.id == data.target_owner_id,
+            User.organization_id == target_org_id,
+            User.tenant_role == "TELECALLER",
+            User.status == "ACTIVE",
+            User.deleted_at.is_(None),
+        ).first()
+        if not owner:
+            raise HTTPException(status_code=400, detail="Target owner must be an active telecaller in this organization")
+    if target_org_id and data.default_product_service_id:
+        from app.models.product_service import ProductService
+        product = db.query(ProductService.id).filter(
+            ProductService.id == data.default_product_service_id,
+            ProductService.organization_id == target_org_id,
+            ProductService.is_active.is_(True),
+        ).first()
+        if not product:
+            raise HTTPException(status_code=400, detail="Default Product/Service is not active in this organization")
+
     # Create ImportJob record
     job = ImportJob(
         id=job_id,
@@ -194,7 +224,7 @@ def execute_import(
         file_path=file_path,
         column_mapping=col_map,
         target_stage_id=data.target_stage_id,
-        target_owner_id=data.target_owner_id or current_user.id,
+        target_owner_id=data.target_owner_id,
         default_product_service_id=data.default_product_service_id,
         status="PENDING",
         total_rows=0,
@@ -225,7 +255,7 @@ def execute_import(
                 "file_path": file_path,
                 "column_mapping": py_json.dumps(col_map),
                 "target_stage_id": data.target_stage_id,
-                "target_owner_id": data.target_owner_id or current_user.id,
+                "target_owner_id": data.target_owner_id,
                 "default_product_service_id": data.default_product_service_id,
                 "status": "PENDING",
                 "total_rows": 0,

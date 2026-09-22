@@ -358,7 +358,7 @@ def pull_global_companies_to_crm(
                 company_id=crm_comp.id,
                 contact_id=primary_contact.id if primary_contact else None,
                 pipeline_stage_id=stage.id,
-                owner_id=target_owner_id or user.id,
+                owner_id=target_owner_id,
                 title=f"{crm_comp.name} - Global Expansion",
                 company_name=crm_comp.name,
                 contact_name=primary_contact.full_name if primary_contact else None,

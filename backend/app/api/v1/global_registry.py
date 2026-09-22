@@ -22,6 +22,11 @@ from app.services.global_intelligence_service import get_global_intelligence
 router = APIRouter(prefix="/global", tags=["Global Intelligence Registry"])
 
 
+def _require_registry_read(user: User) -> None:
+    if not (user.is_org_admin or user.is_super_admin or user.is_data_entry):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Global Registry access requires Organization Admin or platform data privileges")
+
+
 @router.get("/intelligence", response_model=GlobalIntelligenceResponse)
 def get_intelligence(
     search: Optional[str] = None,
@@ -33,6 +38,7 @@ def get_intelligence(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    _require_registry_read(current_user)
     return get_global_intelligence(
         db=db,
         search=search,
@@ -55,6 +61,7 @@ def get_global_companies(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    _require_registry_read(current_user)
     return search_global_companies(db, search, city, industry, skip, limit, current_user=current_user)
 
 
@@ -64,7 +71,7 @@ def create_company(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if not (current_user.is_super_admin or current_user.is_data_entry or (hasattr(current_user, "role") and current_user.role in ("ORG_ADMIN", "ADMIN"))):
+    if not (current_user.is_super_admin or current_user.is_data_entry):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin or Data Entry privilege required to add companies"
@@ -99,6 +106,8 @@ def pull_companies_to_crm(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Platform users (Super Admin / Data Entry) cannot pull leads directly. Leads can only be pulled into CRM organizations by Organization Admins."
         )
+    if not current_user.is_org_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Organization Admin privilege required to pull companies into CRM")
     return pull_global_companies_to_crm(
         db=db,
         organization_id=tenant_id,
@@ -107,4 +116,3 @@ def pull_companies_to_crm(
         target_stage_id=data.target_stage_id,
         target_owner_id=data.target_owner_id
     )
-

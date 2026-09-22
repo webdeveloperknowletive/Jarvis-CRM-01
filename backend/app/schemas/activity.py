@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Literal
 from datetime import datetime
 
 
@@ -14,6 +14,9 @@ class ActivityCreate(BaseModel):
     status: Optional[str] = "COMPLETED"  # CONNECTED, NO_ANSWER, BUSY, SCHEDULED, FAILED
     duration_seconds: Optional[int] = 0
     metadata_json: Optional[Dict[str, Any]] = None
+    # Backend-authoritative scheduling choice for a recorded call outcome.
+    # None preserves the legacy policy-engine behavior for non-Desk clients.
+    followup_preset: Optional[Literal["tomorrow", "3days", "nextweek", "none"]] = None
 
 
 class ActivityOut(BaseModel):

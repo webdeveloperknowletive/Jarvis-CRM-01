@@ -9,6 +9,7 @@ from app.core.deps import get_db, get_current_user, get_tenant_id, ensure_lead_a
 from app.models.user import User
 from app.models.lead import Lead
 from app.models.lead_history import LeadStageHistory
+from app.models.lead_history import LeadAssignment
 from app.models.activity import Activity
 from app.models.product_service import ProductService
 from app.models.audit import RadarEvent
@@ -22,6 +23,7 @@ from app.services.lead_service import (
 )
 from app.services.activity_service import get_lead_timeline
 from app.services.email_service import get_configured_sender
+from app.core.business_time import organization_business_date
 
 router = APIRouter(prefix="/leads", tags=["Leads & Opportunities"])
 
@@ -48,11 +50,10 @@ def list_leads(
 
     # Telecallers strictly see only leads explicitly assigned to them by Org Admin, plus active delegations
     if current_user.tenant_role == "TELECALLER":
-        from datetime import datetime, timezone
         from app.models.delegation import AbsenceDelegation
         from sqlalchemy import or_
 
-        today_date = datetime.now(timezone.utc).date()
+        today_date = organization_business_date(db, tenant_id)
         delegators = db.query(AbsenceDelegation.absent_user_id).filter(
             AbsenceDelegation.organization_id == tenant_id,
             AbsenceDelegation.cover_user_id == current_user.id,
@@ -255,17 +256,30 @@ def update_lead(
         lead.notes = data.notes
     if data.tags is not None:
         lead.tags = data.tags
-    if data.product_service_id is not None:
+    if "product_service_id" in data.model_fields_set:
+        if data.product_service_id is None:
+            lead.product_service_id = None
+            lead.product_service_name = None
+        else:
+            product_service = db.query(ProductService).filter(
+                ProductService.id == data.product_service_id,
+                ProductService.organization_id == tenant_id,
+                ProductService.is_active.is_(True),
+            ).first()
+            if not product_service:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Active Product/Service not found in organization")
+            lead.product_service_id = product_service.id
+            lead.product_service_name = product_service.name
+    elif data.product_service_name is not None:
         product_service = db.query(ProductService).filter(
-            ProductService.id == data.product_service_id,
             ProductService.organization_id == tenant_id,
+            ProductService.name.ilike(data.product_service_name.strip()),
+            ProductService.is_active.is_(True),
         ).first()
         if not product_service:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Product/Service not found in organization")
-        lead.product_service_id = data.product_service_id
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Product/Service not found in organization catalog")
+        lead.product_service_id = product_service.id
         lead.product_service_name = product_service.name
-    if data.product_service_name is not None:
-        lead.product_service_name = data.product_service_name
     if data.purpose is not None:
         lead.purpose = data.purpose
     if data.segment is not None:
@@ -348,7 +362,10 @@ def batch_assign_leads(
     # Verify target telecaller exists in this organization
     telecaller = db.query(User).filter(
         User.id == data.telecaller_id,
-        User.organization_id == tenant_id
+        User.organization_id == tenant_id,
+        User.tenant_role == "TELECALLER",
+        User.status == "ACTIVE",
+        User.deleted_at.is_(None),
     ).first()
     if not telecaller:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target telecaller not found in this organization")
@@ -356,8 +373,9 @@ def batch_assign_leads(
     # Safe assignment logic: Check if telecaller has an active shift
     from app.models.session import AttendanceSession
     from datetime import datetime, timezone
-    today = datetime.now(timezone.utc).date()
+    today = organization_business_date(db, tenant_id)
     active_shift = db.query(AttendanceSession).filter(
+        AttendanceSession.organization_id == tenant_id,
         AttendanceSession.user_id == telecaller.id,
         AttendanceSession.date == today,
         AttendanceSession.logout_at == None
@@ -366,13 +384,26 @@ def batch_assign_leads(
     if not active_shift:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target telecaller is not clocked in. Assignment rejected.")
 
+    requested_ids = list(dict.fromkeys(data.lead_ids))
+    if not requested_ids:
+        raise HTTPException(status_code=422, detail="At least one lead ID is required")
     leads = db.query(Lead).filter(
-        Lead.id.in_(data.lead_ids),
-        Lead.organization_id == tenant_id
-    ).all()
+        Lead.id.in_(requested_ids),
+        Lead.organization_id == tenant_id,
+        Lead.owner_id.is_(None),
+        Lead.deleted_at.is_(None),
+        Lead.status.notin_(["WON", "LOST", "ARCHIVED", "REJECTED"]),
+    ).with_for_update().all()
 
     for lead in leads:
         lead.owner_id = telecaller.id
+        db.add(LeadAssignment(
+            organization_id=tenant_id,
+            lead_id=lead.id,
+            user_id=telecaller.id,
+            assigned_by=current_user.id,
+            is_primary=True,
+        ))
         activity = Activity(
             organization_id=tenant_id,
             lead_id=lead.id,
@@ -386,9 +417,10 @@ def batch_assign_leads(
     db.commit()
     return {
         "updated_count": len(leads),
+        "skipped_count": len(requested_ids) - len(leads),
         "telecaller_id": telecaller.id,
         "telecaller_name": telecaller.full_name,
-        "message": f"Successfully assigned {len(leads)} leads to {telecaller.full_name}"
+        "message": f"Assigned {len(leads)} unowned leads to {telecaller.full_name}; skipped {len(requested_ids) - len(leads)} already-owned, missing, or ineligible leads"
     }
 
 
@@ -415,7 +447,10 @@ def bulk_reassign_leads(
 
     to_user = db.query(User).filter(
         User.id == data.to_user_id,
-        User.organization_id == tenant_id
+        User.organization_id == tenant_id,
+        User.tenant_role == "TELECALLER",
+        User.status == "ACTIVE",
+        User.deleted_at.is_(None),
     ).first()
     if not to_user:
         raise HTTPException(status_code=404, detail="Target user not found")
@@ -423,8 +458,9 @@ def bulk_reassign_leads(
     # Safe assignment logic: Check if target user has an active shift
     from app.models.session import AttendanceSession
     from datetime import datetime, timezone
-    today = datetime.now(timezone.utc).date()
+    today = organization_business_date(db, tenant_id)
     active_shift = db.query(AttendanceSession).filter(
+        AttendanceSession.organization_id == tenant_id,
         AttendanceSession.user_id == to_user.id,
         AttendanceSession.date == today,
         AttendanceSession.logout_at == None
@@ -433,15 +469,34 @@ def bulk_reassign_leads(
     if not active_shift:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target user is not clocked in. Assignment rejected.")
 
+    from_user = db.query(User.id).filter(
+        User.id == data.from_user_id,
+        User.organization_id == tenant_id,
+    ).first()
+    if not from_user:
+        raise HTTPException(status_code=404, detail="Source user not found")
+
     leads = db.query(Lead).filter(
         Lead.organization_id == tenant_id,
         Lead.owner_id == data.from_user_id,
         Lead.status != "ARCHIVED"
-    ).all()
+    ).with_for_update().all()
 
     count = 0
     for lead in leads:
+        db.query(LeadAssignment).filter(
+            LeadAssignment.organization_id == tenant_id,
+            LeadAssignment.lead_id == lead.id,
+            LeadAssignment.unassigned_at.is_(None),
+        ).update({LeadAssignment.unassigned_at: datetime.now(timezone.utc)}, synchronize_session=False)
         lead.owner_id = to_user.id
+        db.add(LeadAssignment(
+            organization_id=tenant_id,
+            lead_id=lead.id,
+            user_id=to_user.id,
+            assigned_by=current_user.id,
+            is_primary=True,
+        ))
         act = Activity(
             organization_id=tenant_id,
             lead_id=lead.id,

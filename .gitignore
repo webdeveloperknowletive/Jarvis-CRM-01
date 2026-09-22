@@ -2,6 +2,7 @@
 .env.*
 !.env.example
 .env.local
+jarvis_crm/
 
 __pycache__/
 *.pyc

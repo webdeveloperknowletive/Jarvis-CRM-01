@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, ForeignKey, JSON
+from sqlalchemy import Column, String, ForeignKey, JSON, Index, text
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.models.base import TimestampMixin, SoftDeleteMixin, generate_uuid
@@ -6,6 +6,16 @@ from app.models.base import TimestampMixin, SoftDeleteMixin, generate_uuid
 
 class Contact(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "contacts"
+    __table_args__ = (
+        Index(
+            "uq_contact_global_projection",
+            "organization_id",
+            "source_global_contact_id",
+            unique=True,
+            postgresql_where=text("source_global_contact_id IS NOT NULL"),
+            sqlite_where=text("source_global_contact_id IS NOT NULL"),
+        ),
+    )
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     organization_id = Column(String(36), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)

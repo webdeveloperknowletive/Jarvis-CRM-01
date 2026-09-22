@@ -43,24 +43,32 @@ def initialize_daily_targets():
         for tc in telecallers:
             today = organization_business_date(db, tc.organization_id)
             existing = db.query(TelecallerTarget).filter(
+                TelecallerTarget.organization_id == tc.organization_id,
                 TelecallerTarget.user_id == tc.id,
                 TelecallerTarget.target_date == today
             ).first()
             
             if not existing:
+                previous = db.query(TelecallerTarget).filter(
+                    TelecallerTarget.organization_id == tc.organization_id,
+                    TelecallerTarget.user_id == tc.id,
+                    TelecallerTarget.target_date < today,
+                ).order_by(TelecallerTarget.target_date.desc()).first()
+                # No configured history means no target. Do not manufacture a
+                # zero-valued row that the API would mislabel as configured.
+                if not previous:
+                    continue
                 new_target = TelecallerTarget(
                     id=generate_uuid(),
                     organization_id=tc.organization_id,
                     user_id=tc.id,
                     target_date=today,
-                    # No business defaults are invented here.  A missing row
-                    # means the organization has not configured a target.
-                    target_calls=0,
-                    target_connects=0,
-                    target_talk_time_minutes=0,
-                    target_qualified_leads=0,
-                    target_conversions=0,
-                    target_revenue=0.0
+                    target_calls=previous.target_calls or 0,
+                    target_connects=previous.target_connects or 0,
+                    target_talk_time_minutes=previous.target_talk_time_minutes or 0,
+                    target_qualified_leads=previous.target_qualified_leads or 0,
+                    target_conversions=previous.target_conversions or 0,
+                    target_revenue=previous.target_revenue or 0.0,
                 )
                 db.add(new_target)
                 created += 1

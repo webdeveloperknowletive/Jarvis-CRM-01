@@ -10,6 +10,7 @@ from app.models.user import User
 from app.models.audit import AuditLog, RadarEvent
 from app.models.base import utc_now, generate_uuid
 from app.schemas.activity import ActivityCreate, ActivityOut
+from app.core.deps import ensure_lead_access
 
 
 def create_activity(
@@ -23,14 +24,29 @@ def create_activity(
         lead = db.query(Lead).filter(
             Lead.id == data.lead_id,
             Lead.organization_id == organization_id
-        ).first()
+        ).with_for_update().first()
         if not lead:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+        ensure_lead_access(db, lead, user, organization_id)
 
     now = utc_now()
     act_id = generate_uuid()
-    company_id = data.company_id or (lead.company_id if lead else None)
-    contact_id = data.contact_id or (lead.contact_id if lead else None)
+    company_id = lead.company_id if lead else data.company_id
+    contact_id = lead.contact_id if lead else data.contact_id
+    if not lead and company_id:
+        from app.models.company import Company
+        if not db.query(Company.id).filter(
+            Company.id == company_id,
+            Company.organization_id == organization_id,
+        ).first():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+    if not lead and contact_id:
+        from app.models.contact import Contact
+        if not db.query(Contact.id).filter(
+            Contact.id == contact_id,
+            Contact.organization_id == organization_id,
+        ).first():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found")
     act_type = data.activity_type.upper()
     direction = data.direction or "OUTBOUND"
     act_status = data.status or "COMPLETED"
@@ -56,6 +72,34 @@ def create_activity(
     )
     db.add(activity)
 
+    # CallRecord is the authoritative KPI source.  A native dial creates an
+    # INITIATED row; recording the outcome finalizes it.  Direct/manual outcome
+    # clients still get a CallRecord, so targets and EOD never depend on an
+    # Activity-only counter.
+    if act_type == "CALL" and lead:
+        from app.models.call_record import CallRecord
+
+        call_record = db.query(CallRecord).filter(
+            CallRecord.organization_id == organization_id,
+            CallRecord.lead_id == lead.id,
+            CallRecord.user_id == user.id,
+            CallRecord.disposition == "INITIATED",
+        ).order_by(CallRecord.started_at.desc()).with_for_update().first()
+        if not call_record:
+            call_record = CallRecord(
+                organization_id=organization_id,
+                lead_id=lead.id,
+                contact_id=lead.contact_id,
+                user_id=user.id,
+                provider="MANUAL_OUTCOME",
+                direction=direction,
+                started_at=now,
+            )
+            db.add(call_record)
+        call_record.disposition = act_status.upper()
+        call_record.duration_seconds = duration
+        call_record.ended_at = now
+
     # Record Radar event if communication action (Call / WhatsApp / Email)
     if act_type in ("CALL", "WHATSAPP", "EMAIL"):
         radar_event = RadarEvent(
@@ -68,10 +112,14 @@ def create_activity(
         )
         db.add(radar_event)
 
-    # Trigger Followup Policy Engine if it's a Call
-    from app.services.followup_service import execute_followup_policy
+    # The Desk's explicit preset wins. Other clients continue to use the
+    # organization's outcome policy engine.
+    from app.services.followup_service import execute_followup_policy, apply_followup_preset
     if act_type == "CALL":
-        execute_followup_policy(db, activity, organization_id, user)
+        if data.followup_preset is not None:
+            apply_followup_preset(db, activity, organization_id, user, data.followup_preset)
+        else:
+            execute_followup_policy(db, activity, organization_id, user)
 
     db.commit()
 

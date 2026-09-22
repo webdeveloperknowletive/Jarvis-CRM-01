@@ -8,7 +8,7 @@ from app.models.company import Company
 from app.models.contact import Contact
 from app.models.lead import Lead
 from app.models.lead_history import LeadStageHistory
-from app.models.organization import Organization
+from app.models.organization import Organization, Subscription
 from app.models.user import User
 from app.schemas.global_people import GlobalPersonCreate, GlobalPersonUpdate, GlobalPersonOut, GlobalPeoplePullResponse
 from app.services.pipeline_service import get_first_stage, get_stage_by_id
@@ -106,58 +106,6 @@ def create_global_person(db: Session, data: GlobalPersonCreate) -> GlobalPersonO
     return GlobalPersonOut.from_orm(person)
 
 
-def update_global_person(db: Session, person_id: str, data: GlobalPersonUpdate) -> GlobalPersonOut:
-    person = db.query(GlobalPerson).filter(GlobalPerson.id == person_id).first()
-    if not person:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Global person lead not found")
-
-    if data.full_name is not None:
-        person.full_name = data.full_name.strip()
-    if data.email is not None:
-        person.email = data.email.strip() if data.email else None
-    if data.phone is not None:
-        person.phone = data.phone.strip() if data.phone else None
-    if data.designation is not None:
-        person.designation = data.designation.strip() if data.designation else None
-    if data.company_name is not None:
-        person.company_name = data.company_name.strip() if data.company_name else None
-    if data.associated_companies is not None:
-        assoc_comps = []
-        for ac in data.associated_companies:
-            c_name = ac.company_name.strip() if hasattr(ac, 'company_name') else (ac.get('company_name', '').strip() if isinstance(ac, dict) else '')
-            d_name = (ac.designation.strip() if hasattr(ac, 'designation') and ac.designation else (ac.get('designation', '').strip() if isinstance(ac, dict) and ac.get('designation') else ''))
-            if c_name:
-                assoc_comps.append({"company_name": c_name, "designation": d_name})
-        person.associated_companies = assoc_comps
-    if data.industry is not None:
-        person.industry = data.industry.strip() if data.industry else None
-    if data.seniority is not None:
-        person.seniority = data.seniority.strip() if data.seniority else None
-    if data.department is not None:
-        person.department = data.department.strip() if data.department else None
-    if data.linkedin_url is not None:
-        person.linkedin_url = data.linkedin_url.strip() if data.linkedin_url else None
-    if data.city is not None:
-        person.city = data.city.strip() if data.city else None
-    if data.state is not None:
-        person.state = data.state.strip() if data.state else None
-    if data.country is not None:
-        person.country = data.country.strip() if data.country else "India"
-    if data.estimated_value is not None:
-        person.estimated_value = float(data.estimated_value)
-    if data.status is not None:
-        person.status = data.status
-    if data.notes is not None:
-        person.notes = data.notes.strip() if data.notes else None
-
-    db.commit()
-    try:
-        db.refresh(person)
-    except Exception:
-        pass
-    return GlobalPersonOut.from_orm(person)
-
-
 def pull_global_people_to_crm(
     db: Session,
     organization_id: str,
@@ -166,6 +114,18 @@ def pull_global_people_to_crm(
     target_stage_id: Optional[str] = None,
     target_owner_id: Optional[str] = None
 ) -> GlobalPeoplePullResponse:
+    # Serialize quota consumption and same-tenant claims. The tenant projection
+    # unique index remains the final concurrency guard.
+    subscription = db.query(Subscription).filter(
+        Subscription.organization_id == organization_id,
+        Subscription.status == "ACTIVE",
+    ).with_for_update().first()
+    if not subscription:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No active subscription found for this organization")
+
+    global_people_ids = list(dict.fromkeys(global_people_ids))
+    remaining_quota = max(0, subscription.pull_quota_monthly - subscription.pull_quota_used)
+
     # 1. Verify organization exists
     org = db.query(Organization).filter(Organization.id == organization_id).first()
     if not org:
@@ -180,21 +140,37 @@ def pull_global_people_to_crm(
     else:
         stage = get_first_stage(db, organization_id)
 
+    if target_owner_id:
+        owner = db.query(User).filter(
+            User.id == target_owner_id,
+            User.organization_id == organization_id,
+            User.tenant_role == "TELECALLER",
+            User.status == "ACTIVE",
+            User.deleted_at.is_(None),
+        ).first()
+        if not owner:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target owner is not an active telecaller in this organization")
+
     pulled_people = 0
     created_contacts = 0
     created_companies = 0
     created_leads = 0
 
-    owner_id = target_owner_id or user.id
-    now_utc = datetime.now(timezone.utc)
-    org_name = org.name
+    owner_id = target_owner_id
 
     for person_id in global_people_ids:
-        person = db.query(GlobalPerson).filter(GlobalPerson.id == person_id).first()
+        person = db.query(GlobalPerson).filter(GlobalPerson.id == person_id).with_for_update().first()
         if not person:
             continue
 
-        pulled_people += 1
+        already_projected = db.query(Contact).filter(
+            Contact.organization_id == organization_id,
+            Contact.source_global_contact_id == person.id,
+        ).first()
+        if already_projected:
+            continue
+        if pulled_people >= remaining_quota:
+            continue
 
         # 3. Company resolution & creation
         company = None
@@ -227,10 +203,15 @@ def pull_global_people_to_crm(
         if not contact:
             contact = cont_query.filter(Contact.full_name.ilike(person.full_name)).first()
 
+        # A fuzzy/e-mail match linked to another global master must not be
+        # silently repointed. Create a distinct projection in that case.
+        if contact and contact.source_global_contact_id not in (None, person.id):
+            contact = None
         if not contact:
             contact = Contact(
                 organization_id=organization_id,
                 company_id=company.id if company else None,
+                source_global_contact_id=person.id,
                 full_name=person.full_name,
                 designation=person.designation,
                 department=person.department,
@@ -245,6 +226,13 @@ def pull_global_people_to_crm(
             db.add(contact)
             db.flush()
             created_contacts += 1
+        else:
+            contact.source_global_contact_id = person.id
+            if not contact.company_id and company:
+                contact.company_id = company.id
+            db.flush()
+
+        pulled_people += 1
 
         # 5. Lead deduplication & creation
         lead_query = db.query(Lead).filter(Lead.organization_id == organization_id)
@@ -272,6 +260,7 @@ def pull_global_people_to_crm(
                 contact_phone=person.phone,
                 value=float(person.estimated_value or 0.0),
                 source="GLOBAL_PEOPLE",
+                source_global_contact_id=person.id,
                 status="OPEN",
                 priority="HIGH" if person.seniority in ("C-Level", "VP", "Director") else "MEDIUM",
                 score=75 if person.seniority in ("C-Level", "VP") else 60,
@@ -293,6 +282,7 @@ def pull_global_people_to_crm(
             db.add(history)
             created_leads += 1
 
+    subscription.pull_quota_used += pulled_people
     db.commit()
 
     return GlobalPeoplePullResponse(
@@ -300,7 +290,7 @@ def pull_global_people_to_crm(
         created_contacts=created_contacts,
         created_companies=created_companies,
         created_leads=created_leads,
-        remaining_quota=None
+        remaining_quota=subscription.pull_quota_monthly - subscription.pull_quota_used
     )
 
 
@@ -338,4 +328,3 @@ def update_global_person(db: Session, person_id: str, data: GlobalPersonUpdate) 
     except Exception:
         pass
     return GlobalPersonOut.from_orm(person)
-

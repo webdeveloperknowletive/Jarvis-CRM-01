@@ -6,6 +6,7 @@ from sqlalchemy import desc
 from app.core.deps import get_db, get_current_user, get_tenant_id
 from app.models.user import User
 from app.models.product_service import ProductService
+from app.models.organization import Organization
 from app.schemas.product_service import ProductServiceCreate, ProductServiceUpdate, ProductServiceOut
 
 router = APIRouter(prefix="/product-services", tags=["Products & Services"])
@@ -35,15 +36,30 @@ def create_product_service(
 ):
     if not (current_user.is_org_admin or current_user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER", "SUPER_ADMIN")):
         raise HTTPException(status_code=403, detail="Only Managers or Admins can manage the product/service catalog")
+
+    db.query(Organization.id).filter(Organization.id == tenant_id).with_for_update().first()
+    duplicate_query = db.query(ProductService.id).filter(
+        ProductService.organization_id == tenant_id,
+        ProductService.name.ilike(data.name.strip()),
+    )
+    if data.code:
+        duplicate_query = duplicate_query.union(
+            db.query(ProductService.id).filter(
+                ProductService.organization_id == tenant_id,
+                ProductService.code.ilike(data.code.strip()),
+            )
+        )
+    if duplicate_query.first():
+        raise HTTPException(status_code=409, detail="A Product/Service with this name or code already exists")
         
     product = ProductService(
         organization_id=tenant_id,
         name=data.name.strip(),
         code=data.code.strip() if data.code else None,
-        type=data.type,
+        type=data.type.upper(),
         description=data.description,
         price=data.price,
-        currency=data.currency,
+        currency=data.currency.upper(),
         is_active=data.is_active,
         created_by=current_user.id
     )
@@ -89,17 +105,30 @@ def update_product_service(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product/Service not found")
 
     if data.name is not None:
+        duplicate = db.query(ProductService.id).filter(
+            ProductService.organization_id == tenant_id,
+            ProductService.id != product.id,
+            ProductService.name.ilike(data.name.strip()),
+        ).first()
+        if duplicate:
+            raise HTTPException(status_code=409, detail="A Product/Service with this name already exists")
         product.name = data.name.strip()
     if data.code is not None:
+        if data.code and db.query(ProductService.id).filter(
+            ProductService.organization_id == tenant_id,
+            ProductService.id != product.id,
+            ProductService.code.ilike(data.code.strip()),
+        ).first():
+            raise HTTPException(status_code=409, detail="A Product/Service with this code already exists")
         product.code = data.code.strip() if data.code else None
     if data.type is not None:
-        product.type = data.type
+        product.type = data.type.upper()
     if data.description is not None:
         product.description = data.description
     if data.price is not None:
         product.price = data.price
     if data.currency is not None:
-        product.currency = data.currency
+        product.currency = data.currency.upper()
     if data.is_active is not None:
         product.is_active = data.is_active
 

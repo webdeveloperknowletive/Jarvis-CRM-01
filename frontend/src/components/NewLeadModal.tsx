@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { api, PipelineStage } from "../services/api";
+import React, { useEffect, useState } from "react";
+import { api, PipelineStage, ProductService } from "../services/api";
 import { X, UserPlus, AlertCircle } from "lucide-react";
 import { cleanPhoneInput } from "../utils/phoneHelper";
 
@@ -19,8 +19,17 @@ export const NewLeadModal: React.FC<NewLeadModalProps> = ({ stages, onClose, onS
   const [stageId, setStageId] = useState(stages[0]?.id || "");
   const [priority, setPriority] = useState("MEDIUM");
   const [notes, setNotes] = useState("");
+  const [purpose, setPurpose] = useState("");
+  const [productServiceId, setProductServiceId] = useState("");
+  const [productServices, setProductServices] = useState<ProductService[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.getProductServices(true)
+      .then(setProductServices)
+      .catch(() => setProductServices([]));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +47,8 @@ export const NewLeadModal: React.FC<NewLeadModalProps> = ({ stages, onClose, onS
         pipeline_stage_id: stageId || null,
         priority,
         notes: notes || null,
+        product_service_id: productServiceId || null,
+        purpose: purpose || null,
       });
       onSuccess();
       onClose();
@@ -192,6 +203,29 @@ export const NewLeadModal: React.FC<NewLeadModalProps> = ({ stages, onClose, onS
                 onChange={(e) => setValue(e.target.value)}
                 className="input-text"
                 style={{ fontFamily: "monospace" }}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                Product / Service
+              </label>
+              <select value={productServiceId} onChange={(e) => setProductServiceId(e.target.value)} className="select-dropdown">
+                <option value="">Not selected</option>
+                {productServices.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                Purpose
+              </label>
+              <input
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
+                placeholder="e.g. Interested in our data science course"
+                className="input-text"
               />
             </div>
           </div>

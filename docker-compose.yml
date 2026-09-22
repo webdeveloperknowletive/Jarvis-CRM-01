@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: jarvis_crm
       POSTGRES_USER: jarvis_user
-      POSTGRES_PASSWORD: jarvis_secure_password_2026
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment}
     ports:
       - "5432:5432"
     volumes:
@@ -42,9 +42,9 @@ services:
     environment:
       - ENVIRONMENT=production
       - DEBUG=false
-      - DATABASE_URL=postgresql://jarvis_user:jarvis_secure_password_2026@postgres:5432/jarvis_crm
+      - DATABASE_URL=postgresql://jarvis_user:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment}@postgres:5432/jarvis_crm
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=production-jarvis-secret-key-change-in-env-32-chars
+      - SECRET_KEY=${SECRET_KEY:?Set a random SECRET_KEY of at least 32 characters}
     depends_on:
       postgres:
         condition: service_healthy
@@ -64,9 +64,9 @@ services:
     command: celery -A app.worker.celery_app worker --loglevel=info
     environment:
       - ENVIRONMENT=production
-      - DATABASE_URL=postgresql://jarvis_user:jarvis_secure_password_2026@postgres:5432/jarvis_crm
+      - DATABASE_URL=postgresql://jarvis_user:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment}@postgres:5432/jarvis_crm
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=production-jarvis-secret-key-change-in-env-32-chars
+      - SECRET_KEY=${SECRET_KEY:?Set a random SECRET_KEY of at least 32 characters}
     depends_on:
       backend:
         condition: service_started
@@ -95,9 +95,9 @@ services:
     command: celery -A app.worker.celery_app beat --loglevel=info
     environment:
       - ENVIRONMENT=production
-      - DATABASE_URL=postgresql://jarvis_user:jarvis_secure_password_2026@postgres:5432/jarvis_crm
+      - DATABASE_URL=postgresql://jarvis_user:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment}@postgres:5432/jarvis_crm
       - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=production-jarvis-secret-key-change-in-env-32-chars
+      - SECRET_KEY=${SECRET_KEY:?Set a random SECRET_KEY of at least 32 characters}
     depends_on:
       redis:
         condition: service_healthy

@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { 
   Lead, 
+  Task,
   PipelineStage, 
   TelecallerTargetToday, 
   NextActionItem, 
   DailyQueueItem, 
+  DailyQueueResponse,
   api 
 } from "../services/api";
 import { openGmail, openWhatsApp } from "../utils/mailHelper";
@@ -89,6 +91,12 @@ export const TelecallerDesk: React.FC = () => {
 
   // Daily Queue (Problem 18)
   const [dailyQueue, setDailyQueue] = useState<DailyQueueItem[]>([]);
+  const [queueSummary, setQueueSummary] = useState<Pick<DailyQueueResponse, "total" | "fresh_count" | "followup_count">>({
+    total: 0,
+    fresh_count: 0,
+    followup_count: 0,
+  });
+  const [followups, setFollowups] = useState<Task[]>([]);
 
   // Pre-call context & details
   const [preCallContext, setPreCallContext] = useState<any>(null);
@@ -130,6 +138,7 @@ export const TelecallerDesk: React.FC = () => {
     loadTargets();
     loadNextActions();
     loadDailyQueue();
+    loadFollowups();
     loadStages();
   };
 
@@ -183,7 +192,12 @@ export const TelecallerDesk: React.FC = () => {
   const loadDailyQueue = async () => {
     try {
       const data = await api.getTelecallerDailyQueue();
-      setDailyQueue(data || []);
+      setDailyQueue(data.items || []);
+      setQueueSummary({
+        total: data.total,
+        fresh_count: data.fresh_count,
+        followup_count: data.followup_count,
+      });
     } catch (e) {
       console.error("Error loading daily queue:", e);
     }
@@ -326,6 +340,14 @@ export const TelecallerDesk: React.FC = () => {
     }
   };
 
+  const loadFollowups = async () => {
+    try {
+      setFollowups((await api.getFollowups()) || []);
+    } catch (e) {
+      console.error("Error loading follow-ups:", e);
+    }
+  };
+
   const handleDownloadVCard = async () => {
     if (!selectedLead) return;
     try {
@@ -358,6 +380,7 @@ export const TelecallerDesk: React.FC = () => {
         subject: `Telecaller Call: ${outcome}`,
         description: notes || `Outcome marked as ${outcome}`,
         status: outcome,
+        followup_preset: followupPreset,
         // Duration is populated by the telephony provider/webhook when
         // available; the UI must not fabricate telemetry.
       });
@@ -376,6 +399,8 @@ export const TelecallerDesk: React.FC = () => {
       // Refresh Targets & Next Actions
       loadTargets();
       loadNextActions();
+      loadDailyQueue();
+      loadFollowups();
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -718,6 +743,47 @@ export const TelecallerDesk: React.FC = () => {
         </div>
       )}
 
+      {/* Dedicated persisted follow-up panel. The API is the source of truth. */}
+      <div className="card" style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Calendar style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
+            <strong style={{ fontSize: "0.8125rem" }}>My Follow-ups</strong>
+            <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
+              {followups.filter((item) => item.status === "PENDING" || item.status === "OVERDUE").length} active
+            </span>
+          </div>
+          <button onClick={loadFollowups} className="btn-secondary" style={{ fontSize: "0.6875rem", padding: "4px 8px" }}>Refresh</button>
+        </div>
+        {followups.length === 0 ? (
+          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>No follow-up history yet.</span>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "8px" }}>
+            {followups.slice(0, 8).map((item) => (
+              <div key={item.id} style={{ border: "1px solid var(--border-subtle)", borderRadius: "8px", padding: "9px 10px", background: "var(--bg-surface-subtle)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
+                  <strong style={{ fontSize: "0.75rem" }}>{item.title}</strong>
+                  <span style={{ fontSize: "0.625rem", fontWeight: 700, color: item.status === "COMPLETED" ? "var(--emerald)" : "var(--amber)" }}>{item.status}</span>
+                </div>
+                <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "4px" }}>
+                  {item.due_at ? new Date(item.due_at).toLocaleString() : "No due time"}
+                  {item.reschedule_count > 0 ? ` · rescheduled ${item.reschedule_count}×` : ""}
+                </div>
+                {(item.status === "PENDING" || item.status === "OVERDUE") && (
+                  <button
+                    className="btn-secondary"
+                    style={{ fontSize: "0.6875rem", padding: "4px 8px", marginTop: "7px" }}
+                    onClick={async () => { await api.completeFollowup(item.id); await Promise.all([loadFollowups(), loadDailyQueue()]); }}
+                  >
+                    Mark complete
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Success Notification Banner */}
       {successMsg && (
         <div style={{
@@ -809,14 +875,14 @@ export const TelecallerDesk: React.FC = () => {
           }}>
             <div>
               <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                Worklist Queue ({filteredLeads.length})
+                Worklist Queue ({queueSummary.total})
               </span>
               <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
                 <span style={{ fontSize: "0.6875rem", color: "var(--emerald)", fontWeight: 600, background: "var(--emerald-light)", padding: "2px 6px", borderRadius: "4px" }}>
-                  {dailyQueue.filter(q => q.source === 'NEW_LEAD').length} Fresh Leads
+                  {queueSummary.fresh_count} Fresh Leads
                 </span>
                 <span style={{ fontSize: "0.6875rem", color: "var(--amber)", fontWeight: 600, background: "#fef3c7", padding: "2px 6px", borderRadius: "4px" }}>
-                  {dailyQueue.filter(q => q.source === 'FOLLOWUP').length} Follow-ups
+                  {queueSummary.followup_count} Follow-ups
                 </span>
               </div>
             </div>
@@ -1194,6 +1260,14 @@ export const TelecallerDesk: React.FC = () => {
                     <strong>Product/Service:</strong> {selectedLead.product_service_name}
                   </div>
                 )}
+                {selectedLead.purpose && (
+                  <div>
+                    <strong>Purpose:</strong> {selectedLead.purpose}
+                  </div>
+                )}
+                <div>
+                  <strong>Lead context:</strong> {selectedLead.lead_type || "Unspecified"} · {selectedLead.segment || "Other"} · {selectedLead.stage?.name || selectedLead.status}
+                </div>
               </div>
 
               {/* AI Recommendation Talking Points */}

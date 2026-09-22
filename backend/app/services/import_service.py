@@ -659,7 +659,8 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                         from app.models.product_service import ProductService
                         ps = db.query(ProductService).filter(
                             ProductService.organization_id == organization_id,
-                            ProductService.name.ilike(raw_product_service)
+                            ProductService.name.ilike(raw_product_service),
+                            ProductService.is_active.is_(True),
                         ).first()
                         if ps:
                             resolved_product_service_id = ps.id
@@ -678,10 +679,22 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                     elif default_product_service_id:
                         from app.models.product_service import ProductService
                         ps = db.query(ProductService).filter(
-                            ProductService.id == default_product_service_id
+                            ProductService.id == default_product_service_id,
+                            ProductService.organization_id == organization_id,
+                            ProductService.is_active.is_(True),
                         ).first()
-                        if ps:
-                            resolved_product_service_name = ps.name
+                        if not ps:
+                            error = ImportRowError(
+                                job_id=job_id,
+                                row_number=row_num,
+                                raw_data=raw_dict,
+                                error_code="UNRESOLVABLE_PRODUCT_SERVICE",
+                                error_message="Default Product/Service is not active in organization catalog",
+                            )
+                            db.add(error)
+                            errors += 1
+                            continue
+                        resolved_product_service_name = ps.name
 
                     # Create Lead Record referencing target stage
                     new_lead = Lead(
@@ -689,7 +702,7 @@ def execute_import_job(db: Session, job_id: str) -> ImportJob:
                         company_id=company.id if company else None,
                         contact_id=contact.id if contact else None,
                         pipeline_stage_id=stage.id,
-                        owner_id=target_owner_id or uploaded_by,
+                        owner_id=target_owner_id,
                         title=final_title,
                         company_name=comp_name or (company.name if company else None),
                         contact_name=cont_name or (contact.full_name if contact else None),

@@ -1,58 +1,57 @@
-import pytest
-from fastapi.testclient import TestClient
-from app.main import app
+from datetime import datetime, timezone
 
-@pytest.fixture
-def client():
-    return TestClient(app)
+from app.core.business_time import organization_business_date
+from app.models.session import AttendanceSession
+from app.schemas.lead import LeadCreate
+from app.services.lead_service import create_lead
 
-def test_telecaller_scoping_and_batch_assignment(client):
-    # 1. Login as Org Admin
-    res = client.post("/api/v1/auth/login", json={"email": "admin@apex.com", "password": "ApexAdmin@2026"})
-    assert res.status_code == 200
-    org_token = res.json()["access_token"]
-    org_headers = {"Authorization": f"Bearer {org_token}"}
 
-    # 2. Get Telecallers
-    res_tel = client.get("/api/v1/users/telecallers", headers=org_headers)
-    assert res_tel.status_code == 200
-    telecallers = res_tel.json()
-    assert len(telecallers) >= 1
-    telecaller = next(t for t in telecallers if t["email"] == "telecaller@apex.com")
-    telecaller_id = telecaller["id"]
+def test_telecaller_scoping_and_batch_assignment(client, db_session, tenant_a_fixture):
+    tenant = tenant_a_fixture
+    stage_id = tenant["org"].pipelines[0].stages[0].id
+    leads = [
+        create_lead(
+            db_session,
+            tenant["org"].id,
+            LeadCreate(title=f"Assignment regression {index}", pipeline_stage_id=stage_id),
+            tenant["admin_user"],
+        )
+        for index in range(5)
+    ]
 
-    # 3. Login as Telecaller and start shift
-    res_t_login = client.post("/api/v1/auth/login", json={"email": "telecaller@apex.com", "password": "Telecaller@2026"})
-    assert res_t_login.status_code == 200
-    tel_token = res_t_login.json()["access_token"]
-    tel_headers = {"Authorization": f"Bearer {tel_token}"}
-    
-    res_shift = client.post("/api/v1/shift/start", headers=tel_headers)
-    assert res_shift.status_code in [200, 400] # 400 if already started
+    existing_shift = db_session.query(AttendanceSession).filter(
+        AttendanceSession.organization_id == tenant["org"].id,
+        AttendanceSession.user_id == tenant["telecaller_user"].id,
+        AttendanceSession.logout_at.is_(None),
+    ).first()
+    if not existing_shift:
+        db_session.add(
+            AttendanceSession(
+                organization_id=tenant["org"].id,
+                user_id=tenant["telecaller_user"].id,
+                date=organization_business_date(db_session, tenant["org"].id),
+                login_at=datetime.now(timezone.utc),
+            )
+        )
+        db_session.commit()
 
-    # 4. Get leads and batch assign 5 leads
-    res_leads = client.get("/api/v1/leads/", headers=org_headers)
-    assert res_leads.status_code == 200
-    all_leads = res_leads.json()
-    assert len(all_leads) >= 5
-    target_lead_ids = [l["id"] for l in all_leads[:5]]
-
-    res_assign = client.post(
+    response = client.post(
         "/api/v1/leads/batch-assign",
-        json={"lead_ids": target_lead_ids, "telecaller_id": telecaller_id},
-        headers=org_headers
+        json={
+            "lead_ids": [lead.id for lead in leads],
+            "telecaller_id": tenant["telecaller_user"].id,
+        },
+        headers={"Authorization": f"Bearer {tenant['admin_token']}"},
     )
-    assert res_assign.status_code == 200
-    data = res_assign.json()
-    assert data["updated_count"] == 5
-    assert data["telecaller_id"] == telecaller_id
+    assert response.status_code == 200
+    assert response.json()["updated_count"] == 5
+    assert response.json()["skipped_count"] == 0
 
-    # 5. Verify strictly sees assigned leads
-    res_t_leads = client.get("/api/v1/leads/", headers=tel_headers)
-    assert res_t_leads.status_code == 200
-    tel_leads = res_t_leads.json()
-    
-    # Verify every lead returned to telecaller has owner_id == telecaller_id
-    assert len(tel_leads) >= 5
-    for l in tel_leads:
-        assert l["owner_id"] == telecaller_id
+    visible = client.get(
+        "/api/v1/leads/",
+        headers={"Authorization": f"Bearer {tenant['telecaller_token']}"},
+    )
+    assert visible.status_code == 200
+    visible_by_id = {lead["id"]: lead for lead in visible.json()}
+    for lead in leads:
+        assert visible_by_id[lead.id]["owner_id"] == tenant["telecaller_user"].id

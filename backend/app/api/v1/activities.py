@@ -29,4 +29,6 @@ def get_activities(
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
 ):
+    if current_user.tenant_role == "TELECALLER":
+        user_id = current_user.id
     return list_activities(db, tenant_id, user_id, activity_type, skip, limit)

@@ -7,6 +7,7 @@ from app.models.audit import AuditLog
 from app.models.organization import Subscription
 from app.schemas.user import UserCreate, UserUpdate, UserOut
 from app.core.security import get_password_hash
+from app.core.business_time import organization_business_date
 
 router = APIRouter(prefix="/users", tags=["Users & RBAC"])
 
@@ -19,6 +20,8 @@ def list_users(
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
 ):
+    if not (current_user.is_org_admin or current_user.tenant_role == "SALES_MANAGER"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Manager or Organization Admin privilege required")
     query = db.query(User).filter(User.organization_id == tenant_id)
     return query.order_by(User.full_name.asc()).offset(skip).limit(limit).all()
 
@@ -29,15 +32,16 @@ def list_organization_telecallers(
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
 ):
+    if not (current_user.is_org_admin or current_user.tenant_role == "SALES_MANAGER"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Manager or Organization Admin privilege required")
     from app.models.lead import Lead
     telecallers = db.query(User).filter(
         User.organization_id == tenant_id,
         User.tenant_role == "TELECALLER"
     ).order_by(User.full_name.asc()).all()
 
-    from datetime import datetime, timezone
     from app.models.telecaller_target import TelecallerTarget
-    today = datetime.now(timezone.utc).date()
+    today = organization_business_date(db, tenant_id)
     result = []
     for t in telecallers:
         assigned_count = db.query(Lead).filter(
@@ -152,7 +156,7 @@ def update_user(
     user = db.query(User).filter(
         User.id == id,
         User.organization_id == tenant_id
-    ).first()
+    ).with_for_update().first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -171,10 +175,21 @@ def update_user(
             detail="Organization administrators cannot modify platform permission overrides",
         )
     if data.telecaller_targets is not None:
-        from datetime import datetime, timezone
         from app.models.telecaller_target import TelecallerTarget
+        if user.tenant_role != "TELECALLER":
+            raise HTTPException(status_code=400, detail="Daily targets can only be configured for telecallers")
         values = data.telecaller_targets
-        target_date = datetime.now(timezone.utc).date()
+        target_date = organization_business_date(db, tenant_id)
+        numeric_values = {
+            "target_calls": int(values.get("calls", values.get("target_calls", 0)) or 0),
+            "target_connects": int(values.get("connects", values.get("target_connects", 0)) or 0),
+            "target_talk_time_minutes": int(values.get("talk_time", values.get("target_talk_time_minutes", 0)) or 0),
+            "target_qualified_leads": int(values.get("qualified_leads", values.get("target_qualified_leads", 0)) or 0),
+            "target_conversions": int(values.get("conversions", values.get("target_conversions", 0)) or 0),
+            "target_revenue": float(values.get("revenue", values.get("target_revenue", 0)) or 0),
+        }
+        if any(value < 0 for value in numeric_values.values()):
+            raise HTTPException(status_code=422, detail="Target values cannot be negative")
         target = db.query(TelecallerTarget).filter(
             TelecallerTarget.organization_id == tenant_id,
             TelecallerTarget.user_id == user.id,
@@ -186,12 +201,8 @@ def update_user(
                 user_id=user.id, target_date=target_date,
             )
             db.add(target)
-        target.target_calls = int(values.get("calls", values.get("target_calls", 0)) or 0)
-        target.target_connects = int(values.get("connects", values.get("target_connects", 0)) or 0)
-        target.target_talk_time_minutes = int(values.get("talk_time", values.get("target_talk_time_minutes", 0)) or 0)
-        target.target_qualified_leads = int(values.get("qualified_leads", values.get("target_qualified_leads", 0)) or 0)
-        target.target_conversions = int(values.get("conversions", values.get("target_conversions", 0)) or 0)
-        target.target_revenue = float(values.get("revenue", values.get("target_revenue", 0)) or 0)
+        for field, value in numeric_values.items():
+            setattr(target, field, value)
         # The legacy JSON is deliberately not updated: TelecallerTarget is the
         # authoritative store.  Existing JSON is read only once for migration.
 

@@ -44,6 +44,7 @@ export const TAB_TO_ROUTE: Record<string, string> = {
   operations: "/super_admin_operations",
   governance: "/data_governance",
   api_keys: "/api_keys",
+  products: "/products",
 };
 
 export const ROUTE_TO_TAB: Record<string, string> = {
@@ -75,6 +76,7 @@ export const ROUTE_TO_TAB: Record<string, string> = {
   "/data_governance": "governance",
   "/governance": "governance",
   "/api_keys": "api_keys",
+  "/products": "products",
 };
 
 export const App: React.FC = () => {

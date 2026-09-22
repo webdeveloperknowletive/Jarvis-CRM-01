@@ -70,6 +70,7 @@ export interface Lead {
   phone_type?: string | null;
   product_service_id?: string | null;
   product_service_name?: string | null;
+  purpose?: string | null;
   is_whatsapp?: boolean;
   is_sms_capable?: boolean;
   is_callable?: boolean;
@@ -545,6 +546,15 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ new_due_at, reason }),
     }),
+  getFollowups: (status?: string) =>
+    api.request<Task[]>(`/followups/${status === undefined ? "?status=" : `?status=${encodeURIComponent(status)}`}`),
+  completeFollowup: (id: string) =>
+    api.request<Task>(`/followups/${id}/complete`, { method: "POST" }),
+  rescheduleFollowup: (id: string, new_due_at: string, reason?: string) =>
+    api.request<Task>(`/followups/${id}/reschedule`, {
+      method: "POST",
+      body: JSON.stringify({ new_due_at, reason }),
+    }),
 
   // Companies & Contacts
   getCompanies: () => api.request<any[]>("/companies/"),
@@ -791,7 +801,7 @@ export const api = {
   getTelecallerPerformanceToday: () => api.request<any>("/telecaller/performance/today"),
 
   // Telecaller Execution Queues & Next Best Action (Problems 12, 16, 17, 18)
-  getTelecallerDailyQueue: () => api.request<DailyQueueItem[]>("/telecaller/queue/today"),
+  getTelecallerDailyQueue: () => api.request<DailyQueueResponse>("/telecaller/queue/today"),
   getTelecallerQueueNext: (currentLeadId?: string) => api.request<any>(`/telecaller/queue/next${currentLeadId ? `?current_lead_id=${currentLeadId}` : ""}`),
   getTelecallerNextActions: () => api.request<NextActionItem[]>("/telecaller/next-actions"),
 
@@ -942,6 +952,13 @@ export interface DailyQueueItem {
   score: number;
   segment?: string | null;
   lead_type?: string | null;
+}
+
+export interface DailyQueueResponse {
+  total: number;
+  fresh_count: number;
+  followup_count: number;
+  items: DailyQueueItem[];
 }
 
 export interface DedupeCandidate {

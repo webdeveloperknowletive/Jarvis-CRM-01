@@ -12,6 +12,7 @@ from app.models.user import User
 from app.models.lead import Lead
 from app.models.call_record import CallRecord
 from app.models.activity import Activity
+from app.core.business_time import organization_business_date, organization_day_bounds_utc
 
 router = APIRouter(prefix="/telephony", tags=["Telephony"])
 
@@ -157,16 +158,15 @@ def get_my_kpis(
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
 ):
-    from datetime import datetime, timezone
     from sqlalchemy import func
 
-    today = datetime.now(timezone.utc).date()
-    
-    day_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc)
+    today = organization_business_date(db, tenant_id)
+    day_start, day_end = organization_day_bounds_utc(db, tenant_id, today)
     calls_made = db.query(CallRecord).filter(
         CallRecord.organization_id == tenant_id,
         CallRecord.user_id == current_user.id,
         CallRecord.started_at >= day_start,
+        CallRecord.started_at <= day_end,
         CallRecord.disposition != "INITIATED",
     ).count()
 
@@ -174,6 +174,7 @@ def get_my_kpis(
         CallRecord.organization_id == tenant_id,
         CallRecord.user_id == current_user.id,
         CallRecord.started_at >= day_start,
+        CallRecord.started_at <= day_end,
     ).scalar() or 0
 
     high_interest = db.query(CallRecord).filter(
@@ -181,6 +182,7 @@ def get_my_kpis(
         CallRecord.user_id == current_user.id,
         CallRecord.disposition.in_(["INTERESTED", "CALLBACK", "PROPOSAL_SENT"]),
         CallRecord.started_at >= day_start,
+        CallRecord.started_at <= day_end,
     ).count()
 
     return TelecallerKPIsOut(

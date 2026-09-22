@@ -35,6 +35,7 @@ const NAVIGATION_CONFIG: NavModule[] = [
   { id: "global_intelligence", label: "Global Intelligence", icon: BrainCircuit, iconColor: "var(--primary)", visible: (u) => isDataEntry(u) || isSuperAdmin(u) },
   { id: "global_edits", label: "Global Edits", icon: ActivitySquare, iconColor: "var(--amber)", visible: isSuperAdmin },
   { id: "global", label: "Company Intelligence", icon: Globe2, iconColor: "var(--cyan)", visible: (u) => isDataEntry(u) || isSuperAdmin(u) },
+  { id: "global", label: "Global Registry", icon: Globe2, iconColor: "var(--cyan)", visible: isOrgAdmin },
   { id: "people", label: "People Intelligence", icon: UserCheck, iconColor: "var(--emerald)", visible: (u) => isDataEntry(u) || isSuperAdmin(u) },
   { id: "import", label: "Data Ingestion", icon: UploadCloud, iconColor: "#6366f1", visible: (u) => isDataEntry(u) || (!isSuperAdmin(u) && !isTelecaller(u)) },
   { id: "radar", label: "Radar Insights", icon: Sparkles, iconColor: "var(--amber)", visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },

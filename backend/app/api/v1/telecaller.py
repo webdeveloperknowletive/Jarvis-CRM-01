@@ -24,6 +24,7 @@ from app.models.ai import AIInsight
 from app.models.base import generate_uuid, utc_now
 from app.services.lead_service import serialize_lead
 from app.services.activity_service import get_lead_timeline
+from app.core.business_time import organization_business_date, organization_day_bounds_utc
 
 logger = logging.getLogger(__name__)
 
@@ -92,23 +93,14 @@ def get_today_target(
     Computes today's target vs. actuals for the telecaller.
     Queries verified activity and lead progression records.
     """
-    from app.models.organization import Organization
-    import zoneinfo
-
     target_user_id = user_id if (user_id and current_user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER", "SUPER_ADMIN")) else current_user.id
-    
-    org = db.query(Organization).filter(Organization.id == tenant_id).first()
-    tz_name = org.timezone if org and org.timezone else "Asia/Kolkata"
-    tz = zoneinfo.ZoneInfo(tz_name)
-    now_local = datetime.now(timezone.utc).astimezone(tz)
-    today = now_local.date()
-    
-    local_start = datetime.combine(today, datetime.min.time(), tzinfo=tz)
-    local_end = datetime.combine(today, datetime.max.time(), tzinfo=tz)
-    today_start = local_start.astimezone(timezone.utc)
-    today_end = local_end.astimezone(timezone.utc)
+    today = organization_business_date(db, tenant_id)
+    today_start, today_end = organization_day_bounds_utc(db, tenant_id, today)
 
-    target_user = db.query(User).filter(User.id == target_user_id, User.organization_id == tenant_id).first()
+    target_user = db.query(User).filter(
+        User.id == target_user_id,
+        User.organization_id == tenant_id,
+    ).with_for_update().first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -131,7 +123,8 @@ def get_today_target(
             target_revenue=float(legacy.get("revenue", 0) or 0),
         )
         db.add(target)
-        db.flush()
+        db.commit()
+        db.refresh(target)
     is_configured = target is not None
     target_calls = (target.target_calls or 0) if target else 0
     target_connects = (target.target_connects or 0) if target else 0
@@ -223,7 +216,7 @@ def get_my_queue(
     Strictly tenant-scoped and telecaller-isolated.
     """
     now = datetime.now(timezone.utc)
-    today_date = now.date()
+    today_date = organization_business_date(db, tenant_id, now)
 
     # Find users who delegated their work to current user
     delegators = db.query(AbsenceDelegation.absent_user_id).filter(
@@ -271,7 +264,14 @@ class DailyQueueItem(BaseModel):
     lead_type: Optional[str] = None
 
 
-@router.get("/queue/today", response_model=List[DailyQueueItem])
+class DailyQueueOut(BaseModel):
+    total: int
+    fresh_count: int
+    followup_count: int
+    items: List[DailyQueueItem]
+
+
+@router.get("/queue/today", response_model=DailyQueueOut)
 def get_daily_queue_today(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -283,15 +283,23 @@ def get_daily_queue_today(
     2. New leads assigned to telecaller
     3. Cadence retries / pending re-attempts
     """
-    today = datetime.now(timezone.utc).date()
-    today_end = datetime.combine(today, datetime.max.time()).replace(tzinfo=timezone.utc)
+    today = organization_business_date(db, tenant_id)
+    _, today_end = organization_day_bounds_utc(db, tenant_id, today)
+
+    delegators = db.query(AbsenceDelegation.absent_user_id).filter(
+        AbsenceDelegation.organization_id == tenant_id,
+        AbsenceDelegation.cover_user_id == current_user.id,
+        AbsenceDelegation.start_date <= today,
+        AbsenceDelegation.end_date >= today,
+    ).all()
+    queue_owner_ids = [current_user.id, *[row[0] for row in delegators]]
 
     items: List[DailyQueueItem] = []
 
     # 1. Followup Tasks Due Today
     tasks = db.query(Task).join(Lead, Task.lead_id == Lead.id).filter(
         Task.organization_id == tenant_id,
-        Task.assigned_to == current_user.id,
+        Task.assigned_to.in_(queue_owner_ids),
         Task.status.in_(["PENDING", "OVERDUE"]),
         Task.due_at <= today_end
     ).order_by(desc(Task.priority == "HIGH"), Task.due_at.asc()).limit(100).all()
@@ -327,7 +335,7 @@ def get_daily_queue_today(
         subq, Lead.id == subq.c.lead_id
     ).filter(
         Lead.organization_id == tenant_id,
-        Lead.owner_id == current_user.id,
+        Lead.owner_id.in_(queue_owner_ids),
         Lead.status.in_(["NEW", "OPEN"]),
         subq.c.lead_id == None
     ).order_by(desc(Lead.score), Lead.created_at.desc()).limit(50).all()
@@ -358,7 +366,14 @@ def get_daily_queue_today(
         return (p_order, due)
 
     items.sort(key=sort_key)
-    return items
+    fresh_count = sum(item.source == "NEW_LEAD" for item in items)
+    followup_count = sum(item.source == "FOLLOWUP" for item in items)
+    return DailyQueueOut(
+        total=len(items),
+        fresh_count=fresh_count,
+        followup_count=followup_count,
+        items=items,
+    )
 
 
 @router.get("/queue/next")
@@ -372,7 +387,7 @@ def get_next_queue_lead(
     Eagerly loads the next dialable lead in sequence with eager-loaded pre-call context (last 5 activities,
     pending tasks, company, stage history).
     """
-    queue = get_daily_queue_today(db, current_user, tenant_id)
+    queue = get_daily_queue_today(db, current_user, tenant_id).items
     if not queue:
         return {"lead": None, "has_next": False}
 
@@ -614,6 +629,20 @@ def create_delegation(
     if not (current_user.is_org_admin or current_user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER", "SUPER_ADMIN")):
         raise HTTPException(status_code=403, detail="Manager or Admin role required to create coverage delegations")
 
+    if data.start_date > data.end_date:
+        raise HTTPException(status_code=422, detail="Delegation start_date must not be after end_date")
+    if data.absent_user_id == data.cover_user_id:
+        raise HTTPException(status_code=422, detail="Absent and cover users must be different")
+    users = db.query(User).filter(
+        User.organization_id == tenant_id,
+        User.id.in_([data.absent_user_id, data.cover_user_id]),
+        User.tenant_role == "TELECALLER",
+        User.status == "ACTIVE",
+        User.deleted_at.is_(None),
+    ).all()
+    if len(users) != 2:
+        raise HTTPException(status_code=400, detail="Both delegation users must be active telecallers in this organization")
+
     delegation = AbsenceDelegation(
         id=generate_uuid(),
         organization_id=tenant_id,
@@ -634,12 +663,20 @@ def list_active_delegations(
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
 ):
-    today = datetime.now(timezone.utc).date()
+    today = organization_business_date(db, tenant_id)
     delegations = db.query(AbsenceDelegation).filter(
         AbsenceDelegation.organization_id == tenant_id,
         AbsenceDelegation.start_date <= today,
         AbsenceDelegation.end_date >= today
-    ).all()
+    )
+    if current_user.tenant_role == "TELECALLER":
+        delegations = delegations.filter(
+            or_(
+                AbsenceDelegation.absent_user_id == current_user.id,
+                AbsenceDelegation.cover_user_id == current_user.id,
+            )
+        )
+    delegations = delegations.all()
 
     return [
         {
@@ -666,7 +703,7 @@ def get_my_today_eod_report(
     current_user: User = Depends(get_current_user),
     tenant_id: str = Depends(get_tenant_id)
 ):
-    today = datetime.now(timezone.utc).date()
+    today = organization_business_date(db, tenant_id)
     report = db.query(EODReport).filter(
         EODReport.organization_id == tenant_id,
         EODReport.user_id == current_user.id,

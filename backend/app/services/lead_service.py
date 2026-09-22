@@ -16,6 +16,7 @@ from app.schemas.lead import LeadCreate, LeadUpdate, LeadOut, PipelineStageOut
 from app.services.pipeline_service import get_stage_by_id, get_first_stage
 from app.services.masking_service import should_mask_field, mask_phone_number, mask_email_address
 from app.services.lead_qualification_service import resolve_segment
+from app.core.business_time import organization_business_date
 
 
 from app.models.product_service import ProductService
@@ -27,6 +28,20 @@ def create_lead(
     creator_user: Optional[User] = None
 ) -> Lead:
     user_id = creator_user.id if creator_user else None
+
+    owner_id = data.owner_id
+    if owner_id:
+        owner = db.query(User).filter(
+            User.id == owner_id,
+            User.organization_id == organization_id,
+            User.tenant_role == "TELECALLER",
+            User.status == "ACTIVE",
+            User.deleted_at.is_(None),
+        ).first()
+        if not owner:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Owner must be an active telecaller in this organization")
+    elif creator_user and creator_user.tenant_role == "TELECALLER":
+        owner_id = creator_user.id
 
     # 1. Resolve pipeline stage
     if data.pipeline_stage_id:
@@ -92,13 +107,26 @@ def create_lead(
 
     # 4b. Resolve Product/Service Name
     product_service_name = data.product_service_name
+    product_service_id = data.product_service_id
     if data.product_service_id:
         ps = db.query(ProductService).filter(
             ProductService.id == data.product_service_id,
-            ProductService.organization_id == organization_id
+            ProductService.organization_id == organization_id,
+            ProductService.is_active.is_(True),
         ).first()
-        if ps:
-            product_service_name = ps.name
+        if not ps:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Product/Service not found in organization catalog")
+        product_service_name = ps.name
+    elif data.product_service_name:
+        ps = db.query(ProductService).filter(
+            ProductService.organization_id == organization_id,
+            ProductService.name.ilike(data.product_service_name.strip()),
+            ProductService.is_active.is_(True),
+        ).first()
+        if not ps:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Product/Service not found in organization catalog")
+        product_service_id = ps.id
+        product_service_name = ps.name
 
     # 5. Create Lead
     lead = Lead(
@@ -106,7 +134,7 @@ def create_lead(
         company_id=company.id if company else data.company_id,
         contact_id=contact.id if contact else data.contact_id,
         pipeline_stage_id=stage.id,
-        owner_id=data.owner_id or user_id,
+        owner_id=owner_id,
         title=data.title.strip(),
         company_name=comp_name,
         contact_name=c_name,
@@ -121,7 +149,7 @@ def create_lead(
         description=data.description,
         notes=data.notes,
         tags=data.tags or [],
-        product_service_id=data.product_service_id,
+        product_service_id=product_service_id,
         product_service_name=product_service_name,
         purpose=data.purpose,
         segment=resolve_segment(data.segment, comp_name, c_email),
@@ -199,7 +227,7 @@ def change_lead_stage(
     lead = db.query(Lead).filter(
         Lead.id == lead_id,
         Lead.organization_id == organization_id
-    ).first()
+    ).with_for_update().first()
     if not lead:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
 
@@ -300,7 +328,10 @@ def assign_lead(
 
     new_owner = db.query(User).filter(
         User.id == new_owner_id,
-        User.organization_id == organization_id
+        User.organization_id == organization_id,
+        User.tenant_role == "TELECALLER",
+        User.status == "ACTIVE",
+        User.deleted_at.is_(None),
     ).first()
     if not new_owner:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assignee user not found in organization")
@@ -308,8 +339,9 @@ def assign_lead(
     # Safe assignment logic: Check if target user has an active shift
     from app.models.session import AttendanceSession
     from datetime import datetime, timezone
-    today = datetime.now(timezone.utc).date()
+    today = organization_business_date(db, organization_id)
     active_shift = db.query(AttendanceSession).filter(
+        AttendanceSession.organization_id == organization_id,
         AttendanceSession.user_id == new_owner.id,
         AttendanceSession.date == today,
         AttendanceSession.logout_at == None
@@ -318,10 +350,13 @@ def assign_lead(
     if not active_shift:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target user is not clocked in. Assignment rejected.")
 
+    if lead.owner_id == new_owner.id:
+        return lead
     lead.owner_id = new_owner.id
 
     # Mark active assignment unassigned
     db.query(LeadAssignment).filter(
+        LeadAssignment.organization_id == organization_id,
         LeadAssignment.lead_id == lead.id,
         LeadAssignment.unassigned_at == None
     ).update({"unassigned_at": datetime.now(timezone.utc)})

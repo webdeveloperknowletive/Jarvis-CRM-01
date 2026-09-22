@@ -33,6 +33,8 @@ def get_global_people(
     current_user: User = Depends(get_current_user)
 ):
     """Search and retrieve executive profiles from the Global People Intelligence registry."""
+    if not (current_user.is_org_admin or current_user.is_super_admin or current_user.is_data_entry):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Global People access requires Organization Admin or platform data privileges")
     return search_global_people(
         db=db,
         search=search,
@@ -52,7 +54,7 @@ def create_person_lead(
     current_user: User = Depends(get_current_user)
 ):
     """Single add lead feature with detailed input fields for the People Intelligence registry."""
-    if not (current_user.is_super_admin or current_user.is_data_entry or (hasattr(current_user, "role") and current_user.role in ("ORG_ADMIN", "ADMIN"))):
+    if not (current_user.is_super_admin or current_user.is_data_entry):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin or Data Entry privilege required to add people to the Global Intelligence directory"
@@ -90,7 +92,15 @@ def pull_people_to_crm(
             detail="Platform users (Super Admin / Data Entry) cannot pull leads directly. Leads can only be pulled into CRM organizations by Organization Admins."
         )
 
-    target_org_id = tenant_id or data.target_organization_id
+    if not current_user.is_org_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Organization Admin privilege required to pull people into CRM",
+        )
+
+    # Tenant context comes from the authenticated user. A payload tenant ID is
+    # intentionally ignored so it cannot become an IDOR primitive.
+    target_org_id = tenant_id
     if not target_org_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -105,4 +115,3 @@ def pull_people_to_crm(
         target_stage_id=data.target_stage_id,
         target_owner_id=data.target_owner_id
     )
-

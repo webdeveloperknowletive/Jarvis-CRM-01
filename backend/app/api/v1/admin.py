@@ -24,8 +24,11 @@ def require_super_admin(current_user: User = Depends(get_current_user)):
     return current_user
 
 
-from app.models.activity import Activity
-from app.models.session import TelecallerSession
+from app.models.call_record import CallRecord
+from app.models.session import AttendanceSession
+from app.models.company import Company
+from app.models.contact import Contact
+from app.core.business_time import organization_business_date, organization_day_bounds_utc
 from datetime import datetime, timezone
 
 class KPIDashboardOut(BaseModel):
@@ -48,26 +51,33 @@ def get_kpis(
     total_admins = db.query(User).filter(User.tenant_role == "ORG_ADMIN").count()
     total_companies = db.query(GlobalCompany).filter(GlobalCompany.status == "ACTIVE").count()
     total_people = db.query(GlobalPerson).filter(GlobalPerson.status == "ACTIVE").count()
-    total_pulls = 0
+    total_pulls = (
+        db.query(Company).filter(Company.source_global_company_id.isnot(None)).count()
+        + db.query(Contact).filter(Contact.source_global_contact_id.isnot(None)).count()
+    )
 
-    today = datetime.now(timezone.utc).date()
-    
-    # Telecaller stats
-    total_calls_today = db.query(Activity).filter(
-        Activity.activity_type == "CALL",
-        Activity.occurred_at >= datetime.combine(today, datetime.min.time())
-    ).count()
-
-    active_sessions = db.query(TelecallerSession).filter(
-        TelecallerSession.end_time == None
-    ).count()
-
-    # Sum of talk time today
+    # Each tenant's "today" is evaluated in its configured business timezone.
     from sqlalchemy import func
-    talk_time_seconds = db.query(func.sum(Activity.duration_seconds)).filter(
-        Activity.activity_type == "CALL",
-        Activity.occurred_at >= datetime.combine(today, datetime.min.time())
-    ).scalar() or 0
+    total_calls_today = 0
+    talk_time_seconds = 0
+    for org in db.query(Organization).all():
+        business_date = organization_business_date(db, org.id)
+        day_start, day_end = organization_day_bounds_utc(db, org.id, business_date)
+        total_calls_today += db.query(CallRecord).filter(
+            CallRecord.organization_id == org.id,
+            CallRecord.started_at >= day_start,
+            CallRecord.started_at <= day_end,
+            CallRecord.disposition != "INITIATED",
+        ).count()
+        talk_time_seconds += db.query(func.sum(CallRecord.duration_seconds)).filter(
+            CallRecord.organization_id == org.id,
+            CallRecord.started_at >= day_start,
+            CallRecord.started_at <= day_end,
+        ).scalar() or 0
+
+    active_sessions = db.query(AttendanceSession).filter(
+        AttendanceSession.logout_at.is_(None)
+    ).count()
 
     return KPIDashboardOut(
         total_organizations=total_orgs,
