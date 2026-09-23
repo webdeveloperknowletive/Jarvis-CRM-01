@@ -8,6 +8,8 @@ from fastapi import HTTPException, status
 from app.models.task import Task
 from app.models.lead import Lead
 from app.models.user import User
+from app.models.activity import Activity
+from app.models.audit import AuditLog
 from app.schemas.task import TaskCreate, TaskUpdate, TaskRescheduleRequest, TaskOut
 
 
@@ -65,7 +67,7 @@ def create_task(
         User.id == assigned_to,
         User.organization_id == organization_id,
         User.deleted_at.is_(None),
-    ).first()
+    ).with_for_update().first()
     if not assignee:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assignee not found in organization")
 
@@ -147,13 +149,37 @@ def complete_task(
     task = db.query(Task).filter(
         Task.id == task_id,
         Task.organization_id == organization_id
-    ).first()
+    ).with_for_update().first()
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     _ensure_task_access(db, task, actor_user, organization_id)
 
+    if task.status != "PENDING":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Follow-up is no longer active")
+
     task.status = "COMPLETED"
     task.completed_at = datetime.now(timezone.utc)
+    if task.task_type == "FOLLOW_UP":
+        db.add(Activity(
+            organization_id=organization_id,
+            lead_id=task.lead_id,
+            company_id=task.company_id,
+            contact_id=task.contact_id,
+            user_id=actor_user.id,
+            activity_type="TASK",
+            subject="Follow-up completed",
+            description=task.title,
+            status="COMPLETED",
+        ))
+        db.add(AuditLog(
+            organization_id=organization_id,
+            user_id=actor_user.id,
+            action="FOLLOWUP_COMPLETED",
+            entity_type="TASK",
+            entity_id=task.id,
+            old_values={"status": "PENDING", "due_at": task.due_at.isoformat() if task.due_at else None},
+            new_values={"status": "COMPLETED"},
+        ))
     db.commit()
     try:
         db.refresh(task)
@@ -172,25 +198,54 @@ def reschedule_task(
     task = db.query(Task).filter(
         Task.id == task_id,
         Task.organization_id == organization_id
-    ).first()
+    ).with_for_update().first()
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     _ensure_task_access(db, task, actor_user, organization_id)
+
+    if task.status != "PENDING":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Follow-up is no longer active")
+    new_due = data.new_due_at
+    if new_due.tzinfo is None:
+        new_due = new_due.replace(tzinfo=timezone.utc)
+    if new_due <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Follow-up due time must be in the future")
 
     old_due = task.due_at.isoformat() if task.due_at else None
     task.reschedule_count += 1
     new_history = list(task.reschedule_history or [])
     new_history.append({
         "old_due_at": old_due,
-        "new_due_at": data.new_due_at.isoformat(),
+        "new_due_at": new_due.isoformat(),
         "reason": data.reason,
         "changed_by": actor_user.id,
         "changed_by_name": actor_user.full_name,
         "changed_at": datetime.now(timezone.utc).isoformat()
     })
     task.reschedule_history = new_history
-    task.due_at = data.new_due_at
+    task.due_at = new_due
     task.status = "PENDING"
+    if task.task_type == "FOLLOW_UP":
+        db.add(Activity(
+            organization_id=organization_id,
+            lead_id=task.lead_id,
+            company_id=task.company_id,
+            contact_id=task.contact_id,
+            user_id=actor_user.id,
+            activity_type="TASK",
+            subject="Follow-up rescheduled",
+            description=f"Moved from {old_due or 'unscheduled'} to {new_due.isoformat()}. {data.reason or ''}".strip(),
+            status="COMPLETED",
+        ))
+        db.add(AuditLog(
+            organization_id=organization_id,
+            user_id=actor_user.id,
+            action="FOLLOWUP_RESCHEDULED",
+            entity_type="TASK",
+            entity_id=task.id,
+            old_values={"due_at": old_due},
+            new_values={"due_at": new_due.isoformat(), "reason": data.reason},
+        ))
     db.commit()
     try:
         db.refresh(task)

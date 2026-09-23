@@ -222,7 +222,8 @@ def change_lead_stage(
     to_stage_id: str,
     organization_id: str,
     actor_user: User,
-    reason: Optional[str] = None
+    reason: Optional[str] = None,
+    commit: bool = True,
 ) -> Lead:
     lead = db.query(Lead).filter(
         Lead.id == lead_id,
@@ -304,11 +305,14 @@ def change_lead_stage(
     )
     db.add(audit)
 
-    db.commit()
-    try:
-        db.refresh(lead)
-    except Exception:
-        pass
+    if commit:
+        db.commit()
+        try:
+            db.refresh(lead)
+        except Exception:
+            pass
+    else:
+        db.flush()
     return lead
 
 

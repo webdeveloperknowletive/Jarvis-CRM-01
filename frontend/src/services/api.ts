@@ -91,6 +91,10 @@ export interface Task {
   due_at?: string | null;
   assigned_to_name?: string | null;
   reschedule_count: number;
+  display_status?: "PENDING" | "OVERDUE";
+  last_outcome?: string | null;
+  attempt_count?: number;
+  lead?: Lead;
 }
 
 export interface Activity {
@@ -555,6 +559,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ new_due_at, reason }),
     }),
+  rescheduleFollowupPreset: (id: string, preset: "tomorrow" | "3days" | "nextweek", reason?: string) =>
+    api.request<Task>(`/followups/${id}/reschedule`, {
+      method: "POST",
+      body: JSON.stringify({ preset, reason }),
+    }),
 
   // Companies & Contacts
   getCompanies: () => api.request<any[]>("/companies/"),
@@ -941,6 +950,7 @@ export interface NextActionItem {
 
 export interface DailyQueueItem {
   lead_id: string;
+  task_id?: string | null;
   source: string;
   priority: string;
   due_at?: string | null;

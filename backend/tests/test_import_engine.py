@@ -1,5 +1,6 @@
 import os
 import pytest
+from pathlib import Path
 from app.models.pipeline import PipelineStage
 from app.models.lead import Lead
 from app.models.company import Company
@@ -8,10 +9,16 @@ from app.services.import_service import preview_import_file, execute_import_job
 from app.models.import_job import ImportJob, ImportRowError
 
 
-def test_import_engine_pipeline_immutability(db_session, tenant_a_fixture):
+def test_import_engine_pipeline_immutability(db_session, tenant_a_fixture, tmp_path):
     org = tenant_a_fixture["org"]
     admin = tenant_a_fixture["admin_user"]
-    test_csv_path = "storage_uploads/test_1000_leads.csv"
+    test_csv_path = tmp_path / "test_1000_leads.csv"
+    header = "Company Name,Contact Person,Email Address,Phone Number,City,Industry,Opportunity Title\n"
+    rows = [
+        f"Import Company {index},Contact {index},contact{index}@example.com,98765{index:05d},Mumbai,Services,Opportunity {index}\n"
+        for index in range(1000)
+    ]
+    test_csv_path.write_text(header + "".join(rows), encoding="utf-8")
 
     # Count initial pipeline stages
     initial_stages_count = db_session.query(PipelineStage).join(PipelineStage.pipeline).filter(
@@ -20,7 +27,7 @@ def test_import_engine_pipeline_immutability(db_session, tenant_a_fixture):
     assert initial_stages_count == 7  # Canonical 7 stages seeded
 
     # 1. Preview file
-    preview = preview_import_file(test_csv_path, "CSV")
+    preview = preview_import_file(str(test_csv_path), "CSV")
     assert preview["total_detected_rows"] == 1000
     assert "Company Name" in preview["detected_headers"]
     assert preview["suggested_mappings"]["Company Name"] == "company_name"
@@ -43,7 +50,7 @@ def test_import_engine_pipeline_immutability(db_session, tenant_a_fixture):
         job_type="TENANT_LEADS",
         file_name="test_1000_leads.csv",
         file_type="CSV",
-        file_path=test_csv_path,
+        file_path=str(test_csv_path),
         column_mapping=mapping,
         status="PENDING"
     )

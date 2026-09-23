@@ -7,6 +7,9 @@ from app.models.global_people import GlobalPerson
 from app.models.organization import Subscription
 from app.models.session import AttendanceSession
 from app.models.task import Task
+from app.models.lead_history import LeadStageHistory
+from app.models.followup_policy import FollowupPolicy
+from app.models.base import generate_uuid
 from app.models.user import User
 from app.schemas.activity import ActivityCreate
 from app.schemas.lead import LeadCreate
@@ -328,3 +331,119 @@ def test_telecaller_cannot_mutate_another_owners_followup(client, db_session, te
     assert response.status_code == 404
     db_session.refresh(task)
     assert task.status == "PENDING"
+
+
+def test_call_outcome_stage_and_no_followup_are_atomic(db_session, tenant_a_fixture):
+    tenant = tenant_a_fixture
+    lead = _assigned_lead(db_session, tenant, "Atomic outcome and stage lead")
+    stages = tenant["org"].pipelines[0].stages
+    target_stage = stages[1]
+
+    create_activity(
+        db_session,
+        tenant["org"].id,
+        tenant["telecaller_user"],
+        ActivityCreate(
+            lead_id=lead.id,
+            activity_type="CALL",
+            status="INTERESTED",
+            description="Budget and timing discussed.",
+            pipeline_stage_id=target_stage.id,
+            followup_preset="none",
+        ),
+    )
+
+    db_session.refresh(lead)
+    assert lead.pipeline_stage_id == target_stage.id
+    assert db_session.query(LeadStageHistory).filter(
+        LeadStageHistory.lead_id == lead.id,
+        LeadStageHistory.to_stage_id == target_stage.id,
+    ).count() == 1
+    assert db_session.query(CallRecord).filter(
+        CallRecord.lead_id == lead.id,
+        CallRecord.disposition == "INTERESTED",
+    ).count() == 1
+    assert db_session.query(Activity).filter(
+        Activity.lead_id == lead.id,
+        Activity.activity_type == "CALL",
+        Activity.description == "Budget and timing discussed.",
+    ).count() == 1
+    assert db_session.query(Task).filter(
+        Task.lead_id == lead.id,
+        Task.task_type == "FOLLOW_UP",
+        Task.status == "PENDING",
+    ).count() == 0
+
+
+def test_followup_api_and_worklist_share_accessible_active_population(client, db_session, tenant_a_fixture):
+    tenant = tenant_a_fixture
+    lead = _assigned_lead(db_session, tenant, "Future persisted follow-up")
+    task = Task(
+        organization_id=tenant["org"].id,
+        lead_id=lead.id,
+        task_type="FOLLOW_UP",
+        title="Future callback",
+        status="PENDING",
+        priority="MEDIUM",
+        due_at=datetime.now(timezone.utc) + timedelta(days=5),
+        assigned_to=tenant["telecaller_user"].id,
+        created_by=tenant["admin_user"].id,
+    )
+    db_session.add(task)
+    db_session.commit()
+
+    headers = {"Authorization": f"Bearer {tenant['telecaller_token']}"}
+    followup_response = client.get("/api/v1/followups/", headers=headers)
+    queue_response = client.get("/api/v1/telecaller/queue/today", headers=headers)
+    assert followup_response.status_code == 200
+    assert queue_response.status_code == 200
+
+    followups = followup_response.json()
+    queue_followups = [item for item in queue_response.json()["items"] if item["source"] == "FOLLOWUP"]
+    assert {item["lead_id"] for item in followups} == {item["lead_id"] for item in queue_followups}
+    projection = next(item for item in followups if item["id"] == task.id)
+    assert projection["lead"]["id"] == lead.id
+    assert projection["lead"]["title"] == "Future persisted follow-up"
+    assert projection["display_status"] == "PENDING"
+    assert projection["attempt_count"] == 0
+
+    completed = client.post(f"/api/v1/followups/{task.id}/complete", headers=headers)
+    assert completed.status_code == 200
+    assert completed.json()["status"] == "COMPLETED"
+    refreshed = client.get("/api/v1/followups/", headers=headers).json()
+    assert task.id not in {item["id"] for item in refreshed}
+
+
+def test_followup_max_attempts_closes_active_cycle(db_session, tenant_a_fixture):
+    tenant = tenant_a_fixture
+    lead = _assigned_lead(db_session, tenant, "Maximum attempt follow-up")
+    db_session.add(FollowupPolicy(
+        id=generate_uuid(),
+        organization_id=tenant["org"].id,
+        name="Callback max attempts",
+        trigger_outcome="TEST_MAX_ATTEMPTS",
+        max_attempts=2,
+        interval_minutes=1440,
+        is_active=True,
+    ))
+    db_session.commit()
+
+    create_activity(
+        db_session,
+        tenant["org"].id,
+        tenant["telecaller_user"],
+        ActivityCreate(lead_id=lead.id, activity_type="CALL", status="TEST_MAX_ATTEMPTS", followup_preset="tomorrow"),
+    )
+    assert db_session.query(Task).filter(Task.lead_id == lead.id, Task.status == "PENDING").count() == 1
+
+    for _ in range(2):
+        create_activity(
+            db_session,
+            tenant["org"].id,
+            tenant["telecaller_user"],
+            ActivityCreate(lead_id=lead.id, activity_type="CALL", status="TEST_MAX_ATTEMPTS", followup_preset="tomorrow"),
+        )
+
+    assert db_session.query(Task).filter(Task.lead_id == lead.id, Task.status == "PENDING").count() == 0
+    closed = db_session.query(Task).filter(Task.lead_id == lead.id, Task.status == "CANCELLED").one()
+    assert "Maximum follow-up attempts reached (2)" in closed.description

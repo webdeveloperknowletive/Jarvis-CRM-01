@@ -14,7 +14,7 @@ from app.models.lead import Lead
 from app.models.pipeline import Pipeline, PipelineStage
 from app.core.security import create_access_token
 
-def test_audit():
+def run_live_audit():
     print("=== JARVIS CRM AUDIT: ALL 20 PROBLEMS VERIFICATION ===")
     client = TestClient(app)
     db = SessionLocal()
@@ -189,4 +189,4 @@ def test_audit():
         db.close()
 
 if __name__ == "__main__":
-    test_audit()
+    run_live_audit()

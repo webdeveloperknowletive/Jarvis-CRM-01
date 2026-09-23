@@ -4,7 +4,6 @@ import {
   Task,
   PipelineStage, 
   TelecallerTargetToday, 
-  NextActionItem, 
   DailyQueueItem, 
   DailyQueueResponse,
   api 
@@ -19,7 +18,6 @@ import {
   ShieldCheck, 
   Flame, 
   Check, 
-  ChevronRight,
   Lock,
   RefreshCw,
   Search,
@@ -71,23 +69,18 @@ export const TelecallerDesk: React.FC = () => {
   const [activeSegment, setActiveSegment] = useState<string>("ALL"); // ALL, B2B, B2C
   const [activeStageFilter, setActiveStageFilter] = useState<string>("ALL"); // ALL, NEW, CONTACTED, INTERESTED, HOT, WARM, COLD
 
-  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
-  
   // Post-Call Outcome & Soft-Block Enforcement (Problem 5)
   const [isInCall, setIsInCall] = useState(false);
   const [outcome, setOutcome] = useState<string>("CONNECTED");
   const [notes, setNotes] = useState("");
-  const [followupPreset, setFollowupPreset] = useState<string>("tomorrow");
+  const [followupPreset, setFollowupPreset] = useState<string>("none");
+  const [selectedStageId, setSelectedStageId] = useState<string>("");
   const [loggingOutcome, setLoggingOutcome] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [softBlockAttemptedLead, setSoftBlockAttemptedLead] = useState<Lead | null>(null);
 
   // Targets & Real-time Progress (Problem 2)
   const [targets, setTargets] = useState<TelecallerTargetToday | null>(null);
-
-  // Next Best Action (Problems 16 & 17)
-  const [nextActions, setNextActions] = useState<NextActionItem[]>([]);
-  const [showNextActions, setShowNextActions] = useState(true);
 
   // Daily Queue (Problem 18)
   const [dailyQueue, setDailyQueue] = useState<DailyQueueItem[]>([]);
@@ -97,6 +90,8 @@ export const TelecallerDesk: React.FC = () => {
     followup_count: 0,
   });
   const [followups, setFollowups] = useState<Task[]>([]);
+  const [followupActionId, setFollowupActionId] = useState<string | null>(null);
+  const [rescheduleTaskId, setRescheduleTaskId] = useState<string | null>(null);
 
   // Pre-call context & details
   const [preCallContext, setPreCallContext] = useState<any>(null);
@@ -136,7 +131,6 @@ export const TelecallerDesk: React.FC = () => {
   const loadInitialData = async () => {
     loadShiftStatus();
     loadTargets();
-    loadNextActions();
     loadDailyQueue();
     loadFollowups();
     loadStages();
@@ -180,15 +174,6 @@ export const TelecallerDesk: React.FC = () => {
     }
   };
 
-  const loadNextActions = async () => {
-    try {
-      const data = await api.getTelecallerNextActions();
-      setNextActions(data || []);
-    } catch (e) {
-      console.error("Error loading next best actions:", e);
-    }
-  };
-
   const loadDailyQueue = async () => {
     try {
       const data = await api.getTelecallerDailyQueue();
@@ -198,6 +183,7 @@ export const TelecallerDesk: React.FC = () => {
         fresh_count: data.fresh_count,
         followup_count: data.followup_count,
       });
+      return data;
     } catch (e) {
       console.error("Error loading daily queue:", e);
     }
@@ -206,6 +192,7 @@ export const TelecallerDesk: React.FC = () => {
   useEffect(() => {
     if (selectedLead) {
       loadPreCallContext(selectedLead.id);
+      setSelectedStageId(selectedLead.pipeline_stage_id || "");
     }
   }, [selectedLead]);
 
@@ -223,7 +210,7 @@ export const TelecallerDesk: React.FC = () => {
     try {
       const data = await api.getLeads(activeSegment === "ALL" ? {} : { segment: activeSegment });
       setLeads(data || []);
-      setSelectedLead((current) => data?.find((lead) => lead.id === current?.id) || data?.[0] || null);
+      return data || [];
     } catch (e) {
       console.error("Error loading leads in telecaller desk:", e);
     } finally {
@@ -233,7 +220,9 @@ export const TelecallerDesk: React.FC = () => {
 
   // Segment filtering is backend-authoritative; this only applies presentation filters.
   const filteredLeads = useMemo(() => {
+    const queueLeadIds = new Set(dailyQueue.map((item) => item.lead_id));
     return leads.filter((lead) => {
+      if (!queueLeadIds.has(lead.id)) return false;
       // 1. Stage/Type filter
       if (activeStageFilter !== "ALL") {
         if (activeStageFilter === "HOT") {
@@ -262,7 +251,20 @@ export const TelecallerDesk: React.FC = () => {
       }
       return true;
     });
-  }, [leads, activeStageFilter, searchQuery]);
+  }, [leads, dailyQueue, activeStageFilter, searchQuery]);
+
+  useEffect(() => {
+    if (loading) return;
+    setSelectedLead((current) => {
+      if (current && dailyQueue.some((item) => item.lead_id === current.id)) {
+        return leads.find((lead) => lead.id === current.id) || current;
+      }
+      const firstQueued = dailyQueue
+        .map((item) => leads.find((lead) => lead.id === item.lead_id))
+        .find((lead): lead is Lead => Boolean(lead));
+      return firstQueued || null;
+    });
+  }, [leads, dailyQueue, loading]);
 
   // Lead selection with UX soft-block enforcement (Problem 5)
   const handleSelectLead = (lead: Lead) => {
@@ -298,18 +300,20 @@ export const TelecallerDesk: React.FC = () => {
   };
 
   // Dial Call (Problem 3 & 5)
-  const handleCall = async () => {
-    if (!selectedLead) return;
+  const handleCall = async (leadOverride?: Lead) => {
+    const lead = leadOverride || selectedLead;
+    if (!lead) return;
+    setSelectedLead(lead);
     setIsInCall(true);
     setSuccessMsg("Call initiated! Post-call outcome drawer is active.");
     setTimeout(() => setSuccessMsg(null), 4000);
 
     if (!notes) {
-      setNotes(`Outbound Call placed to ${selectedLead.contact_name || selectedLead.title}. Notes: `);
+      setNotes(`Outbound Call placed to ${lead.contact_name || lead.title}. Notes: `);
     }
 
     try {
-      const res = await api.dialLead(selectedLead.id);
+      const res = await api.dialLead(lead.id);
       if (res.tel_url) {
         window.location.href = res.tel_url;
       }
@@ -319,24 +323,26 @@ export const TelecallerDesk: React.FC = () => {
   };
 
   // WhatsApp (Problem 13 & 15)
-  const handleWhatsApp = async () => {
-    if (!selectedLead) return;
-    if (isLandlineNumber(selectedLead.contact_phone)) {
+  const handleWhatsApp = async (leadOverride?: Lead) => {
+    const lead = leadOverride || selectedLead;
+    if (!lead) return;
+    setSelectedLead(lead);
+    if (isLandlineNumber(lead.contact_phone)) {
       alert("WhatsApp is not supported on Indian Landline numbers. Please use Voice Call.");
       return;
     }
 
     try {
-      const res = await api.triggerLeadAction(selectedLead.id, "whatsapp");
+      const res = await api.triggerLeadAction(lead.id, "whatsapp");
       if (res.whatsapp_url) {
         window.open(res.whatsapp_url, "_blank", "noopener,noreferrer");
       } else {
-        openWhatsApp(selectedLead.contact_phone, `Hello ${selectedLead.contact_name || ""}, regarding ${selectedLead.title}.`);
+        openWhatsApp(lead.contact_phone, `Hello ${lead.contact_name || ""}, regarding ${lead.title}.`);
       }
       setSuccessMsg("Opened WhatsApp Web in a new tab.");
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch {
-      openWhatsApp(format10DigitPhone(selectedLead.contact_phone), `Hello ${selectedLead.contact_name || ""}, regarding ${selectedLead.title}.`);
+      openWhatsApp(format10DigitPhone(lead.contact_phone), `Hello ${lead.contact_name || ""}, regarding ${lead.title}.`);
     }
   };
 
@@ -348,10 +354,12 @@ export const TelecallerDesk: React.FC = () => {
     }
   };
 
-  const handleDownloadVCard = async () => {
-    if (!selectedLead) return;
+  const handleDownloadVCard = async (leadOverride?: Lead) => {
+    const lead = leadOverride || selectedLead;
+    if (!lead) return;
+    setSelectedLead(lead);
     try {
-      await api.downloadLeadVCard(selectedLead.id);
+      await api.downloadLeadVCard(lead.id);
       setSuccessMsg("Contact card downloaded.");
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (error) {
@@ -361,16 +369,36 @@ export const TelecallerDesk: React.FC = () => {
     }
   };
 
+  const handleEmail = (leadOverride?: Lead) => {
+    const lead = leadOverride || selectedLead;
+    if (!lead?.contact_email || lead.contact_email.includes("*")) {
+      setSuccessMsg("No accessible email address is available for this lead.");
+      setTimeout(() => setSuccessMsg(null), 3500);
+      return;
+    }
+    setSelectedLead(lead);
+    openGmail(
+      lead.contact_email,
+      `Regarding ${lead.title}`,
+      `Hello ${lead.contact_name || ""},\n\nI am following up regarding ${lead.product_service_name || lead.title}.\n\nRegards,`
+    );
+  };
+
   const handleCopyEmail = (email: string) => {
     if (!email) return;
     navigator.clipboard.writeText(email);
-    setCopiedEmail(email);
-    setTimeout(() => setCopiedEmail(null), 2000);
+    setSuccessMsg("Email address copied.");
+    setTimeout(() => setSuccessMsg(null), 2000);
   };
 
   // Outcome Logging (Problem 5 & 16/17 Policy Engine)
   const handleRecordOutcome = async () => {
     if (!selectedLead) return;
+    if (!selectedStageId) {
+      setSuccessMsg("Select the lead stage before saving the call outcome.");
+      setTimeout(() => setSuccessMsg(null), 3500);
+      return;
+    }
     setLoggingOutcome(true);
     try {
       // 1. Log Call Activity
@@ -380,6 +408,7 @@ export const TelecallerDesk: React.FC = () => {
         subject: `Telecaller Call: ${outcome}`,
         description: notes || `Outcome marked as ${outcome}`,
         status: outcome,
+        pipeline_stage_id: selectedStageId,
         followup_preset: followupPreset,
         // Duration is populated by the telephony provider/webhook when
         // available; the UI must not fabricate telemetry.
@@ -387,25 +416,59 @@ export const TelecallerDesk: React.FC = () => {
 
       setSuccessMsg(`Call outcome "${outcome}" recorded successfully!`);
       setNotes("");
+      setFollowupPreset("none");
       setIsInCall(false);
       setTimeout(() => setSuccessMsg(null), 3000);
 
-      // Move to next lead in filtered queue
-      const currentIndex = filteredLeads.findIndex((l) => l.id === selectedLead.id);
-      if (currentIndex < filteredLeads.length - 1) {
-        setSelectedLead(filteredLeads[currentIndex + 1]);
-      }
-      
-      // Refresh Targets & Next Actions
-      loadTargets();
-      loadNextActions();
-      loadDailyQueue();
-      loadFollowups();
+      // Re-read every projection after the transaction. A called fresh lead
+      // leaves the worklist unless the saved choice created a follow-up.
+      await Promise.all([loadTargets(), loadDailyQueue(), loadFollowups(), loadMyLeads()]);
     } catch (err: any) {
       alert(err.message);
     } finally {
       setLoggingOutcome(false);
     }
+  };
+
+  const openFollowupLead = (item: Task) => {
+    if (!item.lead) return;
+    setSelectedLead(item.lead);
+    setShowDetailModal(true);
+  };
+
+  const handleCompleteFollowup = async (item: Task) => {
+    setFollowupActionId(item.id);
+    try {
+      await api.completeFollowup(item.id);
+      await Promise.all([loadFollowups(), loadDailyQueue(), loadTargets(), loadMyLeads()]);
+      setSuccessMsg("Follow-up completed and removed from the active queue.");
+      setTimeout(() => setSuccessMsg(null), 3500);
+    } catch (error) {
+      setSuccessMsg(error instanceof Error ? error.message : "Could not complete follow-up.");
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } finally {
+      setFollowupActionId(null);
+    }
+  };
+
+  const handleRescheduleFollowup = async (item: Task, preset: "tomorrow" | "3days" | "nextweek") => {
+    setFollowupActionId(item.id);
+    try {
+      await api.rescheduleFollowupPreset(item.id, preset, "Rescheduled from Telecaller Desk");
+      await Promise.all([loadFollowups(), loadDailyQueue()]);
+      setRescheduleTaskId(null);
+      setSuccessMsg("Follow-up rescheduled successfully.");
+      setTimeout(() => setSuccessMsg(null), 3500);
+    } catch (error) {
+      setSuccessMsg(error instanceof Error ? error.message : "Could not reschedule follow-up.");
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } finally {
+      setFollowupActionId(null);
+    }
+  };
+
+  const scrollToDeskSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   // Escape hatch for soft block (Problem 5)
@@ -459,7 +522,7 @@ export const TelecallerDesk: React.FC = () => {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+    <div className="telecaller-desk" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       {/* Top Header & Shift Attendance Bar (Problem 11) */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
         <div>
@@ -481,7 +544,7 @@ export const TelecallerDesk: React.FC = () => {
             </span>
           </div>
           <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: "2px" }}>
-            Target enforcement, Next-Best-Action prioritization, Landline/Mobile segregation & 2-tap outcome logging
+            One queue for fresh leads and real follow-ups, with quick calling, stage audit and outcome recording
           </p>
         </div>
 
@@ -670,119 +733,75 @@ export const TelecallerDesk: React.FC = () => {
         )
       )}
 
-      {/* Next-Best-Action Smart Queue Accordion (Problems 16 & 17) */}
-      {nextActions.length > 0 && (
-        <div style={{
-          background: "linear-gradient(135deg, rgba(99, 102, 241, 0.04), rgba(168, 85, 247, 0.04))",
-          borderRadius: "12px",
-          border: "1px solid rgba(99, 102, 241, 0.2)",
-          padding: "14px 18px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px"
-        }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Sparkles style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
-              <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                Next-Best-Action Worklist ({nextActions.length} Scheduled)
-              </span>
-            </div>
-            <button
-              onClick={() => setShowNextActions(!showNextActions)}
-              style={{ border: "none", background: "transparent", color: "var(--primary)", fontSize: "0.75rem", cursor: "pointer", fontWeight: 600 }}
-            >
-              {showNextActions ? "Collapse" : "Expand"}
-            </button>
-          </div>
-
-          {showNextActions && (
-            <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "4px" }}>
-              {nextActions.slice(0, 5).map((act, i) => (
-                <div
-                  key={i}
-                  onClick={() => {
-                    const match = leads.find((l) => l.id === act.lead_id);
-                    if (match) handleSelectLead(match);
-                  }}
-                  style={{
-                    minWidth: "230px",
-                    background: "var(--bg-surface)",
-                    padding: "10px 14px",
-                    borderRadius: "8px",
-                    border: "1px solid var(--border-subtle)",
-                    cursor: "pointer",
-                    boxShadow: "var(--shadow-xs)"
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                    <span style={{
-                      fontSize: "0.6875rem",
-                      fontWeight: 800,
-                      padding: "2px 6px",
-                      borderRadius: "4px",
-                      background: act.scheduled_time === "NOW" ? "#fee2e2" : "var(--primary-light)",
-                      color: act.scheduled_time === "NOW" ? "#b91c1c" : "var(--primary)"
-                    }}>
-                      {act.scheduled_time}
-                    </span>
-                    <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-                      {act.action_type}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {act.company_name} — {act.contact_name}
-                  </p>
-                  <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                    {act.action_reason}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Dedicated persisted follow-up panel. The API is the source of truth. */}
-      <div className="card" style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div id="telecaller-followups" className="card telecaller-followups" style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: "10px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Calendar style={{ width: "16px", height: "16px", color: "var(--primary)" }} />
             <strong style={{ fontSize: "0.8125rem" }}>My Follow-ups</strong>
             <span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
-              {followups.filter((item) => item.status === "PENDING" || item.status === "OVERDUE").length} active
+              {followups.length} active · matches queue
             </span>
           </div>
           <button onClick={loadFollowups} className="btn-secondary" style={{ fontSize: "0.6875rem", padding: "4px 8px" }}>Refresh</button>
         </div>
         {followups.length === 0 ? (
-          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>No follow-up history yet.</span>
+          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>No active persisted follow-ups.</span>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "8px" }}>
-            {followups.slice(0, 8).map((item) => (
-              <div key={item.id} style={{ border: "1px solid var(--border-subtle)", borderRadius: "8px", padding: "9px 10px", background: "var(--bg-surface-subtle)" }}>
+          <div className="telecaller-followup-grid">
+            {followups.map((item) => (
+              <article key={item.id} className="telecaller-followup-card">
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
-                  <strong style={{ fontSize: "0.75rem" }}>{item.title}</strong>
-                  <span style={{ fontSize: "0.625rem", fontWeight: 700, color: item.status === "COMPLETED" ? "var(--emerald)" : "var(--amber)" }}>{item.status}</span>
-                </div>
-                <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                  {item.due_at ? new Date(item.due_at).toLocaleString() : "No due time"}
-                  {item.reschedule_count > 0 ? ` · rescheduled ${item.reschedule_count}×` : ""}
-                </div>
-                {(item.status === "PENDING" || item.status === "OVERDUE") && (
-                  <button
-                    className="btn-secondary"
-                    style={{ fontSize: "0.6875rem", padding: "4px 8px", marginTop: "7px" }}
-                    onClick={async () => { await api.completeFollowup(item.id); await Promise.all([loadFollowups(), loadDailyQueue()]); }}
-                  >
-                    Mark complete
+                  <button type="button" className="telecaller-followup-title" onClick={() => openFollowupLead(item)}>
+                    {item.lead?.contact_name || item.lead?.title || item.title}
                   </button>
+                  <span className={item.display_status === "OVERDUE" ? "followup-status overdue" : "followup-status"}>
+                    {item.display_status || "PENDING"}
+                  </span>
+                </div>
+                <div className="telecaller-followup-company">{item.lead?.company_name || "Direct customer"}</div>
+                <div className="telecaller-followup-meta">
+                  <span><Clock size={12} /> {item.due_at ? new Date(item.due_at).toLocaleString() : "Not scheduled"}</span>
+                  <span>{item.lead?.product_service_name || item.lead?.purpose || "General follow-up"}</span>
+                  <span>Last outcome: {item.last_outcome || "None"} · Attempts: {item.attempt_count || 0}</span>
+                  <span>Assignee: {item.assigned_to_name || "Current telecaller"}{item.reschedule_count ? ` · Rescheduled ${item.reschedule_count}×` : ""}</span>
+                </div>
+                <div className="telecaller-followup-actions">
+                  <button type="button" onClick={() => openFollowupLead(item)}><ExternalLink size={13} /> Open</button>
+                  <button type="button" onClick={() => item.lead && handleCall(item.lead)}><PhoneCall size={13} /> Call</button>
+                  <button type="button" onClick={() => item.lead && handleWhatsApp(item.lead)} disabled={!item.lead || isLandlineNumber(item.lead.contact_phone)}><MessageCircle size={13} /> WhatsApp</button>
+                  <button type="button" onClick={() => item.lead && handleEmail(item.lead)}><Mail size={13} /> Email</button>
+                  <button type="button" onClick={() => item.lead && handleDownloadVCard(item.lead)}><Download size={13} /> VCard</button>
+                  <button type="button" disabled={followupActionId === item.id} onClick={() => handleCompleteFollowup(item)}><Check size={13} /> Complete</button>
+                  <button type="button" disabled={followupActionId === item.id} onClick={() => setRescheduleTaskId(rescheduleTaskId === item.id ? null : item.id)}><Calendar size={13} /> Reschedule</button>
+                </div>
+                {rescheduleTaskId === item.id && (
+                  <div className="telecaller-reschedule-row">
+                    <span>Move to:</span>
+                    <button onClick={() => handleRescheduleFollowup(item, "tomorrow")}>Tomorrow</button>
+                    <button onClick={() => handleRescheduleFollowup(item, "3days")}>3 days</button>
+                    <button onClick={() => handleRescheduleFollowup(item, "nextweek")}>Next week</button>
+                  </div>
                 )}
-              </div>
+              </article>
             ))}
           </div>
         )}
       </div>
+
+      <section className="telecaller-quick-dashboard" aria-label="Telecaller quick actions">
+        <div>
+          <span className="telecaller-quick-kicker">Calling queue</span>
+          <strong>{queueSummary.total ? `Lead ${Math.max(1, dailyQueue.findIndex((item) => item.lead_id === selectedLead?.id) + 1)} of ${queueSummary.total}` : "Queue complete"}</strong>
+          <div className="telecaller-queue-progress"><span style={{ width: `${queueSummary.total ? Math.max(4, ((dailyQueue.findIndex((item) => item.lead_id === selectedLead?.id) + 1) / queueSummary.total) * 100) : 100}%` }} /></div>
+        </div>
+        <div className="telecaller-quick-buttons">
+          <button onClick={() => handleCall()} disabled={!selectedLead}><PhoneCall size={18} /> Quick call</button>
+          <button onClick={() => scrollToDeskSection("telecaller-outcome")} disabled={!selectedLead}><CheckCircle2 size={18} /> Record outcome</button>
+          <button onClick={() => { if (selectedLead) setShowDetailModal(true); }} disabled={!selectedLead}><ExternalLink size={18} /> Stage audit</button>
+          <button onClick={() => scrollToDeskSection("telecaller-followups")}><Calendar size={18} /> Follow-ups <span>{followups.length}</span></button>
+        </div>
+      </section>
 
       {/* Success Notification Banner */}
       {successMsg && (
@@ -860,9 +879,9 @@ export const TelecallerDesk: React.FC = () => {
       )}
 
       {/* Main Two-Column Layout */}
-      <div className="grid-cols-desk">
+      <div className="grid-cols-desk" id="telecaller-worklist">
         {/* Left Column: Prioritized Leads Queue */}
-        <div className="card" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div className="card telecaller-queue-card" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
           {/* Queue Header & Sequential Advance Button (Problem 18) */}
           <div style={{
             display: "flex",
@@ -1069,9 +1088,9 @@ export const TelecallerDesk: React.FC = () => {
 
         {/* Right Column: Active Lead Outbound Workspace */}
         {selectedLead ? (
-          <div className="card" style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div className="card telecaller-active-card" id="telecaller-active-lead" style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
             {/* Contact Header Card & Action Triggers (Problem 3, 13, 15) */}
-            <div style={{
+            <div className="telecaller-contact-hero" style={{
               padding: "18px",
               borderRadius: "10px",
               background: "var(--bg-surface-subtle)",
@@ -1135,10 +1154,10 @@ export const TelecallerDesk: React.FC = () => {
                 )}
 
                 {/* Direct Action Buttons: Call, WhatsApp (Disabled for Landlines), Gmail, Payment */}
-                <div style={{ display: "flex", gap: "8px", marginTop: "12px", justifyContent: "flex-end", flexWrap: "wrap" }}>
+                <div className="telecaller-primary-actions" style={{ display: "flex", gap: "8px", marginTop: "12px", justifyContent: "flex-end", flexWrap: "wrap" }}>
                   {/* Call button */}
                   <button
-                    onClick={handleCall}
+                    onClick={() => handleCall()}
                     className="btn-primary"
                     style={{
                       background: "linear-gradient(135deg, #059669, #047857)",
@@ -1178,7 +1197,7 @@ export const TelecallerDesk: React.FC = () => {
                     </button>
                   ) : (
                     <button
-                      onClick={handleWhatsApp}
+                      onClick={() => handleWhatsApp()}
                       className="btn-secondary"
                       style={{ fontSize: "0.75rem", padding: "7px 14px", display: "flex", alignItems: "center", gap: "6px" }}
                       title="Open WhatsApp chat"
@@ -1189,7 +1208,18 @@ export const TelecallerDesk: React.FC = () => {
                   )}
 
                   <button
-                    onClick={handleDownloadVCard}
+                    onClick={() => handleEmail()}
+                    className="btn-secondary"
+                    disabled={!selectedLead.contact_email || selectedLead.contact_email.includes("*")}
+                    style={{ fontSize: "0.75rem", padding: "7px 14px", display: "flex", alignItems: "center", gap: "6px" }}
+                    title="Compose an email to this lead"
+                  >
+                    <Mail style={{ width: "14px", height: "14px", color: "var(--primary)" }} />
+                    Email
+                  </button>
+
+                  <button
+                    onClick={() => handleDownloadVCard()}
                     className="btn-secondary"
                     style={{ fontSize: "0.75rem", padding: "7px 14px", display: "flex", alignItems: "center", gap: "6px" }}
                     title="Download the contact card you are authorized to access"
@@ -1223,7 +1253,7 @@ export const TelecallerDesk: React.FC = () => {
             </div>
 
             {/* Static Call Brief Sidebar (Problem 12) */}
-            <div style={{
+            <div className="telecaller-call-brief" style={{
               padding: "16px",
               borderRadius: "10px",
               background: "var(--primary-light)",
@@ -1279,7 +1309,7 @@ export const TelecallerDesk: React.FC = () => {
             </div>
 
             {/* Docked 2-Tap Post-Call Outcome Sheet (Problem 5) */}
-            <div style={{
+            <div id="telecaller-outcome" className="telecaller-outcome-sheet" style={{
               padding: "18px",
               borderRadius: "10px",
               background: isInCall ? "rgba(16, 185, 129, 0.04)" : "var(--bg-surface)",
@@ -1308,7 +1338,7 @@ export const TelecallerDesk: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "8px" }}>
+              <div className="telecaller-outcome-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "8px" }}>
                 {OUTCOMES.map((o) => {
                   const isSelected = outcome === o.id;
                   return (
@@ -1339,10 +1369,26 @@ export const TelecallerDesk: React.FC = () => {
                 })}
               </div>
 
+              <div>
+                <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                  2. Confirm Lead Stage
+                </h4>
+                <select
+                  value={selectedStageId}
+                  onChange={(event) => setSelectedStageId(event.target.value)}
+                  aria-label="Lead stage"
+                  style={{ width: "100%", padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border-medium)", background: "var(--bg-surface)", color: "var(--text-primary)" }}
+                >
+                  <option value="">Select stage</option>
+                  {stages.map((stage) => <option key={stage.id} value={stage.id}>{stage.name}</option>)}
+                </select>
+                <p style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "4px" }}>Outcome and stage are stored separately in the same transaction.</p>
+              </div>
+
               {/* Call Notes */}
               <div>
                 <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
-                  2. Discussion Notes
+                  3. Discussion Notes
                 </h4>
                 <textarea
                   value={notes}
@@ -1363,10 +1409,10 @@ export const TelecallerDesk: React.FC = () => {
                 />
               </div>
 
-              {/* Follow-up Policy Preset (Problems 16 & 17) */}
+              {/* Explicit follow-up scheduling */}
               <div>
                 <h4 style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
-                  3. Automated Follow-up Policy
+                  4. Schedule Follow-up (optional)
                 </h4>
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                   {[
@@ -1424,6 +1470,14 @@ export const TelecallerDesk: React.FC = () => {
           </div>
         )}
       </div>
+
+      <nav className="telecaller-mobile-nav" aria-label="Telecaller dashboard shortcuts">
+        <button onClick={() => scrollToDeskSection("telecaller-worklist")}><Search size={18} /><span>Queue</span></button>
+        <button className="primary" onClick={() => handleCall()} disabled={!selectedLead}><PhoneCall size={20} /><span>Call</span></button>
+        <button onClick={() => scrollToDeskSection("telecaller-followups")}><Calendar size={18} /><span>Follow-ups</span><em>{followups.length}</em></button>
+        <button onClick={() => scrollToDeskSection("telecaller-outcome")} disabled={!selectedLead}><CheckCircle2 size={18} /><span>Outcome</span></button>
+        <button onClick={() => { if (selectedLead) setShowDetailModal(true); }} disabled={!selectedLead}><ExternalLink size={18} /><span>Lead 360</span></button>
+      </nav>
 
       {/* Dynamic Payment Link Modal (Problem 19) */}
       {showPaymentModal && selectedLead && (

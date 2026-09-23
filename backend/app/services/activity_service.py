@@ -100,6 +100,11 @@ def create_activity(
         call_record.duration_seconds = duration
         call_record.ended_at = now
 
+        # Follow-up policies count authoritative CallRecord rows. Flush the
+        # current outcome before evaluating a max-attempt policy so this call
+        # participates in that count while remaining in the same transaction.
+        db.flush()
+
     # Record Radar event if communication action (Call / WhatsApp / Email)
     if act_type in ("CALL", "WHATSAPP", "EMAIL"):
         radar_event = RadarEvent(
@@ -112,14 +117,25 @@ def create_activity(
         )
         db.add(radar_event)
 
-    # The Desk's explicit preset wins. Other clients continue to use the
-    # organization's outcome policy engine.
-    from app.services.followup_service import execute_followup_policy, apply_followup_preset
+    # Outcome, stage, notes, call metrics and the explicit follow-up choice are
+    # committed as one unit.  A failed stage/follow-up operation rolls the
+    # whole outcome back instead of leaving partial history.
+    if act_type == "CALL" and lead and data.pipeline_stage_id:
+        from app.services.lead_service import change_lead_stage
+        change_lead_stage(
+            db,
+            lead.id,
+            data.pipeline_stage_id,
+            organization_id,
+            user,
+            reason=f"Recorded with call outcome {act_status.upper()}",
+            commit=False,
+        )
+
+    from app.services.followup_service import apply_followup_preset
     if act_type == "CALL":
         if data.followup_preset is not None:
             apply_followup_preset(db, activity, organization_id, user, data.followup_preset)
-        else:
-            execute_followup_policy(db, activity, organization_id, user)
 
     db.commit()
 

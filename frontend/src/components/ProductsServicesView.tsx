@@ -20,7 +20,6 @@ export const ProductsServicesView: React.FC = () => {
   const [error, setError] = useState("");
 
   const [showModal, setShowModal] = useState(false);
-  const [step, setStep] = useState<1 | 2>(1);
   const [editingItem, setEditingItem] = useState<ProductService | null>(null);
 
   const [formData, setFormData] = useState({
@@ -71,7 +70,6 @@ export const ProductsServicesView: React.FC = () => {
         description: "",
         status: "ACTIVE"
       });
-      setStep(1);
     }
     setShowModal(true);
   };
@@ -207,120 +205,65 @@ export const ProductsServicesView: React.FC = () => {
           background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
           display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
         }}>
-          <div className="card" style={{ width: "100%", maxWidth: "540px", padding: "32px", animation: "slideUp 0.3s ease" }}>
+          <div className="card" style={{ width: "100%", maxWidth: "500px", padding: "24px", animation: "slideUp 0.3s ease" }}>
+            <h3 style={{ fontSize: "1.25rem", fontWeight: 700, margin: "0 0 20px 0", color: "#f8fafc" }}>
+              {editingItem ? "Edit Item" : "Add Product or Service"}
+            </h3>
             
-            {step === 1 && !editingItem ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "24px", textAlign: "center" }}>
-                <div>
-                  <h3 style={{ fontSize: "1.35rem", fontWeight: 800, margin: "0", color: "var(--text-primary)" }}>
-                    What would you like to add?
-                  </h3>
-                  <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", margin: "8px 0 0 0" }}>
-                    Choose the type of item you want to add to your catalog.
-                  </p>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "flex", gap: "16px" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: "0.875rem", color: "#94a3b8", marginBottom: "6px" }}>Name <span style={{color:"#ef4444"}}>*</span></label>
+                  <input required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="input-text" placeholder="e.g., Enterprise CRM License" />
                 </div>
-                <div style={{ display: "flex", gap: "16px", justifyContent: "center" }}>
-                  <button 
-                    type="button"
-                    onClick={() => { setFormData({...formData, type: "PRODUCT"}); setStep(2); }}
-                    style={{ flex: 1, padding: "24px 16px", borderRadius: "12px", border: "2px solid var(--border-subtle)", background: "var(--bg-surface)", cursor: "pointer", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#38bdf8"; e.currentTarget.style.background = "rgba(56, 189, 248, 0.05)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; e.currentTarget.style.background = "var(--bg-surface)"; }}
-                  >
-                    <Box style={{ width: "36px", height: "36px", color: "#38bdf8", marginBottom: "12px" }} />
-                    <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "1.05rem" }}>Product</div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "6px" }}>Physical or digital good</div>
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => { setFormData({...formData, type: "SERVICE"}); setStep(2); }}
-                    style={{ flex: 1, padding: "24px 16px", borderRadius: "12px", border: "2px solid var(--border-subtle)", background: "var(--bg-surface)", cursor: "pointer", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#a78bfa"; e.currentTarget.style.background = "rgba(167, 139, 250, 0.05)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; e.currentTarget.style.background = "var(--bg-surface)"; }}
-                  >
-                    <Tag style={{ width: "36px", height: "36px", color: "#a78bfa", marginBottom: "12px" }} />
-                    <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "1.05rem" }}>Service</div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "6px" }}>Consulting, support, etc.</div>
-                  </button>
+                <div style={{ width: "150px" }}>
+                  <label style={{ display: "block", fontSize: "0.875rem", color: "#94a3b8", marginBottom: "6px" }}>Code <span style={{color:"#ef4444"}}>*</span></label>
+                  <input required value={formData.code} onChange={(e) => setFormData({...formData, code: e.target.value})} className="input-text" placeholder="CRM-ENT-1" />
                 </div>
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary" style={{ alignSelf: "center", marginTop: "8px", background: "transparent", color: "var(--text-secondary)" }}>
+              </div>
+
+              <div style={{ display: "flex", gap: "16px" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: "0.875rem", color: "#94a3b8", marginBottom: "6px" }}>Type</label>
+                  <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value as "PRODUCT"|"SERVICE"})} className="input-text">
+                    <option value="PRODUCT">Product</option>
+                    <option value="SERVICE">Service</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: "0.875rem", color: "#94a3b8", marginBottom: "6px" }}>Status</label>
+                  <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="input-text">
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "16px" }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: "0.875rem", color: "#94a3b8", marginBottom: "6px" }}>Price</label>
+                  <input type="number" step="0.01" required value={formData.price} onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value) || 0})} className="input-text" />
+                </div>
+                <div style={{ width: "100px" }}>
+                  <label style={{ display: "block", fontSize: "0.875rem", color: "#94a3b8", marginBottom: "6px" }}>Currency</label>
+                  <input required value={formData.currency} onChange={(e) => setFormData({...formData, currency: e.target.value.toUpperCase()})} className="input-text" />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "0.875rem", color: "#94a3b8", marginBottom: "6px" }}>Description</label>
+                <textarea rows={3} value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="input-text" placeholder="Optional description..." />
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "8px" }}>
+                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary" style={{ background: "transparent", color: "#94a3b8" }}>
                   Cancel
                 </button>
+                <button type="submit" className="btn-primary">
+                  {editingItem ? "Save Changes" : "Create Item"}
+                </button>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                <div style={{ display: "flex", alignItems: "center", marginBottom: "4px" }}>
-                  {!editingItem && (
-                    <button type="button" onClick={() => setStep(1)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", marginRight: "16px", padding: "4px", display: "flex", alignItems: "center", fontSize: "0.875rem", fontWeight: 600 }}>
-                      &larr; Back
-                    </button>
-                  )}
-                  <h3 style={{ fontSize: "1.25rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
-                    {editingItem ? "Edit Item" : `Add ${formData.type === "PRODUCT" ? "Product" : "Service"}`}
-                  </h3>
-                </div>
-                
-                <div style={{ display: "flex", gap: "16px" }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>Name <span style={{color:"#ef4444"}}>*</span></label>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "8px" }}>Public facing name of the item.</div>
-                    <input required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="input-text" placeholder={formData.type === "PRODUCT" ? "e.g., Enterprise CRM License" : "e.g., Annual Consulting"} />
-                  </div>
-                  <div style={{ width: "160px" }}>
-                    <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>Code <span style={{color:"#ef4444"}}>*</span></label>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "8px" }}>Unique identifier (SKU).</div>
-                    <input required value={formData.code} onChange={(e) => setFormData({...formData, code: e.target.value})} className="input-text" placeholder="CRM-ENT-1" />
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: "16px" }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>Type</label>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "8px" }}>Category of this item.</div>
-                    <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value as "PRODUCT"|"SERVICE"})} className="input-text">
-                      <option value="PRODUCT">Product</option>
-                      <option value="SERVICE">Service</option>
-                    </select>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>Status</label>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "8px" }}>Availability for assignments.</div>
-                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="input-text">
-                      <option value="ACTIVE">Active</option>
-                      <option value="INACTIVE">Inactive</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: "16px" }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>Price</label>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "8px" }}>Base price before taxes.</div>
-                    <input type="number" step="0.01" required value={formData.price} onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value) || 0})} className="input-text" />
-                  </div>
-                  <div style={{ width: "120px" }}>
-                    <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>Currency</label>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "8px" }}>ISO Code.</div>
-                    <input required value={formData.currency} onChange={(e) => setFormData({...formData, currency: e.target.value.toUpperCase()})} className="input-text" placeholder="USD" />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>Description</label>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "8px" }}>Detailed explanation of what this includes.</div>
-                  <textarea rows={3} value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="input-text" placeholder="Optional description..." />
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "8px", paddingTop: "20px", borderTop: "1px solid var(--border-subtle)" }}>
-                  <button type="button" onClick={() => setShowModal(false)} className="btn-secondary" style={{ background: "transparent", color: "var(--text-secondary)" }}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn-primary">
-                    {editingItem ? "Save Changes" : "Create Item"}
-                  </button>
-                </div>
-              </form>
-            )}
+            </form>
           </div>
         </div>
       )}

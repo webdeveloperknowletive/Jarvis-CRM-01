@@ -14,8 +14,11 @@ class ActivityCreate(BaseModel):
     status: Optional[str] = "COMPLETED"  # CONNECTED, NO_ANSWER, BUSY, SCHEDULED, FAILED
     duration_seconds: Optional[int] = 0
     metadata_json: Optional[Dict[str, Any]] = None
-    # Backend-authoritative scheduling choice for a recorded call outcome.
-    # None preserves the legacy policy-engine behavior for non-Desk clients.
+    # A call outcome and a pipeline stage are separate business facts.  The
+    # Desk sends the selected stage so both can be persisted atomically.
+    pipeline_stage_id: Optional[str] = None
+    # Follow-ups are explicit.  Omitting the field never infers a callback
+    # from the outcome or a legacy policy.
     followup_preset: Optional[Literal["tomorrow", "3days", "nextweek", "none"]] = None
 
 

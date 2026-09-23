@@ -2,9 +2,73 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from app.models.activity import Activity
 from app.models.task import Task
+from app.models.lead import Lead
+from app.models.call_record import CallRecord
 from app.models.followup_policy import FollowupPolicy
 from app.models.user import User
+from app.models.delegation import AbsenceDelegation
 from app.core.business_time import followup_preset_due_at
+from app.core.business_time import organization_business_date
+
+
+def accessible_work_owner_ids(db: Session, tenant_id: str, current_user: User) -> list[str]:
+    """Resolve the same ownership scope for queue and follow-up projections."""
+    owner_ids = [current_user.id]
+    if current_user.tenant_role == "TELECALLER":
+        today = organization_business_date(db, tenant_id)
+        rows = db.query(AbsenceDelegation.absent_user_id).filter(
+            AbsenceDelegation.organization_id == tenant_id,
+            AbsenceDelegation.cover_user_id == current_user.id,
+            AbsenceDelegation.start_date <= today,
+            AbsenceDelegation.end_date >= today,
+        ).all()
+        owner_ids.extend(row[0] for row in rows)
+    return list(dict.fromkeys(owner_ids))
+
+
+def active_followup_query(db: Session, tenant_id: str, current_user: User):
+    """Canonical accessible active follow-up population.
+
+    A follow-up is active only while the persisted task is PENDING, has a due
+    date, and still references an accessible, non-deleted, open lead.  Overdue
+    is deliberately a presentation state; it is not stored as task status.
+    """
+    owner_ids = accessible_work_owner_ids(db, tenant_id, current_user)
+    return db.query(Task).join(Lead, Task.lead_id == Lead.id).filter(
+        Task.organization_id == tenant_id,
+        Task.task_type == "FOLLOW_UP",
+        Task.status == "PENDING",
+        Task.due_at.isnot(None),
+        Task.assigned_to.in_(owner_ids),
+        Lead.organization_id == tenant_id,
+        Lead.owner_id.in_(owner_ids),
+        Lead.deleted_at.is_(None),
+        Lead.status.notin_(("WON", "LOST", "ARCHIVED", "REJECTED")),
+    )
+
+
+def followup_attempt_count(db: Session, task: Task) -> int:
+    """Count real finalized call attempts made after the follow-up began."""
+    query = db.query(CallRecord).filter(
+        CallRecord.organization_id == task.organization_id,
+        CallRecord.lead_id == task.lead_id,
+        CallRecord.user_id == task.assigned_to,
+        CallRecord.disposition.isnot(None),
+        CallRecord.disposition != "INITIATED",
+    )
+    if task.created_at:
+        query = query.filter(CallRecord.started_at >= task.created_at)
+    return query.count()
+
+
+def latest_followup_outcome(db: Session, task: Task) -> str | None:
+    row = db.query(CallRecord.disposition).filter(
+        CallRecord.organization_id == task.organization_id,
+        CallRecord.lead_id == task.lead_id,
+        CallRecord.disposition.isnot(None),
+        CallRecord.disposition != "INITIATED",
+    ).order_by(CallRecord.started_at.desc()).first()
+    return row[0] if row else None
 
 
 def _matching_policy(db: Session, tenant_id: str, outcome: str | None):
@@ -20,11 +84,19 @@ def _matching_policy(db: Session, tenant_id: str, outcome: str | None):
 def _attempt_limit_reached(db: Session, tenant_id: str, lead_id: str, policy: FollowupPolicy | None) -> bool:
     if not policy or not policy.max_attempts:
         return False
-    attempts = db.query(Task).filter(
+    first_followup = db.query(Task).filter(
         Task.organization_id == tenant_id,
         Task.lead_id == lead_id,
         Task.task_type == "FOLLOW_UP",
-        Task.status.in_(("COMPLETED", "CANCELLED", "OVERDUE")),
+    ).order_by(Task.created_at.asc()).first()
+    if not first_followup:
+        return False
+    attempts = db.query(CallRecord).filter(
+        CallRecord.organization_id == tenant_id,
+        CallRecord.lead_id == lead_id,
+        CallRecord.started_at >= first_followup.created_at,
+        CallRecord.disposition.isnot(None),
+        CallRecord.disposition != "INITIATED",
     ).count()
     return attempts >= policy.max_attempts
 
@@ -114,6 +186,19 @@ def apply_followup_preset(
 
     policy = _matching_policy(db, tenant_id, activity.status)
     if _attempt_limit_reached(db, tenant_id, activity.lead_id, policy):
+        db.query(Task).filter(
+            Task.organization_id == tenant_id,
+            Task.lead_id == activity.lead_id,
+            Task.task_type == "FOLLOW_UP",
+            Task.status == "PENDING",
+        ).update(
+            {
+                Task.status: "CANCELLED",
+                Task.description: f"Maximum follow-up attempts reached ({policy.max_attempts}).",
+            },
+            synchronize_session=False,
+        )
+        db.flush()
         return None
     label = {"tomorrow": "Tomorrow", "3days": "In 3 Days", "nextweek": "Next Week"}[preset]
     return _upsert_active_followup(

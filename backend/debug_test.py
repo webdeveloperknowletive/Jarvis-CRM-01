@@ -1,41 +1,60 @@
+"""Manual organization smoke test.
+
+This file intentionally exposes no import-time side effects so pytest can
+collect the repository safely. Run it directly only against a disposable
+database configured through the normal application environment.
+"""
+
 from fastapi.testclient import TestClient
-from app.main import app
-from app.core.database import SessionLocal
 from sqlalchemy import text
 
-client = TestClient(app)
-db = SessionLocal()
+from app.core.database import SessionLocal
+from app.main import app
 
-# Cleanup before test
-db.execute(text("DELETE FROM organizations WHERE slug = 'adani-industries-ltd'"))
-db.execute(text("DELETE FROM users WHERE email = 'admin@adani.com'"))
-db.execute(text("DROP SCHEMA IF EXISTS adani_industries_ltd CASCADE"))
-db.commit()
 
-# 1. Login as Super Admin
-sa_res = client.post("/api/v1/auth/login", json={"email": "superadmin@jarvis.local", "password": "JarvisAdmin@2026"})
-sa_token = sa_res.json()["access_token"]
+def main() -> None:
+    client = TestClient(app)
+    db = SessionLocal()
+    try:
+        db.execute(text("DELETE FROM organizations WHERE slug = 'adani-industries-ltd'"))
+        db.execute(text("DELETE FROM users WHERE email = 'admin@adani.com'"))
+        db.commit()
 
-# 2. Create organization Adani Industries LTD.
-res = client.post("/api/v1/organizations/", json={
-    "name": "Adani Industries LTD.",
-    "slug": "adani-industries-ltd",
-    "admin_name": "Gautam Adani",
-    "admin_email": "admin@adani.com",
-    "admin_password": "AdaniAdmin@2026",
-    "plan_code": "GROWTH"
-}, headers={"Authorization": f"Bearer {sa_token}"})
+        super_admin_login = client.post(
+            "/api/v1/auth/login",
+            json={"email": "superadmin@jarvis.local", "password": "JarvisAdmin@2026"},
+        )
+        super_admin_login.raise_for_status()
+        token = super_admin_login.json()["access_token"]
 
-org_login = client.post("/api/v1/auth/login", json={"email": "admin@adani.com", "password": "AdaniAdmin@2026"})
-new_token = org_login.json()["access_token"]
-new_headers = {"Authorization": f"Bearer {new_token}"}
+        response = client.post(
+            "/api/v1/organizations/",
+            json={
+                "name": "Adani Industries LTD.",
+                "slug": "adani-industries-ltd",
+                "admin_name": "Gautam Adani",
+                "admin_email": "admin@adani.com",
+                "admin_password": "AdaniAdmin@2026",
+                "plan_code": "GROWTH",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        response.raise_for_status()
 
-new_leads_res = client.get("/api/v1/leads/", headers=new_headers)
-print("LEADS RESPONSE:", new_leads_res.status_code, new_leads_res.text)
+        organization_login = client.post(
+            "/api/v1/auth/login",
+            json={"email": "admin@adani.com", "password": "AdaniAdmin@2026"},
+        )
+        organization_login.raise_for_status()
+        organization_headers = {"Authorization": f"Bearer {organization_login.json()['access_token']}"}
+        leads_response = client.get("/api/v1/leads/", headers=organization_headers)
+        print("LEADS RESPONSE:", leads_response.status_code, leads_response.text)
+    finally:
+        db.execute(text("DELETE FROM organizations WHERE slug = 'adani-industries-ltd'"))
+        db.execute(text("DELETE FROM users WHERE email = 'admin@adani.com'"))
+        db.commit()
+        db.close()
 
-# Cleanup
-db.execute(text("DELETE FROM organizations WHERE slug = 'adani-industries-ltd'"))
-db.execute(text("DELETE FROM users WHERE email = 'admin@adani.com'"))
-db.execute(text("DROP SCHEMA IF EXISTS adani_industries_ltd CASCADE"))
-db.commit()
-db.close()
+
+if __name__ == "__main__":
+    main()

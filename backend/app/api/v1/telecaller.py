@@ -24,6 +24,7 @@ from app.models.ai import AIInsight
 from app.models.base import generate_uuid, utc_now
 from app.services.lead_service import serialize_lead
 from app.services.activity_service import get_lead_timeline
+from app.services.followup_service import active_followup_query, accessible_work_owner_ids
 from app.core.business_time import organization_business_date, organization_day_bounds_utc
 
 logger = logging.getLogger(__name__)
@@ -251,6 +252,7 @@ def get_my_queue(
 
 class DailyQueueItem(BaseModel):
     lead_id: str
+    task_id: Optional[str] = None
     source: str  # FOLLOWUP, NEW_LEAD, RETRY
     priority: str
     due_at: Optional[datetime] = None
@@ -278,31 +280,20 @@ def get_daily_queue_today(
     tenant_id: str = Depends(get_tenant_id)
 ):
     """
-    Builds the prioritized daily execution queue as a prioritized union of:
-    1. Followup tasks due today or earlier (PENDING)
+    Builds the prioritized execution queue as a prioritized union of:
+    1. All accessible active persisted follow-up tasks (PENDING)
     2. New leads assigned to telecaller
     3. Cadence retries / pending re-attempts
     """
-    today = organization_business_date(db, tenant_id)
-    _, today_end = organization_day_bounds_utc(db, tenant_id, today)
-
-    delegators = db.query(AbsenceDelegation.absent_user_id).filter(
-        AbsenceDelegation.organization_id == tenant_id,
-        AbsenceDelegation.cover_user_id == current_user.id,
-        AbsenceDelegation.start_date <= today,
-        AbsenceDelegation.end_date >= today,
-    ).all()
-    queue_owner_ids = [current_user.id, *[row[0] for row in delegators]]
+    queue_owner_ids = accessible_work_owner_ids(db, tenant_id, current_user)
 
     items: List[DailyQueueItem] = []
 
-    # 1. Followup Tasks Due Today
-    tasks = db.query(Task).join(Lead, Task.lead_id == Lead.id).filter(
-        Task.organization_id == tenant_id,
-        Task.assigned_to.in_(queue_owner_ids),
-        Task.status.in_(["PENDING", "OVERDUE"]),
-        Task.due_at <= today_end
-    ).order_by(desc(Task.priority == "HIGH"), Task.due_at.asc()).limit(100).all()
+    # 1. The worklist consumes the exact same active persisted population as
+    # My Follow-ups.  Future callbacks remain visible and sort by due time.
+    tasks = active_followup_query(db, tenant_id, current_user).order_by(
+        desc(Task.priority == "HIGH"), Task.due_at.asc()
+    ).all()
 
     processed_task_lead_ids = set()
     for t in tasks:
@@ -311,6 +302,7 @@ def get_daily_queue_today(
             s_lead = serialize_lead(t.lead, current_user, db)
             items.append(DailyQueueItem(
                 lead_id=t.lead.id,
+                task_id=t.id,
                 source="FOLLOWUP",
                 priority=t.priority or "NORMAL",
                 due_at=t.due_at,
@@ -336,6 +328,7 @@ def get_daily_queue_today(
     ).filter(
         Lead.organization_id == tenant_id,
         Lead.owner_id.in_(queue_owner_ids),
+        Lead.deleted_at.is_(None),
         Lead.status.in_(["NEW", "OPEN"]),
         subq.c.lead_id == None
     ).order_by(desc(Lead.score), Lead.created_at.desc()).limit(50).all()

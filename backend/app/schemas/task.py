@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+from app.schemas.lead import LeadOut
 
 
 class TaskCreate(BaseModel):
@@ -53,3 +54,12 @@ class TaskOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class FollowupOut(TaskOut):
+    """Telecaller follow-up projection backed by one persisted Task row."""
+
+    lead: LeadOut
+    display_status: str
+    last_outcome: Optional[str] = None
+    attempt_count: int = 0
