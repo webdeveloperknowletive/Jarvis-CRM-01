@@ -1,3 +1,7 @@
+# [OBSOLETE] - THIS DOCUMENT IS NO LONGER ACCURATE
+
+**Please refer to docs/SOURCE_OF_TRUTH.md and ARCHITECTURE.md for current accurate information.**
+
 # JARVIS CRM — Final Fix & Verification Report
 
 ## Executive summary
@@ -91,3 +95,4 @@ The application is materially safer than the original audit baseline, but it is 
 - `backend/alembic/versions/651077a665a1_batch_updates_phase10_13.py`
 - `backend/alembic/versions/8d2e4f6a9b11_attendance_business_date.py`
 - `frontend/src/components/EmailComposeModal.tsx`
+

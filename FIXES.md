@@ -1,3 +1,7 @@
+# [OBSOLETE] - THIS DOCUMENT IS NO LONGER ACCURATE
+
+**Please refer to docs/SOURCE_OF_TRUTH.md and ARCHITECTURE.md for current accurate information.**
+
 
 **JARVIS CRM — STRUCTURED PRODUCTION AUDIT REPORT**
 *(Pre-fix inspection complete. No production code modified yet. Findings are based on full repository inspection of models, services, APIs, migrations, frontend, Docker, tests, and data-flow tracing.)*
@@ -107,3 +111,4 @@
 4. Add regression tests for every Critical/High finding.
 5. Run full backend test suite, frontend type-check/build, and report exact results.
 6. Deliver **FINAL JARVIS CRM AUDIT & FIX REPORT** with FIXED / PARTIALLY FIXED / NOT FIXED status for every original finding.
+

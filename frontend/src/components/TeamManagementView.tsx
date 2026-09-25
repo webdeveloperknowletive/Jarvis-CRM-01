@@ -170,7 +170,7 @@ export const TeamManagementView: React.FC<TeamManagementViewProps> = ({ onNaviga
     setLeadsSearch("");
     setLoadingLeads(true);
     try {
-      const allLeads = await api.getLeads();
+      const allLeads = await api.getAssignableLeads(tc.id);
       setAvailableLeads(allLeads);
     } catch (err) {
       console.error(err);

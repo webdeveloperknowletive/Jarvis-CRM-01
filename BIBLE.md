@@ -1,3 +1,7 @@
+# [OBSOLETE] - THIS DOCUMENT IS NO LONGER ACCURATE
+
+**Please refer to docs/SOURCE_OF_TRUTH.md and ARCHITECTURE.md for current accurate information.**
+
 # JARVIS CRM — The Bible (Source of Truth)
 
 This document is the master blueprint of the JARVIS CRM platform. It contains the complete system architecture, data models, business rules, and feature summaries built up through Phase 4. A new developer should be able to rebuild the entire application from scratch using only this document.
@@ -131,3 +135,4 @@ The frontend is a single-page React app styled with a **glassmorphic** design sy
   - `TelecallerDesk`: High-speed calling interface for agents.
   - `GlobalIntelligenceView`: Network graph and registry explorer for pulling data.
   - `SuperAdminView`: Tabbed layout for managing tenants, billing, and platform audit logs.
+

@@ -1,3 +1,7 @@
+# [OBSOLETE] - THIS DOCUMENT IS NO LONGER ACCURATE
+
+**Please refer to docs/SOURCE_OF_TRUTH.md and ARCHITECTURE.md for current accurate information.**
+
 # Telecaller Leads and Migration Fix Report
 
 ## Scope completed
@@ -50,3 +54,4 @@ seeded PostgreSQL instance (`localhost:5432`); they are not runnable in this
 archive-only environment. This report covers the requested Telecaller lead,
 VCF, and migration paths, not a claim that every phase of the master prompt has
 been implemented.
+

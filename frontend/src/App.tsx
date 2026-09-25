@@ -44,6 +44,8 @@ export const TAB_TO_ROUTE: Record<string, string> = {
   operations: "/super_admin_operations",
   governance: "/data_governance",
   api_keys: "/api_keys",
+  products: "/products",
+  global_edits: "/global_edits",
 };
 
 export const ROUTE_TO_TAB: Record<string, string> = {
@@ -75,6 +77,8 @@ export const ROUTE_TO_TAB: Record<string, string> = {
   "/data_governance": "governance",
   "/governance": "governance",
   "/api_keys": "api_keys",
+  "/products": "products",
+  "/global_edits": "global_edits",
 };
 
 export const App: React.FC = () => {
@@ -122,7 +126,7 @@ export const App: React.FC = () => {
     // --- SECURITY ROUTE GUARD ---
     if (matchedTab) {
       const superAdminTabs = ['dashboard', 'organizations', 'users', 'security', 'audit', 'recovery', 'operations', 'global_edits'];
-      const orgAdminTabs = ['team', 'governance', 'api_keys', 'templates', 'organizations', 'security', 'audit', 'recovery'];
+      const orgAdminTabs = ['team', 'governance', 'api_keys', 'templates', 'organizations', 'security', 'audit', 'recovery', 'products', 'global', 'global_intelligence', 'people'];
       const dataEntryTabs = ['global_intelligence', 'global', 'people', 'import'];
       const isDataEntry = Boolean(currentUser.is_data_entry || currentUser.platform_role === 'DATA_ENTRY' || currentUser.tenant_role === 'DATA_ENTRY');
 
@@ -167,7 +171,7 @@ export const App: React.FC = () => {
       // --- SECURITY ROUTE GUARD ---
       if (matchedTab) {
         const superAdminTabs = ['dashboard', 'organizations', 'users', 'security', 'audit', 'recovery', 'operations', 'global_edits'];
-        const orgAdminTabs = ['team', 'governance', 'api_keys', 'templates', 'organizations', 'security', 'audit', 'recovery'];
+        const orgAdminTabs = ['team', 'governance', 'api_keys', 'templates', 'organizations', 'security', 'audit', 'recovery', 'products', 'global', 'global_intelligence', 'people'];
         const dataEntryTabs = ['global_intelligence', 'global', 'people', 'import'];
         const isDataEntry = Boolean(user.is_data_entry || user.platform_role === 'DATA_ENTRY' || user.tenant_role === 'DATA_ENTRY');
 

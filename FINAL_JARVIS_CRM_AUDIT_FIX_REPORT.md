@@ -1,3 +1,7 @@
+# [OBSOLETE] - THIS DOCUMENT IS NO LONGER ACCURATE
+
+**Please refer to docs/SOURCE_OF_TRUTH.md and ARCHITECTURE.md for current accurate information.**
+
 # JARVIS CRM — Final Audit, Fix, and Verification Report
 
 Date: 2026-09-22
@@ -301,3 +305,4 @@ Before production deployment:
 6. Smoke-test configured email, telephony, WhatsApp, and vCard flows.
 
 Until those steps pass, PostgreSQL concurrency and live integration claims must remain **NOT VERIFIED/PARTIAL**, as classified above.
+

@@ -403,6 +403,8 @@ export const api = {
     const query = new URLSearchParams(params).toString();
     return api.request<Lead[]>(`/leads/${query ? "?" + query : ""}`);
   },
+  getAssignableLeads: (telecaller_id: string) =>
+    api.request<Lead[]>(`/leads/available-for-assignment?telecaller_id=${encodeURIComponent(telecaller_id)}`),
   getLeadDetail: (id: string) => api.request<Lead>(`/leads/${id}`),
   downloadLeadVCard: async (id: string): Promise<void> => {
     const token = api.getToken();

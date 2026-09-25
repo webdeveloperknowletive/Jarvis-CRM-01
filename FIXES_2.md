@@ -1,3 +1,7 @@
+# [OBSOLETE] - THIS DOCUMENT IS NO LONGER ACCURATE
+
+**Please refer to docs/SOURCE_OF_TRUTH.md and ARCHITECTURE.md for current accurate information.**
+
 
 **Deep analysis completed.** Below is the refined, verified picture of the critical subsystems after tracing database models → services → API endpoints → frontend calls → persistence, plus Celery jobs and concurrency characteristics.
 
@@ -120,3 +124,4 @@
 6. Re-run the test suite and produce the **FINAL JARVIS CRM AUDIT & FIX REPORT**.
 
 Proceeding to code changes now.
+

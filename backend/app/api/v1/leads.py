@@ -139,6 +139,220 @@ def create_new_lead(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return serialize_lead(lead, current_user, db)
 
+class BatchAssignRequest(BaseModel):
+    lead_ids: List[str]
+    telecaller_id: str
+
+
+@router.get("/available-for-assignment", response_model=List[LeadOut])
+def get_leads_available_for_assignment(
+    telecaller_id: str = Query(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    if current_user.tenant_role not in ["ORG_ADMIN", "SALES_MANAGER", "SUPER_ADMIN"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
+        
+    query = db.query(Lead).filter(
+        Lead.organization_id == tenant_id,
+        or_(
+            Lead.owner_id.is_(None), 
+            Lead.owner_id == telecaller_id,
+            Lead.owner.has(User.tenant_role != "TELECALLER")
+        ),
+        Lead.status.notin_(["WON", "LOST", "ARCHIVED", "REJECTED"]),
+        Lead.deleted_at.is_(None)
+    )
+    
+    leads = query.order_by(Lead.created_at.desc()).limit(1000).all()
+    return [serialize_lead(l, current_user, db) for l in leads]
+
+@router.post("/batch-assign")
+def batch_assign_leads(
+    data: BatchAssignRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """
+    Assigns multiple leads (e.g. 5, 20, 50) to a specific Telecaller in one transaction.
+    """
+    if not (current_user.is_org_admin or current_user.is_super_admin or current_user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER")):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only Organization Admins can assign leads to telecallers")
+
+    # Verify target telecaller exists in this organization
+    telecaller = db.query(User).filter(
+        User.id == data.telecaller_id,
+        User.organization_id == tenant_id,
+        User.tenant_role == "TELECALLER",
+        User.status == "ACTIVE",
+        User.deleted_at.is_(None),
+    ).first()
+    if not telecaller:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target telecaller not found in this organization")
+
+    # Safe assignment logic: Check if telecaller has an active shift
+    from app.models.session import AttendanceSession
+    from datetime import datetime, timezone
+    today = organization_business_date(db, tenant_id)
+    active_shift = db.query(AttendanceSession).filter(
+        AttendanceSession.organization_id == tenant_id,
+        AttendanceSession.user_id == telecaller.id,
+        AttendanceSession.date == today,
+        AttendanceSession.logout_at == None
+    ).first()
+    
+    if not active_shift:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target telecaller is not clocked in. Assignment rejected.")
+
+    requested_ids = list(dict.fromkeys(data.lead_ids))
+    if not requested_ids:
+        raise HTTPException(status_code=422, detail="At least one lead ID is required")
+    leads = db.query(Lead).filter(
+        Lead.id.in_(requested_ids),
+        Lead.organization_id == tenant_id,
+        or_(
+            Lead.owner_id.is_(None),
+            Lead.owner.has(User.tenant_role != "TELECALLER")
+        ),
+        Lead.deleted_at.is_(None),
+        Lead.status.notin_(["WON", "LOST", "ARCHIVED", "REJECTED"]),
+    ).with_for_update().all()
+
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    for lead in leads:
+        db.query(LeadAssignment).filter(
+            LeadAssignment.organization_id == tenant_id,
+            LeadAssignment.lead_id == lead.id,
+            LeadAssignment.unassigned_at.is_(None)
+        ).update({"unassigned_at": now}, synchronize_session=False)
+
+        lead.owner_id = telecaller.id
+        db.add(LeadAssignment(
+            organization_id=tenant_id,
+            lead_id=lead.id,
+            user_id=telecaller.id,
+            assigned_by=current_user.id,
+            is_primary=True,
+        ))
+        activity = Activity(
+            organization_id=tenant_id,
+            lead_id=lead.id,
+            user_id=current_user.id,
+            activity_type="ASSIGNMENT",
+            subject=f"Assigned to {telecaller.full_name}",
+            description=f"Assigned by Org Admin {current_user.full_name} for calling queue."
+        )
+        db.add(activity)
+
+    db.commit()
+    return {
+        "updated_count": len(leads),
+        "skipped_count": len(requested_ids) - len(leads),
+        "telecaller_id": telecaller.id,
+        "telecaller_name": telecaller.full_name,
+        "message": f"Assigned {len(leads)} unowned leads to {telecaller.full_name}; skipped {len(requested_ids) - len(leads)} already-owned, missing, or ineligible leads"
+    }
+
+
+class BulkReassignRequest(BaseModel):
+    from_user_id: str
+    to_user_id: str
+    reason: Optional[str] = None
+
+
+@router.patch("/bulk-reassign")
+def bulk_reassign_leads(
+    data: BulkReassignRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    tenant_id: str = Depends(get_tenant_id)
+):
+    """
+    Problem 8: Permanent handover fallback.
+    Reassigns all OPEN leads from an absent user to another user in one transaction,
+    writing an audit activity row per lead.
+    """
+    if not (current_user.is_org_admin or current_user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER") or current_user.is_super_admin):
+        raise HTTPException(status_code=403, detail="Only managers can perform bulk reassignment")
+
+    to_user = db.query(User).filter(
+        User.id == data.to_user_id,
+        User.organization_id == tenant_id,
+        User.tenant_role == "TELECALLER",
+        User.status == "ACTIVE",
+        User.deleted_at.is_(None),
+    ).first()
+    if not to_user:
+        raise HTTPException(status_code=404, detail="Target user not found")
+
+    # Safe assignment logic: Check if target user has an active shift
+    from app.models.session import AttendanceSession
+    from datetime import datetime, timezone
+    today = organization_business_date(db, tenant_id)
+    active_shift = db.query(AttendanceSession).filter(
+        AttendanceSession.organization_id == tenant_id,
+        AttendanceSession.user_id == to_user.id,
+        AttendanceSession.date == today,
+        AttendanceSession.logout_at == None
+    ).first()
+    
+    if not active_shift:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target user is not clocked in. Assignment rejected.")
+
+    from_user = db.query(User.id).filter(
+        User.id == data.from_user_id,
+        User.organization_id == tenant_id,
+    ).first()
+    if not from_user:
+        raise HTTPException(status_code=404, detail="Source user not found")
+
+    leads = db.query(Lead).filter(
+        Lead.organization_id == tenant_id,
+        Lead.owner_id == data.from_user_id,
+        Lead.status != "ARCHIVED"
+    ).with_for_update().all()
+
+    count = 0
+    for lead in leads:
+        db.query(LeadAssignment).filter(
+            LeadAssignment.organization_id == tenant_id,
+            LeadAssignment.lead_id == lead.id,
+            LeadAssignment.unassigned_at.is_(None),
+        ).update({LeadAssignment.unassigned_at: datetime.now(timezone.utc)}, synchronize_session=False)
+        lead.owner_id = to_user.id
+        db.add(LeadAssignment(
+            organization_id=tenant_id,
+            lead_id=lead.id,
+            user_id=to_user.id,
+            assigned_by=current_user.id,
+            is_primary=True,
+        ))
+        act = Activity(
+            organization_id=tenant_id,
+            lead_id=lead.id,
+            user_id=current_user.id,
+            activity_type="ASSIGNMENT",
+            subject=f"Bulk Reassigned to {to_user.full_name}",
+            description=data.reason or f"Bulk permanent handover by {current_user.full_name}"
+        )
+        db.add(act)
+        count += 1
+
+    db.commit()
+    return {"status": "success", "reassigned_count": count, "to_user": to_user.full_name}
+
+
+class PreCallContextOut(BaseModel):
+    lead: LeadOut
+    timeline: List[ActivityOut]
+    stage_history: List[LeadStageHistoryOut]
+    ai_summary: Optional[dict] = None
+    ai_next_action: Optional[dict] = None
+
+
 
 @router.get("/{id}", response_model=LeadOut)
 def get_lead_detail(
@@ -321,203 +535,6 @@ def reassign_lead(
 ):
     lead = assign_lead(db, id, data.owner_id, tenant_id, current_user)
     return serialize_lead(lead, current_user, db)
-
-
-class BatchAssignRequest(BaseModel):
-    lead_ids: List[str]
-    telecaller_id: str
-
-
-@router.get("/available-for-assignment")
-def get_leads_available_for_assignment(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    tenant_id: str = Depends(get_tenant_id)
-):
-    if current_user.tenant_role not in ["ORG_ADMIN", "SALES_MANAGER", "SUPER_ADMIN"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
-        
-    query = db.query(Lead).filter(
-        Lead.organization_id == tenant_id,
-        Lead.owner_id == None,
-        Lead.status.notin_(["WON", "LOST", "ARCHIVED", "REJECTED"])
-    )
-    
-    leads = query.order_by(Lead.created_at.desc()).limit(100).all()
-    return [{"id": l.id, "title": l.title, "contact_name": l.contact_name, "created_at": l.created_at} for l in leads]
-
-@router.post("/batch-assign")
-def batch_assign_leads(
-    data: BatchAssignRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    tenant_id: str = Depends(get_tenant_id)
-):
-    """
-    Assigns multiple leads (e.g. 5, 20, 50) to a specific Telecaller in one transaction.
-    """
-    if not (current_user.is_org_admin or current_user.is_super_admin or current_user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER")):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only Organization Admins can assign leads to telecallers")
-
-    # Verify target telecaller exists in this organization
-    telecaller = db.query(User).filter(
-        User.id == data.telecaller_id,
-        User.organization_id == tenant_id,
-        User.tenant_role == "TELECALLER",
-        User.status == "ACTIVE",
-        User.deleted_at.is_(None),
-    ).first()
-    if not telecaller:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target telecaller not found in this organization")
-
-    # Safe assignment logic: Check if telecaller has an active shift
-    from app.models.session import AttendanceSession
-    from datetime import datetime, timezone
-    today = organization_business_date(db, tenant_id)
-    active_shift = db.query(AttendanceSession).filter(
-        AttendanceSession.organization_id == tenant_id,
-        AttendanceSession.user_id == telecaller.id,
-        AttendanceSession.date == today,
-        AttendanceSession.logout_at == None
-    ).first()
-    
-    if not active_shift:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target telecaller is not clocked in. Assignment rejected.")
-
-    requested_ids = list(dict.fromkeys(data.lead_ids))
-    if not requested_ids:
-        raise HTTPException(status_code=422, detail="At least one lead ID is required")
-    leads = db.query(Lead).filter(
-        Lead.id.in_(requested_ids),
-        Lead.organization_id == tenant_id,
-        Lead.owner_id.is_(None),
-        Lead.deleted_at.is_(None),
-        Lead.status.notin_(["WON", "LOST", "ARCHIVED", "REJECTED"]),
-    ).with_for_update().all()
-
-    for lead in leads:
-        lead.owner_id = telecaller.id
-        db.add(LeadAssignment(
-            organization_id=tenant_id,
-            lead_id=lead.id,
-            user_id=telecaller.id,
-            assigned_by=current_user.id,
-            is_primary=True,
-        ))
-        activity = Activity(
-            organization_id=tenant_id,
-            lead_id=lead.id,
-            user_id=current_user.id,
-            activity_type="ASSIGNMENT",
-            subject=f"Assigned to {telecaller.full_name}",
-            description=f"Assigned by Org Admin {current_user.full_name} for calling queue."
-        )
-        db.add(activity)
-
-    db.commit()
-    return {
-        "updated_count": len(leads),
-        "skipped_count": len(requested_ids) - len(leads),
-        "telecaller_id": telecaller.id,
-        "telecaller_name": telecaller.full_name,
-        "message": f"Assigned {len(leads)} unowned leads to {telecaller.full_name}; skipped {len(requested_ids) - len(leads)} already-owned, missing, or ineligible leads"
-    }
-
-
-class BulkReassignRequest(BaseModel):
-    from_user_id: str
-    to_user_id: str
-    reason: Optional[str] = None
-
-
-@router.patch("/bulk-reassign")
-def bulk_reassign_leads(
-    data: BulkReassignRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    tenant_id: str = Depends(get_tenant_id)
-):
-    """
-    Problem 8: Permanent handover fallback.
-    Reassigns all OPEN leads from an absent user to another user in one transaction,
-    writing an audit activity row per lead.
-    """
-    if not (current_user.is_org_admin or current_user.tenant_role in ("ORG_ADMIN", "SALES_MANAGER") or current_user.is_super_admin):
-        raise HTTPException(status_code=403, detail="Only managers can perform bulk reassignment")
-
-    to_user = db.query(User).filter(
-        User.id == data.to_user_id,
-        User.organization_id == tenant_id,
-        User.tenant_role == "TELECALLER",
-        User.status == "ACTIVE",
-        User.deleted_at.is_(None),
-    ).first()
-    if not to_user:
-        raise HTTPException(status_code=404, detail="Target user not found")
-
-    # Safe assignment logic: Check if target user has an active shift
-    from app.models.session import AttendanceSession
-    from datetime import datetime, timezone
-    today = organization_business_date(db, tenant_id)
-    active_shift = db.query(AttendanceSession).filter(
-        AttendanceSession.organization_id == tenant_id,
-        AttendanceSession.user_id == to_user.id,
-        AttendanceSession.date == today,
-        AttendanceSession.logout_at == None
-    ).first()
-    
-    if not active_shift:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target user is not clocked in. Assignment rejected.")
-
-    from_user = db.query(User.id).filter(
-        User.id == data.from_user_id,
-        User.organization_id == tenant_id,
-    ).first()
-    if not from_user:
-        raise HTTPException(status_code=404, detail="Source user not found")
-
-    leads = db.query(Lead).filter(
-        Lead.organization_id == tenant_id,
-        Lead.owner_id == data.from_user_id,
-        Lead.status != "ARCHIVED"
-    ).with_for_update().all()
-
-    count = 0
-    for lead in leads:
-        db.query(LeadAssignment).filter(
-            LeadAssignment.organization_id == tenant_id,
-            LeadAssignment.lead_id == lead.id,
-            LeadAssignment.unassigned_at.is_(None),
-        ).update({LeadAssignment.unassigned_at: datetime.now(timezone.utc)}, synchronize_session=False)
-        lead.owner_id = to_user.id
-        db.add(LeadAssignment(
-            organization_id=tenant_id,
-            lead_id=lead.id,
-            user_id=to_user.id,
-            assigned_by=current_user.id,
-            is_primary=True,
-        ))
-        act = Activity(
-            organization_id=tenant_id,
-            lead_id=lead.id,
-            user_id=current_user.id,
-            activity_type="ASSIGNMENT",
-            subject=f"Bulk Reassigned to {to_user.full_name}",
-            description=data.reason or f"Bulk permanent handover by {current_user.full_name}"
-        )
-        db.add(act)
-        count += 1
-
-    db.commit()
-    return {"status": "success", "reassigned_count": count, "to_user": to_user.full_name}
-
-
-class PreCallContextOut(BaseModel):
-    lead: LeadOut
-    timeline: List[ActivityOut]
-    stage_history: List[LeadStageHistoryOut]
-    ai_summary: Optional[dict] = None
-    ai_next_action: Optional[dict] = None
 
 
 @router.get("/{id}/pre-call-context", response_model=PreCallContextOut)

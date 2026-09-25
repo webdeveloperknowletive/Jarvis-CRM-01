@@ -79,11 +79,21 @@ def create_activity(
     if act_type == "CALL" and lead:
         from app.models.call_record import CallRecord
 
+        from sqlalchemy import or_, and_
+        from datetime import timedelta
+        
+        recent_threshold = now - timedelta(minutes=60)
         call_record = db.query(CallRecord).filter(
             CallRecord.organization_id == organization_id,
             CallRecord.lead_id == lead.id,
             CallRecord.user_id == user.id,
-            CallRecord.disposition == "INITIATED",
+            or_(
+                CallRecord.ended_at.is_(None),
+                and_(
+                    CallRecord.provider != "MANUAL_OUTCOME",
+                    CallRecord.started_at >= recent_threshold
+                )
+            )
         ).order_by(CallRecord.started_at.desc()).with_for_update().first()
         if not call_record:
             call_record = CallRecord(
@@ -98,7 +108,8 @@ def create_activity(
             db.add(call_record)
         call_record.disposition = act_status.upper()
         call_record.duration_seconds = duration
-        call_record.ended_at = now
+        if not call_record.ended_at:
+            call_record.ended_at = now
 
         # Follow-up policies count authoritative CallRecord rows. Flush the
         # current outcome before evaluating a max-attempt policy so this call

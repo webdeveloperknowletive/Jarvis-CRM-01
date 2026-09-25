@@ -60,11 +60,10 @@ def initiate_call(
         activity_type="CALL",
         subject=f"Outbound Call Initiated to {lead.contact_name or lead.title}",
         description="Call dialed via native application bridge.",
-        status="SCHEDULED"
+        status="SCHEDULED",
+        metadata_json={"call_record_id": call_record.id}
     )
     db.add(activity)
-    db.flush()
-    activity.description = f"Call dialed via native application bridge. call_record_id={call_record.id}"
     db.commit()
     db.refresh(call_record)
     
@@ -111,20 +110,27 @@ async def telephony_webhook(
     dur = data.duration if data.duration is not None else (data.duration_seconds or 0)
 
     if call_record:
+        if data.call_id and not call_record.provider_call_id:
+            call_record.provider_call_id = data.call_id
+
         call_record.disposition = disp
         call_record.duration_seconds = dur
+        if not call_record.ended_at:
+            call_record.ended_at = datetime.now(timezone.utc)
         if data.recording_url:
             call_record.recording_url = data.recording_url
         
         # Finalize the initiation activity instead of appending another raw
         # call row.  Provider retries therefore remain idempotent.
-        activity = db.query(Activity).filter(
+        activities = db.query(Activity).filter(
             Activity.organization_id == call_record.organization_id,
             Activity.lead_id == call_record.lead_id,
             Activity.user_id == call_record.user_id,
             Activity.activity_type == "CALL",
-            Activity.description.like(f"%call_record_id={call_record.id}%"),
-        ).order_by(Activity.occurred_at.desc()).first()
+        ).order_by(Activity.occurred_at.desc()).limit(10).all()
+
+        activity = next((a for a in activities if isinstance(a.metadata_json, dict) and a.metadata_json.get("call_record_id") == call_record.id), None)
+        
         if not activity:
             activity = Activity(
                 organization_id=call_record.organization_id,
@@ -132,6 +138,7 @@ async def telephony_webhook(
                 contact_id=call_record.contact_id,
                 user_id=call_record.user_id,
                 activity_type="CALL",
+                metadata_json={"call_record_id": call_record.id}
             )
             db.add(activity)
         activity.subject = f"Outbound Call - {disp}"

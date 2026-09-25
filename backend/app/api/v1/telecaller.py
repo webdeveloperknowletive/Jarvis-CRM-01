@@ -316,11 +316,11 @@ def get_daily_queue_today(
                 lead_type=t.lead.lead_type
             ))
 
-    # 2. Fresh Leads Assigned to Caller (NEW or OPEN with no call activity)
-    from app.models.activity import Activity
-    subq = db.query(Activity.lead_id).filter(
-        Activity.organization_id == tenant_id,
-        Activity.activity_type == "CALL"
+    # 2. Fresh Leads Assigned to Caller (NEW or OPEN with no finalized CallRecord)
+    from app.models.call_record import CallRecord
+    subq = db.query(CallRecord.lead_id).filter(
+        CallRecord.organization_id == tenant_id,
+        CallRecord.disposition.notin_(["INITIATED", "PENDING"])
     ).subquery()
 
     new_leads = db.query(Lead).outerjoin(

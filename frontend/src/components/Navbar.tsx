@@ -29,24 +29,31 @@ const isTelecaller = (u: User) => u.tenant_role === "TELECALLER";
 const isOrgAdmin = (u: User) => u.tenant_role === "ORG_ADMIN";
 
 const NAVIGATION_CONFIG: NavModule[] = [
-  { id: "telecaller", label: "Calling Desk", icon: PhoneCall, visible: isTelecaller },
+  // Platform / Super Admin Modules
   { id: "dashboard", label: "Dashboard", icon: ActivitySquare, visible: isSuperAdmin },
   { id: "organizations", label: "Organizations", icon: Building2, visible: isSuperAdmin },
-  { id: "global_intelligence", label: "Global Intelligence", icon: BrainCircuit, iconColor: "var(--primary)", visible: (u) => isDataEntry(u) || isSuperAdmin(u) },
   { id: "global_edits", label: "Global Edits", icon: ActivitySquare, iconColor: "var(--amber)", visible: isSuperAdmin },
+  { id: "users", label: "Users", icon: Users, visible: isSuperAdmin },
+  { id: "audit", label: "Platform Activities", icon: ActivitySquare, visible: isSuperAdmin },
+
+  // Data Entry Exclusive Modules (Hidden from Tenant Admins)
   { id: "global", label: "Company Intelligence", icon: Globe2, iconColor: "var(--cyan)", visible: (u) => isDataEntry(u) || isSuperAdmin(u) },
   { id: "people", label: "People Intelligence", icon: UserCheck, iconColor: "var(--emerald)", visible: (u) => isDataEntry(u) || isSuperAdmin(u) },
-  { id: "import", label: "Data Ingestion", icon: UploadCloud, iconColor: "#6366f1", visible: (u) => isDataEntry(u) || (!isSuperAdmin(u) && !isTelecaller(u)) },
+
+  // Telecaller Desk
+  { id: "telecaller", label: "Calling Desk", icon: PhoneCall, visible: isTelecaller },
+
+  // Locked Tenant Module Structure
   { id: "radar", label: "Radar Insights", icon: Sparkles, iconColor: "var(--amber)", visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
-  { id: "pipeline", label: "Pipeline", icon: Kanban, visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
+  { id: "global_intelligence", label: "Global Registry", icon: BrainCircuit, iconColor: "var(--primary)", visible: (u) => !isTelecaller(u) },
   { id: "leads", label: "Leads & Contacts", icon: Users, visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
+  { id: "pipeline", label: "Pipeline", icon: Kanban, visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
   { id: "team", label: "Team & Telecallers", icon: UserCheck, iconColor: "var(--emerald)", visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
+  { id: "import", label: "Data Ingestion", icon: UploadCloud, iconColor: "#6366f1", visible: (u) => isDataEntry(u) || (!isSuperAdmin(u) && !isTelecaller(u)) },
+  { id: "products", label: "Products & Services", icon: Briefcase, visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
   { id: "templates", label: "Templates", icon: ActivitySquare, iconColor: "var(--primary)", visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
   { id: "governance", label: "Data Governance", icon: Shield, iconColor: "var(--primary)", visible: (u) => !isSuperAdmin(u) && !isTelecaller(u) && !isDataEntry(u) },
-  { id: "products", label: "Products & Services", icon: Briefcase, visible: isOrgAdmin },
-  { id: "api_keys", label: "Developer Settings", icon: Key, iconColor: "var(--amber)", visible: (u) => !isTelecaller(u) && !isDataEntry(u) },
-  { id: "users", label: "Users", icon: Users, visible: isSuperAdmin },
-  { id: "audit", label: "Platform Activities", icon: ActivitySquare, visible: isSuperAdmin }
+  { id: "api_keys", label: "Developer Settings", icon: Key, iconColor: "var(--amber)", visible: (u) => !isTelecaller(u) && !isDataEntry(u) }
 ];
 
 export const Navbar: React.FC<NavbarProps> = ({ user, activeTab, setActiveTab, onLogout, onNewLeadClick }) => {
